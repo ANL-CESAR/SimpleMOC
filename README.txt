@@ -85,8 +85,8 @@ n_polar_angles
 n_egroups
 	Number of energy groups
 
-decomp_assemblies_rad
-	Number of assemblies per sub-domain (radially)
+decompose
+	Turn decomposition on/off
 
 decomp_assemblies_ax
 	Number of assemblies per sub-domain (axially)
