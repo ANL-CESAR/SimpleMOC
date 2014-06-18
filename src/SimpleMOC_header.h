@@ -1,4 +1,4 @@
-#include<stio.h>
+#include<stdio.h>
 #include<stdlib.h>
 
 // User inputs
@@ -19,5 +19,6 @@ typedef struct{
 
 // Hardcoded Reactor definition
 typedef struct{
+	double size;
 	
 } Reactor;
