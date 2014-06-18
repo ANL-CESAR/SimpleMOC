@@ -32,3 +32,6 @@ typedef struct{
 // goemetry.c
 double * determine_radii( Reactor reactor );
 void reactor_init( Reactor * reactor );
+
+// init.c
+Input get_input( void );
