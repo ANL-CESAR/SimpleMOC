@@ -50,3 +50,43 @@ Assembly:
 Reactor:
 	- The assemblies are arranged in the manner of the MIT BEAVRS reactor
 	  benchmark. 
+
+===============================================================================
+Input Variables
+===============================================================================
+
+x_assemblies
+	Number of assemblies in the x-axis of the reactor
+
+y_assemblies
+	Number of assemblies in the y-axis of the reactor
+
+cai
+	This is the number of course axial intervals
+
+fai
+	This is the number of fine axial intervals per course axial interval
+
+axial_exp
+	Axial source expansion order
+
+radial_ray_sep
+	Radial ray separation
+
+axial_z_sep
+	Axial stacked z-ray separation
+
+n_azimuthal
+	Number of azimuthal angles
+
+n_polar_angles
+	Number of polar angles
+
+n_egroups
+	Number of energy groups
+
+decomp_assemblies_rad
+	Number of assemblies per sub-domain (radially)
+
+decomp_assemblies_ax
+	Number of assemblies per sub-domain (axially)
