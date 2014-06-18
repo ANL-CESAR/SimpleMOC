@@ -22,10 +22,12 @@ typedef struct{
 typedef struct{
 	double pin_cell_width;     //  Width of a pin cell - Default 1.26 cm
 	double pin_radius;         //  Radius of a fuel pin - 0.46 cm
-	int n_radial_regions;       //  Number of radial regions - default 10
-	int n_aziuthal_regions;     //  Number of azimuthal regions - default 8
+	int n_radial_regions;      //  Number of radial regions - default 10
+	int n_azimuthal_regions;   //  Number of azimuthal regions - default 8
+	double * radii;            // Stores the radii of the radial regions
 } Reactor;
 
 
 // goemetry.c
 double * determine_radii( Reactor reactor );
+void reactor_init( Reactor * reactor );
