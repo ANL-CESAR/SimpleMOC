@@ -15,7 +15,7 @@ typedef struct{
 	int n_polar_angles;        // Number of polar angles
 	int n_egroups;             // Number of energy groups
 	int decompose;             // Turn decomposition on/off (1 on, 0 off)
-	int decomp_assemblies_ax; // Number of assemblies per sub-domain (axially)
+	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
 } Input;
 
 //  Reactor definition
