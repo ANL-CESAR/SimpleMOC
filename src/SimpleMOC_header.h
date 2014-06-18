@@ -19,5 +19,5 @@ typedef struct{
 
 // Hardcoded Reactor definition
 typedef struct{
-
+	
 } Reactor;
