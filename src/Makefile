@@ -17,7 +17,8 @@ BENCHMARK   = no
 program = SimpleMOC
 
 source = \
-main.c
+main.c \
+geometry.c
 
 obj = $(source:.c=.o)
 
