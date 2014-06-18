@@ -18,10 +18,11 @@ typedef struct{
 	long decomp_assemblies_ax; // Number of assemblies per sub-domain (axially)
 } Input;
 
-// Hardcoded Reactor definition
+//  Reactor definition
 typedef struct{
 	double pin_cell_width;     //  Width of a pin cell - Default 1.26 cm
 	double pin_radius;         //  Radius of a fuel pin - 0.46 cm
+	double assembly_width;     //  Width of an assembly - 1.26 x 17 cm
 	int n_radial_regions;      //  Number of radial regions - default 10
 	int n_azimuthal_regions;   //  Number of azimuthal regions - default 8
 	double * radii;            // Stores the radii of the radial regions

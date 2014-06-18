@@ -25,6 +25,7 @@ void reactor_init( Reactor * reactor )
 {
 	reactor->pin_cell_width = 1.26;
 	reactor->pin_radius = 0.46;
+	reactor->assembly_width = 1.26 * 17;
 	reactor->n_radial_regions = 10;
 	reactor->n_azimuthal_regions = 8;
 	reactor->radii = determine_radii( *reactor );
