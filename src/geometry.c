@@ -1,7 +1,7 @@
 #include"SimpleMOC_header.h"
 
 // Finds the "localized" region ID of a 3D cartesian coordinate
-RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor, double * radii )
+RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor )
 {
 	RegionID id;
 
@@ -35,7 +35,7 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	int ring_id = 0;
     for(int i=0; i < reactor.n_radial_regions; i++)
 	{
-		if(radius > radii[i])
+		if(radius > reactor.radii[i])
 			ring_id++;
 		else
 			break;
