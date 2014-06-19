@@ -31,6 +31,12 @@ typedef struct{
 	double * radii;            // Stores the radii of the radial regions
 } Reactor;
 
+// Localized Geometrical region ID
+typedef struct{
+	long assembly;
+	long pin;
+	long domain;
+} RegionID;
 
 // goemetry.c
 double * determine_radii( Reactor reactor );
