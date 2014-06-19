@@ -2,8 +2,7 @@
 
 int main( int argc, char * argv[] )
 {
-	Reactor reactor;
-	reactor_init( &reactor);
+	Reactor reactor = reactor_init();
 	Input input = get_input();
 	return 0;
 }

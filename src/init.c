@@ -1,5 +1,6 @@
 #include"SimpleMOC_header.h"
 
+// Gets input from user and sets defaults
 Input get_input( void )
 {
 	Input input;
@@ -20,4 +21,19 @@ Input get_input( void )
 	// TODO: Add file/CLI user input
 
 	return input;
+}
+
+// Sets the parameters for the reactor and calculates the radii
+Reactor reactor_init( void )
+{
+	Reactor reactor;
+
+	reactor.pin_cell_width = 1.26;
+	reactor.pin_radius = 0.46;
+	reactor.assembly_width = 1.26 * 17;
+	reactor.n_radial_regions = 10;
+	reactor.n_azimuthal_regions = 8;
+	reactor.radii = determine_radii( reactor );
+
+	return reactor;
 }

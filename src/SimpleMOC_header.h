@@ -1,3 +1,6 @@
+#ifndef __SimpleMOC_header
+#define __SimpleMOC_header
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
@@ -31,7 +34,9 @@ typedef struct{
 
 // goemetry.c
 double * determine_radii( Reactor reactor );
-void reactor_init( Reactor * reactor );
 
 // init.c
 Input get_input( void );
+Reactor reactor_init( void );
+
+#endif
