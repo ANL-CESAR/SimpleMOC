@@ -1,9 +1,25 @@
 #include"SimpleMOC_header.h"
 
-long get_domain_id( double x, double y, double z, Input input, Reactor reactor )
+// Finds the "localized" region ID of a 3D cartesian coordinate
+RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor )
 {
-	// find x-assembly
+	RegionID id;
+
+	// find assembly
+	id.assembly = 0;
 	
+	// find pin cell
+	id.pin = 0;
+	
+	// find the zone inside pin cell
+	id.zone = 0;
+
+	return id;
+}
+
+// Finds the serialized "global" index of a region 
+long get_region_index( RegionID id, Input input, Reactor reactor )
+{
 	return 0;
 }
 
@@ -19,4 +35,3 @@ double * determine_radii( Reactor reactor )
 
 	return radii;
 }
-
