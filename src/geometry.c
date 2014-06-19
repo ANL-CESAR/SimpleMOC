@@ -1,7 +1,7 @@
 #include"SimpleMOC_header.h"
 
 // Finds the "localized" region ID of a 3D cartesian coordinate
-RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor )
+RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor, double * radii )
 {
 	RegionID id;
 
@@ -22,8 +22,6 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	int y_pin_id = (int) assembly_y / reactor.pin_cell_width;
 	id.pin = x_pin_id + 17 * y_pin_id;
 
-	// TODO: Add Z component (3D)
-
 	// calculate the (x,y) coordinates in the pin
 	double pin_x = (double) assembly_x - x_pin_id * reactor.pin_cell_width;
 	pin_x -= reactor.pin_cell_width/2; // take x coordinate from center of pin
@@ -33,9 +31,9 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 
 	// find the ring inside pin cell
 	int ring_id = 0;
-    for(int i=0; i < reactor.n_radial_regions; i++)
+    for(int i=1; i < reactor.n_radial_regions; i++)
 	{
-		if(radius > reactor.radii[i])
+		if(radius >= radii[i])
 			ring_id++;
 		else
 			break;
@@ -47,8 +45,17 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	double azimuthal_interval = 2 * pi / reactor.n_azimuthal_regions;
 	int azimuthal_id = (int) theta / azimuthal_interval;
 	
-	// compute zone id
-	id.zone = azimuthal_id + reactor.n_azimuthal_regions * ring_id;
+	// compute 2D zone id
+	int 2D_zone = azimuthal_id + reactor.n_azimuthal_regions * ring_id;
+
+	// compute axial layer
+	int n_coarse_axial_layers = 400 / input.cai;
+	int n_fine_axial_layers = n_course_axial_layers * input.fai;
+ 	int fine_axial_length = input.cai / input.fai;
+	int fine_axial_layer = z / fine_axial_length
+
+	// compute 3D zone id
+	id.zone = fine_axial_layer + 2D_zone * n_fine_axial_layers;
 
 	return id;
 }
@@ -56,13 +63,13 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 // Finds the serialized "global" index of a region 
 long get_region_index( RegionID id, Input input, Reactor reactor )
 {
-	// calculate number of zones in a pin cell (add 1 for outside region)
-	int zones_per_pin = (reactor.n_radial_regions + 1) * reactor.n_azimuthal_regions;
+	// calculate number of zones in a pin cell
+	int n_coarse_axial_layers = 400 / input.cai;
+	int zones_per_pin = reactor.n_radial_regions * reactor.n_azimuthal_regions *
+		input.fai * num_coarse_axial_layers;
 
 	// define number of pins per assembly (assuming 17 x 17 assemblies)
 	int pins_per_assembly = 289;
-
-	// TODO: Add Z component (3D)
 
 	// calculate the index number and return
 	return id.zone + zones_per_pin * ( id.pin + pins_per_assembly * id.assembly);
