@@ -19,7 +19,8 @@ program = SimpleMOC
 source = \
 main.c \
 geometry.c \
-init.c
+init.c \
+io.c
 
 obj = $(source:.c=.o)
 

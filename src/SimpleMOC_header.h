@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
+#include<string.h>
 
 // User inputs
 typedef struct{
@@ -46,5 +47,12 @@ double * determine_radii( Reactor reactor );
 // init.c
 Input get_input( void );
 Reactor reactor_init( void );
+
+// io.c
+void logo(int version);
+void center_print(const char *s, int width);
+void border_print(void);
+void fancy_int( int a );
+void print_input_summary(Input input);
 
 #endif
