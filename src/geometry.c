@@ -35,7 +35,7 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	int ring_id = 0;
     for(int i=0; i < reactor.n_radial_regions; i++)
 	{
-		if(radius < reactor.n_radial_regions)
+		if(radius > radii[i])
 			ring_id++;
 		else
 			break;
