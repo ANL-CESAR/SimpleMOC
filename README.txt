@@ -48,8 +48,8 @@ Assembly:
 	  borated water.
 
 Reactor:
-	- The assemblies are arranged in the manner of the MIT BEAVRS reactor
-	  benchmark. 
+	- The assemblies are arranged in a rectangular shape, as defined by
+	  the user. 
 
 ===============================================================================
 Input Variables
