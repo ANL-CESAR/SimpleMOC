@@ -57,15 +57,15 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 long get_region_index( RegionID id, Input input, Reactor reactor )
 {
 	// calculate number of zones in a pin cell (add 1 for outside region)
-	zones_per_pin = (reactor.n_radial_regions + 1) * reactor.n_azimuthal_regions;
+	int zones_per_pin = (reactor.n_radial_regions + 1) * reactor.n_azimuthal_regions;
 
 	// define number of pins per assembly (assuming 17 x 17 assemblies)
-	pins_per_assembly = 289;
+	int pins_per_assembly = 289;
 
 	// TODO: Add Z component (3D)
 
 	// calculate the index number and return
-	return id.zone + zones_per_pin * ( id.pin + pins_per_assembly * id.assembly)
+	return id.zone + zones_per_pin * ( id.pin + pins_per_assembly * id.assembly);
 }
 
 // Calculates constant volume radii
