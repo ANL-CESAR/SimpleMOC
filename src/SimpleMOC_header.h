@@ -56,6 +56,6 @@ void fancy_int( int a );
 void print_input_summary(Input input);
 
 // tester.c
-void draw_2D_zone_points(Input input, Reactor reactor)
+void generate_2D_zone_points(Input input, Reactor reactor)
 
 #endif

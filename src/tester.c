@@ -4,8 +4,40 @@
 // creates points that "draw" the 2D projection of the geometry
 // points are output to a text file to be parsed and plotted by
 // an external plotter such as Python's matplotlib
-void draw_2D_zone_points(Input input, Reactor reactor)
+void generate_2D_zone_points(Input input, Reactor reactor, int n_pts)
 {
+	//TODO generate output file
+
+	// z has range (0,400) - hard coded
+	double zmax = 400;
+
+	// calculate x range
+	double xmax = input.x_assemblies * reactor.assembly_width;
+
+	// calculate y range
+	double ymax = input.y_assemblies * reacotr.assembly_width;
+
+	// generate z value which will be common for all points
+	double zpt = zmax * urand();
+
+	// define xpt, ypt
+	double xpt;
+	double ypt;
+
+	// generate points
+	for(int i = 0; i < n_pts; i++)
+	{
+		xpt = xmax * urand();
+		ypt = ymax * urand();
+
+	}		
+
 
 	return;
+}
+
+// generates a random number between 0 and 1
+double urand(void)
+{
+	return (double)rand() / (double)RAND_MAX;
 }
