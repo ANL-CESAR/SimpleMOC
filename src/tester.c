@@ -6,7 +6,10 @@
 // an external plotter such as Python's matplotlib
 void generate_2D_zone_points(Input input, Reactor reactor, int n_pts)
 {
-	//TODO generate output file
+	// generate output file
+	FILE * out;
+	out = fopen("gen_points_2D.txt","w");
+	fprintf(out, "X\tY\tZ\tAssembly\tPin\tZone\tIndex");
 
 	// z has range (0,400) - hard coded
 	double zmax = 400;
@@ -23,16 +26,24 @@ void generate_2D_zone_points(Input input, Reactor reactor, int n_pts)
 	// define xpt, ypt
 	double xpt;
 	double ypt;
+	RegionID id;
+	long index;
+
 
 	// generate points
 	for(int i = 0; i < n_pts; i++)
 	{
 		xpt = xmax * urand();
 		ypt = ymax * urand();
+		id = get_region_id(xpt, ypt, zpt, input, reactor);	
+		index = get_region_index(id, input, reactor);
+		fprintf(out, "%f\t%f\t%f\t", xpt, ypt, zpt);
+		fprintf(out, "%d\t%d\t%d\t%d\n", id.assembly, id.pin, id.zone, index);
+	}	
 
-	}		
-
-
+	// close stream	
+	fclose(out);
+	
 	return;
 }
 
