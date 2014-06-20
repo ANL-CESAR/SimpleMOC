@@ -18,8 +18,8 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	double assembly_y = (double) y - y_assembly_id * reactor.assembly_width;
 
 	// find pin cell in the assembly (assuming 17 x 17 assemblies)
-    int x_pin_id = (int) assembly_x / reactor.pin_cell_width;
-	int y_pin_id = (int) assembly_y / reactor.pin_cell_width;
+    int x_pin_id = assembly_x / reactor.pin_cell_width;
+	int y_pin_id = assembly_y / reactor.pin_cell_width;
 	id.pin = x_pin_id + 17 * y_pin_id;
 
 	// calculate the (x,y) coordinates in the pin
@@ -43,7 +43,7 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	double pi = 3.14159265358979323846264338327950;
 	double theta = atan2(pin_y, pin_x) + pi;
 	double azimuthal_interval = 2 * pi / reactor.n_azimuthal_regions;
-	int azimuthal_id = (int) theta / azimuthal_interval;
+	int azimuthal_id = theta / azimuthal_interval;
 	
 	// compute 2D zone id
 	int zone_2D = azimuthal_id + reactor.n_azimuthal_regions * ring_id;

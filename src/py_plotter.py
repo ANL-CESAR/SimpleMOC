@@ -16,7 +16,7 @@ zone = []
 index = []
 
 # option to only read a fraction of the data
-fraction = 10
+fraction = 1
 
 # skipping header line, reading the rest
 for i in range( len(lines)/fraction - 1 ):
