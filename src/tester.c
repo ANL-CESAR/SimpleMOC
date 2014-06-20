@@ -18,7 +18,7 @@ void generate_2D_zone_points(Input input, Reactor reactor, int n_pts)
 	double xmax = input.x_assemblies * reactor.assembly_width;
 
 	// calculate y range
-	double ymax = input.y_assemblies * reacotr.assembly_width;
+	double ymax = input.y_assemblies * reactor.assembly_width;
 
 	// generate z value which will be common for all points
 	double zpt = zmax * urand();
@@ -38,7 +38,7 @@ void generate_2D_zone_points(Input input, Reactor reactor, int n_pts)
 		id = get_region_id(xpt, ypt, zpt, input, reactor);	
 		index = get_region_index(id, input, reactor);
 		fprintf(out, "%f\t%f\t%f\t", xpt, ypt, zpt);
-		fprintf(out, "%d\t%d\t%d\t%d\n", id.assembly, id.pin, id.zone, index);
+		fprintf(out, "%ld\t%ld\t%ld\t%ld\n", id.assembly, id.pin, id.zone, index);
 	}	
 
 	// close stream	
