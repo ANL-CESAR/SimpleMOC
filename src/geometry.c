@@ -1,7 +1,7 @@
 #include"SimpleMOC_header.h"
 
 // Finds the "localized" region ID of a 3D cartesian coordinate
-RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor, double * radii )
+RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor )
 {
 	RegionID id;
 
@@ -33,7 +33,7 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	int ring_id = 0;
     for(int i=1; i < reactor.n_radial_regions; i++)
 	{
-		if(radius >= radii[i])
+		if(radius >= reactor.radii[i])
 			ring_id++;
 		else
 			break;
@@ -46,16 +46,16 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	int azimuthal_id = (int) theta / azimuthal_interval;
 	
 	// compute 2D zone id
-	int 2D_zone = azimuthal_id + reactor.n_azimuthal_regions * ring_id;
+	int zone_2D = azimuthal_id + reactor.n_azimuthal_regions * ring_id;
 
 	// compute axial layer
 	int n_coarse_axial_layers = 400 / input.cai;
-	int n_fine_axial_layers = n_course_axial_layers * input.fai;
+	int n_fine_axial_layers = n_coarse_axial_layers * input.fai;
  	int fine_axial_length = input.cai / input.fai;
-	int fine_axial_layer = z / fine_axial_length
+	int fine_axial_layer = z / fine_axial_length;
 
 	// compute 3D zone id
-	id.zone = fine_axial_layer + 2D_zone * n_fine_axial_layers;
+	id.zone = fine_axial_layer + zone_2D * n_fine_axial_layers;
 
 	return id;
 }
@@ -66,7 +66,7 @@ long get_region_index( RegionID id, Input input, Reactor reactor )
 	// calculate number of zones in a pin cell
 	int n_coarse_axial_layers = 400 / input.cai;
 	int zones_per_pin = reactor.n_radial_regions * reactor.n_azimuthal_regions *
-		input.fai * num_coarse_axial_layers;
+		input.fai * n_coarse_axial_layers;
 
 	// define number of pins per assembly (assuming 17 x 17 assemblies)
 	int pins_per_assembly = 289;
