@@ -40,8 +40,8 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	}
 
 	// find the azimuthal region within the ring
-	double theta = atan2(pin_y, pin_x);
 	double pi = 3.14159265358979323846264338327950;
+	double theta = atan2(pin_y, pin_x) + pi;
 	double azimuthal_interval = 2 * pi / reactor.n_azimuthal_regions;
 	int azimuthal_id = (int) theta / azimuthal_interval;
 	

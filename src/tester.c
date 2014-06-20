@@ -9,7 +9,7 @@ void generate_2D_zone_points(Input input, Reactor reactor, int n_pts)
 	// generate output file
 	FILE * out;
 	out = fopen("gen_points_2D.txt","w");
-	fprintf(out, "X\tY\tZ\tAssembly\tPin\tZone\tIndex");
+	fprintf(out, "X\tY\tZ\tAssembly\tPin\tZone\tIndex\n");
 
 	// z has range (0,400) - hard coded
 	double zmax = 400;
