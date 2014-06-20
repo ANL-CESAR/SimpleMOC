@@ -18,6 +18,7 @@ program = SimpleMOC
 
 source = \
 main.c \
+tester.c \
 geometry.c \
 init.c \
 io.c
