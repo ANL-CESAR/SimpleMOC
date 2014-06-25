@@ -24,9 +24,9 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 
 	// calculate the (x,y) coordinates in the pin
 	double pin_x = (double) assembly_x - x_pin_id * reactor.pin_cell_width;
-	pin_x -= reactor.pin_cell_width/2; // take x coordinate from center of pin
+	pin_x -= reactor.pin_cell_width / 2; // take x coordinate from center of pin
 	double pin_y = (double) assembly_y - y_pin_id * reactor.pin_cell_width;
-	pin_y -= reactor.pin_cell_width/2; // take y coordinate from center of pin
+	pin_y -= reactor.pin_cell_width / 2; // take y coordinate from center of pin
 	double radius = sqrt( pin_x * pin_x + pin_y * pin_y );
 
 	// find the ring inside pin cell
@@ -40,9 +40,8 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	}
 
 	// find the azimuthal region within the ring
-	double pi = 3.14159265358979323846264338327950;
-	double theta = atan2(pin_y, pin_x) + pi;
-	double azimuthal_interval = 2 * pi / reactor.n_azimuthal_regions;
+	double theta = atan2(pin_y, pin_x) + M_PI;
+	double azimuthal_interval = 2 * M_PI / reactor.n_azimuthal_regions;
 	int azimuthal_id = theta / azimuthal_interval;
 	
 	// compute 2D zone id
