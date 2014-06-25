@@ -5,7 +5,8 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 {
 	RegionID id;
 
-	// find assembly
+	// find assembly AND SOME STUFF
+	// Also some more comments
 	int x_assembly_id = (int) x / reactor.assembly_width;
 	int y_assembly_id = (int) y / reactor.assembly_width;
 	id.assembly = x_assembly_id + input.x_assemblies * y_assembly_id;
