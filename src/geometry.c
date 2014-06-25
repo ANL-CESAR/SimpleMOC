@@ -5,8 +5,7 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 {
 	RegionID id;
 
-	// find assembly AND SOME STUFF
-	// Also some more comments
+	// find assembly by x and y coordinates
 	int x_assembly_id = (int) x / reactor.assembly_width;
 	int y_assembly_id = (int) y / reactor.assembly_width;
 	id.assembly = x_assembly_id + input.x_assemblies * y_assembly_id;
@@ -14,6 +13,8 @@ RegionID get_region_id( double x, double y, double z, Input input, Reactor react
 	// calculate the (x,y) coordinates in the assembly
 	double assembly_x = (double) x - x_assembly_id * reactor.assembly_width;
 	double assembly_y = (double) y - y_assembly_id * reactor.assembly_width;
+
+	// TODO: Remove assembly geometry details
 
 	// find pin cell in the assembly (assuming 17 x 17 assemblies)
     int x_pin_id = assembly_x / reactor.pin_cell_width;
