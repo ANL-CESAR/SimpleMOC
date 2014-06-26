@@ -67,10 +67,11 @@ track* generate_tracks(Input input, Reactor reactor)
 	}
 
 	// compute track starting and ending points and create tracks
-	double x1, x2, y1, y2, S;
+	double x1, x2, y1, y2, z1, z2, S;
 	for (int i = 0; i < n_azim; i++)
 	{
 		// TODO: Determine Z-coordinate start
+		z1 = 0;
 
 		// allocate memory for tracks in each azimuthal angle
 		track * azim_tracks = (track *) malloc(n_tracks[i] * sizeof(track));
@@ -105,18 +106,83 @@ track* generate_tracks(Input input, Reactor reactor)
 		// for all tracks, compute the ending points
 		for (int j = 0; j < n_tracks[i]; j++)
 		{
-			// try hitting a y axis
-			x2 = something;
-			y2 = something;
-			if(y2 > reactor.assembly_width)
-			{
-				// try hitting an x axis
-				y2 = 
+			// load in assembly width for reference
+			double w = reactor.assembly_width;
 
-			S = reactor.assembly_width/sin(phi
+			// define all possible intersection points (each surface)
+			double * points_x = (double *) malloc(6 * sizeof(double));
+			double * points_y = (double *) malloc(6 * sizeof(double));
+			double * points_z = (double *) malloc(6 * sizeof(double));
+
+			// left surface (x = 0)
+			points_x[0] = 0;
+			// delta-y = delta-x * tan(phi)
+			points_y[0] = y1 - x1 * tan(phi_eff[i]);
+			// delta-z = delta-x / (cos(phi) * tan(theta))
+			points_z[0] = z1 - x1 / (cos(phi_eff[i]) * tan(polar[i]));
+
+			// right surface (x = assembly width)
+			points_x[1] = w;
+			// delta-y = delta-x * tan(phi)
+			points_y[1] = y1 + (w - x1) * tan(phi_eff[i]);
+			// delta-z = delta-x / (cos(phi) * tan(theta))
+			points_z[1] = z1 + (w - x1) / (cos(phi_eff[i]) * tan(polar[i]));
+			
+			// bottom surface (y = 0)
+			points_y[2] = 0;
+			// delta-x = delta-y / tan(phi)
+			points_x[2] = x1 - y1 / tan(phi_eff[i]);
+			// delta-z = delta-y / (sin(phi) * tan(theta))
+			points_z[2] = z1 - y1 / (sin(phi_eff[i]) * tan(polar[i]));
+
+			// top surface (y = assembly width)
+			points_y[3] = w;
+			// delta-x = delta-y / tan(phi)
+			points_x[3] = x1 + (w - y1) / tan(phi_eff[i]);
+			// delta-z = delta-y / (sin(phi) * tan(theta))
+			points_z[3] = z1 + (w - y1) / (sin(phi_eff[i]) * tan(polar[i]));
+
+			// down surface (z = 0)
+			points_z[4] = 0;
+			// delta-x = delta-z * cos(phi) * tan(theta)
+			points_x[4] = x1 - z1 * cos(phi_eff[i]) * tan(polar[i]);
+			// delta-y = delta-z * sin(phi) * tan(theta)
+			points_y[4] = y1 - z1 * sin(phi_eff[i]) * tan(polar[i]);
+
+			// up surface (z = domain height)
+			// TODO: Calculate domain height
+			double h = 10;
+			points_z[4] = h;
+			// delta-x = delta-z * cos(phi) * tan(theta)
+			points_x[4] = x1 + (h - z1) * cos(phi_eff[i]) * tan(polar[i]);
+			// delta-y = delta-z * sin(phi) * tan(theta)
+			points_y[4] = y1 + (h - z1) * sin(phi_eff[i]) * tan(polar[i]);
+
+			for (int k = 0; k < 6; k++)
+			{
+				// try each plane
+				x2 = points_x[k];
+				y2 = points_y[k];
+				z2 = points_z[k];
+
+				// test to make sure plane is valid
+				if( x2 >= 0 && x2 <= w &&
+						y2 >= 0 && y2 <= w &&
+						z2 >= 0 && z2 <= h)
+					break;
+				else if (k == 5)
+					// could not find plane
+					//TODO: report error message
+			}
 
 
 		// TODO: Generate a synthetic number of segments based off of azimuthal
 		// angle and starting location (track length)
 
 		// TODO: Determine a better way of organizing tracks
+		/* TODO: Find connecting track in other assembly/region: this will
+		 * be done by noting which plane we intersect and thus determining 
+		 * which domain needs to be passed information. We then correct 
+		 * the coordinate so it is the correct coordinates within that
+		 * new assembly/region. Ex: if we connect with the assebmly/region
+		 * above we would subtract the domain height fromt he z coordinate */
