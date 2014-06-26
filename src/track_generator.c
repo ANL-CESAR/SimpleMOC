@@ -23,9 +23,10 @@ Track2D * generate_2D_tracks( Input input, Reactor reactor )
 
 void generate_2D_segments( Input input, Reactor reactor, Track2D tracks, long ntracks )
 {
-	long total_tracks = 0;
 	long num_source_regions_per_assembly = 3000000; // 3M source regions per assembly (estimate)
 
+	// Randomize Number of segments per track, and accumulate total 2D tracks in assembly
+	long total_tracks = 0;
 	for( long i = 0; i < ntracks; i++ )
 	{
 		// TODO: Change from even to normal distribution
