@@ -4,6 +4,7 @@ int main( int argc, char * argv[] )
 {
 	int version = 0;
 	logo(version);
+	srand(time(NULL));
 
 	Reactor reactor = reactor_init();
 	Input input = get_input();

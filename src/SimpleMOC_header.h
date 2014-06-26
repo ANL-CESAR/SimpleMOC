@@ -5,6 +5,8 @@
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
+#include<time.h>
+#include<rand.h>
 
 // User inputs
 typedef struct{
@@ -20,6 +22,7 @@ typedef struct{
 	int n_egroups;             // Number of energy groups
 	int decompose;             // Turn decomposition on/off (1 on, 0 off)
 	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
+	long segments_per_track;   // Average number of segments per track
 } Input;
 
 //  Reactor definition
@@ -51,12 +54,23 @@ typedef struct{
 	long source_id;
 } Segment;
 
-// Track Structure
+// Track2D Structure
 typedef struct{
 	double az_weight;          // Azimuthal Quadrature Weight (rand)
 	double p_weight;           // Polar Quadrature Weight     (rand)
 	long n_segments;           // Number of Segments (gaussian)
 	Segment * segments;        // Array of Segments
+} Track2D;
+
+// Track Structure
+typedef struct{
+	long track2D_id;           // Link into 2D geometry Track ID
+	double p_angle;            // Polar Angle
+	double z_height;           // Z-height
+	double start_flux;         // Starting (input) flux received from inputting neighbor
+	long rank_in;              // MPI rank to receive from
+	double end_flux;           // Attenuated (output) flux to send to output neighbor
+	long rank_out;             // MPI rank to send to
 } Track;
 
 // 11 doubles

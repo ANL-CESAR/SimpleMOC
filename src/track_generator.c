@@ -1,9 +1,58 @@
 #include"SimpleMOC_header.h"
 
-long calculate_num_2D_tracks( Input input, Reactor reactor )
+Track2D * generate_2D_tracks( Input input, Reactor reactor )
 {
-	long tracks = input.n_azimuthal * (reactor.assembly_width / input.radial_ray_sep);
+	// Determine number of 2D tracks
+	long ntracks = input.n_azimuthal * (reactor.assembly_width / input.radial_ray_sep);
+	
+	// Allocate space for 2D tracks
+	Track2D * tracks = (Track2D *) malloc( ntracks * sizeof(Track2D));
+
+	// Fill weights with randomized data
+	for( int i = 0; i < ntracks; i++ )
+	{
+		tracks[i].az_weight = (double) rand() / (double) INT_MAX;
+		tracks[i].p_weight = (double) rand() / (double) INT_MAX;
+	}
+
+	// Allocate and randomize segments
+	generate_2D_segments( input, reactor, tracks, ntracks );
+
 	return tracks;
+}
+
+void generate_2D_segments( Input input, Reactor reactor, Track2D tracks, long ntracks )
+{
+	long total_tracks = 0;
+	long num_source_regions_per_assembly = 3000000; // 3M source regions per assembly (estimate)
+
+	for( long i = 0; i < ntracks; i++ )
+	{
+		// TODO: Change from even to normal distribution
+		tracks[i].n_segments = rand() % input.segments_per_track;
+		total_tracks += tracks[i].n_segments;
+	}
+	
+	// Allocate contiguous space for segments
+	Segment * contiguous_segments = (Segment *) malloc( total_tracks * sizeof(Segment));
+
+	// Set segments arrays to correct locations within contiguous allocation
+	long idx = 0;
+	for( long i = 0; i < ntracks; i++ )
+	{
+		tracks[i].segments = contigous_segments[idx];
+		idx += tracks[i].n_segments;
+	}
+
+	// Initialize segments to randomized values
+	for( long i = 0; i < ntracks; i++ )
+	{
+		for( long j = 0; j < tracks[i].n_segments; j++ )
+		{
+			tracks[i].segments[j].distance  = (double) rand() / (double) INT_MAX;
+			tracks[i].segments[j].source_id = rand() % num_source_regions_per_assembly;
+		}
+	}
 }
 
 // Generates an array of track structures.
