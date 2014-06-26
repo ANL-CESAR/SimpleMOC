@@ -24,9 +24,8 @@ typedef struct{
 
 //  Reactor definition
 typedef struct{
-	double pin_cell_width;     // Width of a pin cell - Default 1.26 cm
-	double pin_radius;         // Radius of a fuel pin - 0.46 cm
 	double assembly_width;     // Width of an assembly - 1.26 x 17 cm
+	double height;             // Height of the reactor - 400 cm
 	int n_radial_regions;      // Number of radial regions - default 10
 	int n_azimuthal_regions;   // Number of azimuthal regions - default 8
 	double * radii;            // Stores the radii of the radial regions
@@ -38,6 +37,29 @@ typedef struct{
 	long pin;                  // Pin Cell ID
 	long zone;                 // Zone (inside pin cell) ID
 } RegionID;
+
+// Cartesian Coordinate Struct
+typedef struct{
+	double x;
+	double y;
+	double z;
+} Coord;
+
+// Segment Structure
+typedef struct{
+	double dist;
+	long source_id;
+} Segment;
+
+// Track Structure
+typedef struct{
+	double az_weight;          // Azimuthal Quadrature Weight (rand)
+	double p_weight;           // Polar Quadrature Weight     (rand)
+	long n_segments;           // Number of Segments (gaussian)
+	Segment * segments;        // Array of Segments
+} Track;
+
+// 11 doubles
 
 // goemetry.c
 RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor );

@@ -1,8 +1,30 @@
-#include"Simple_MOC.h"
+#include"SimpleMOC_header.h"
 
-track* generate_tracks(Input input, Reactor reactor)
+long calculate_num_2D_tracks( Input input, Reactor reactor )
+{
+	long tracks = input.n_azimuthal * (reactor.assembly_width / input.radial_ray_sep);
+	return tracks;
+}
+
+// Generates an array of track structures.
+// Each track structure has:
+//   - Starting cartesian coord
+//   - End cartesian coord
+//   - Track length
+//   - Azimuthal Angle
+//   - Polar Angle
+//   - Quadrature Weights
+Track * generate_tracks(Input input, Reactor reactor)
 {
 	int n_azim = input.n_azimuthal / 2;
+
+	// Allocate space for tracks
+	//long num_tracks = input.n_azimuthal * input.n_polar_angles;
+	//Track * tracks = (Track *) malloc( 2 * num_tracks * sizeof(Track)); 
+	//
+	
+	// We want to determine total number of tracks in the entire system
+	
 
 	// allocate space for variables
 	double * phi_eff = (double *) malloc(input.n_azimuthal * sizeof(double));
@@ -10,9 +32,12 @@ track* generate_tracks(Input input, Reactor reactor)
 	double * dy_eff = (double *) malloc(input.n_azimuthal * sizeof(double));
 	double * ds_eff = (double *) malloc(input.n_azimuthal * sizeof(double));
 	double * azim_weight = (double *) malloc(input.n_azimuthal * sizeof(double));
-	int * n_x = (int *) malloc(input.n_azimuthal * sizeof(int));
-	int * n_y = (int *) malloc(input.n_azimuthal * sizeof(int));
-	int * n_tracks = (int *) malloc(input.n_azimuthal * sizeof(int));
+	int * n_x = (int *) malloc(input.n_azimuthal * input.n_polar_angles * sizeof(int));
+	int * n_y = (int *) malloc(input.n_azimuthal * input.n_polar_angles * sizeof(int));
+	int * n_tracks = (int *) malloc(input.n_azimuthal * input.n_polar_angles * sizeof(int));
+
+	// number of axial tracks per polar angle
+	int n_z = (int) ( reactor.height / input.axial_z_sep );
 
 	for(int i = 0; i < n_azim; i++)
 	{
@@ -24,7 +49,7 @@ track* generate_tracks(Input input, Reactor reactor)
 				* sin(phi) ) + 1;
 		n_y[i] = (int) ( reactor.assembly_width / input.radial_ray_sep
 				* cos(phi) ) + 1;
-		n_tracks[i] = n_x[i] + n_y[i]
+		n_tracks[i] = (n_x[i] + n_y[i]) * n_z * input.n_polar_angles;
 
 		// compute new azimuthal angle such that there are an integer number
 		// of radial ray seperations accross the assembly. The new angle will
@@ -37,8 +62,6 @@ track* generate_tracks(Input input, Reactor reactor)
 
 		if(phi > M_PI/2)
 			phi_eff[i] = M_PI - phi_eff[i];
-		
-
 
 	    // calculate new effective track spacing
 		dx_eff[i] = reactor.assembly_width / n_x[i];
@@ -75,11 +98,6 @@ track* generate_tracks(Input input, Reactor reactor)
 
 		// allocate memory for tracks in each azimuthal angle
 		track * azim_tracks = (track *) malloc(n_tracks[i] * sizeof(track));
-		for (int j = 0; j < n_tracks[i]; j++)
-		{
-			track new_track;
-			azim_tracks[j] = new_track;
-		}
 
 		// compute starting points for tracks originating on the x axis
 		for (int j = 0; j < n_x[i]; j++)

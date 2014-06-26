@@ -21,7 +21,8 @@ main.c \
 tester.c \
 geometry.c \
 init.c \
-io.c
+io.c \
+track_generator.c
 
 obj = $(source:.c=.o)
 
