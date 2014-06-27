@@ -24,6 +24,7 @@ typedef struct{
 	long segments_per_track;   // Average number of segments per track
 	double assembly_width;     // Width of an assembly - 1.26 x 17 cm
 	double height;             // Height of the reactor - 400 cm
+	long num_source_regions_per_assembly; // 3M source regions per assembly (estimate)
 } Input;
 
 // Localized geometrical region ID

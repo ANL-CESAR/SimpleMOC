@@ -25,14 +25,12 @@ Track2D * generate_2D_tracks( Input I )
 // Allocates and initializes all segments
 void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 {
-	long num_source_regions_per_assembly = 3000000; // 3M source regions per assembly (estimate)
-
 	// Randomize Number of segments per track, and accumulate total 2D tracks in assembly
 	long total_tracks = 0;
 	for( long i = 0; i < ntracks; i++ )
 	{
 		// TODO: Change from even to normal distribution
-		tracks[i].n_segments = segments_per_track_distribution( I );
+		tracks[i].n_segments = segments_per_2D_track_distribution( I );
 		total_tracks += tracks[i].n_segments;
 	}
 	
@@ -54,7 +52,7 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 		{
 			tracks[i].segments[j].length  = urand();
 			// TODO: Perhaps this should be assigned in a less random fashion?
-			tracks[i].segments[j].source_id = rand() % num_source_regions_per_assembly;
+			tracks[i].segments[j].source_id = rand() % I.num_source_regions_per_assembly;
 		}
 	}
 }

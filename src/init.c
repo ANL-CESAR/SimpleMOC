@@ -20,6 +20,7 @@ Input get_input( void )
 	I.segments_per_track = 123; // Average number of segments per track
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
+	I.num_source_regions_per_assembly = 3000000; // 3M source regions per assembly (estimate)
 
 	// TODO: Add file/CLI user input
 
