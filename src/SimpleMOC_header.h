@@ -73,6 +73,12 @@ typedef struct{
 	// Also need material, XS data etc.
 } Params;
 
+// Flat Source Region Structure
+typedef struct{
+	double XS[5];
+	double ** scattering_matrix;
+}
+
 // init.c
 Input get_input( void );
 Params build_tracks( Input I );
