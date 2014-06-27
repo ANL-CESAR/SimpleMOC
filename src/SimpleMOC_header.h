@@ -65,8 +65,16 @@ typedef struct{
 	long rank_out;             // MPI rank to send to
 } Track;
 
+// Params Structure for easier data pointer passing
+typedef struct{
+	Track2D * tracks_2D;
+	Track * tracks;
+	// Also need material, XS data etc.
+} Params;
+
 // init.c
 Input get_input( void );
+Params build_tracks( Input I );
 
 // io.c
 void logo(int version);

@@ -8,5 +8,7 @@ int main( int argc, char * argv[] )
 
 	Input input = get_input();
 
+	Params params = build_tracks( input );
+
 	return 0;
 }

@@ -17,10 +17,20 @@ Input get_input( void )
 	I.n_egroups = 100;          // Number of energy groups
 	I.decompose = 0;            // Turn decomposition on/off (1 on, 0 off)
 	I.decomp_assemblies_ax = 1; // Number of assemblies per sub-domain (axially)
+	I.segments_per_track = 123; // Average number of segments per track
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
 
 	// TODO: Add file/CLI user input
 
 	return I;
+}
+
+// Initializes all track data
+Params build_tracks( Input I )
+{
+	Params params;
+	params.tracks_2D = generate_2D_tracks(I); 
+	params.tracks = generate_tracks(I, params.tracks_2D);
+	return params;
 }
