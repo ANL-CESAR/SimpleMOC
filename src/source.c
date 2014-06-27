@@ -23,14 +23,23 @@ Source * initialize_sources( Input I )
 
 	for( long i = 0; i < n_xs_regions; i++ )
 		for( long j = 0; j < I.n_egroups; j++ )
-			matrices[i][j] = &data[i * I.n_egroups * I.n_egroups + j * n_egroups];
+			matrices[i][j] = &data[i * I.n_egroups * I.n_egroups + j * I.n_egroups];
 
+	// Iniitalize Scattering Matrix Values
+	for( long i = 0; i < n_xs_regions; i++ )
+		for( long j = 0; j < I.n_egroups; j++ )
+			for( long k = 0; k < I.n_egroups; k++ )
+				matrices[i][j][k] = urand();
 
-	// Allocate XS's
+	// Allocate & Initialize XS's
 	double * XS = (double *) malloc( n_xs_regions * 5 * sizeof( double ) );
+	for( long i = 0; i < n_xs_regions * 5; i++ )
+		XS[i] = urand();
 
-	// Allocate Fluxes
+	// Allocate & Initialize Fluxes
 	double * Flux = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups * sizeof(double));
+	for( long i = 0; i < I.num_source_regions_per_assembly * I.n_egroups; i++ )
+		Flux[i] = urand();
 	
 	// Assign to source regions
 	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
