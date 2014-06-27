@@ -75,11 +75,6 @@ track* generate_tracks(Input input, Reactor reactor)
 
 		// allocate memory for tracks in each azimuthal angle
 		track * azim_tracks = (track *) malloc(n_tracks[i] * sizeof(track));
-		for (int j = 0; j < n_tracks[i]; j++)
-		{
-			track new_track;
-			azim_tracks[j] = new_track;
-		}
 
 		// compute starting points for tracks originating on the x axis
 		for (int j = 0; j < n_x[i]; j++)
