@@ -29,8 +29,13 @@ Input get_input( void )
 // Initializes all track data
 Params build_tracks( Input I )
 {
+	center_print("INITIALIATION", 79);
+	border_print();
 	Params params;
+	printf("Intializing 2D tracks...\n");
 	params.tracks_2D = generate_2D_tracks(I); 
+	printf("Intializing 3D tracks...\n");
 	params.tracks = generate_tracks(I, params.tracks_2D);
+	border_print();
 	return params;
 }

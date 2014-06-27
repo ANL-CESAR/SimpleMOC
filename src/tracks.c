@@ -1,5 +1,6 @@
 #include"SimpleMOC_header.h"
 
+// Allocates and initializes an array of 2D tracks
 Track2D * generate_2D_tracks( Input I )
 {
 	// Determine number of 2D tracks
@@ -21,6 +22,7 @@ Track2D * generate_2D_tracks( Input I )
 	return tracks;
 }
 
+// Allocates and initializes all segments
 void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 {
 	long num_source_regions_per_assembly = 3000000; // 3M source regions per assembly (estimate)
@@ -50,7 +52,7 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 	{
 		for( long j = 0; j < tracks[i].n_segments; j++ )
 		{
-			// Needs to not be random
+			// TODO: Needs to not be random!
 			tracks[i].segments[j].length  = urand();
 			// TODO: Perhaps this should be assigned in a less random fashion?
 			tracks[i].segments[j].source_id = rand() % num_source_regions_per_assembly;
@@ -66,6 +68,27 @@ void free_2D_tracks( Track2D * tracks )
 
 Track * generate_tracks(Input I, Track2D * tracks_2D)
 {
-	Track * tracks;
+	// Determine total number of tracks
+	long ntracks_2D = I.n_azimuthal * (I.assembly_width / I.radial_ray_sep);
+	long ntracks = ntracks_2D * (I.n_polar_angles * ( I.height / I.axial_z_sep));  
+
+	// Allocate space
+	Track * tracks = (Track *) malloc( ntracks * sizeof(Track));
+
+	// Initialize tracks randomly
+	// TODO: - a few things left to init regarding domains / MPI
+	for( long i = 0; i < ntracks; i++ )
+	{
+		tracks[i].track2D_id = rand() % ntracks_2D;
+		tracks[i].p_angle = urand() * 2 * M_PI;
+		tracks[i].z_height = I.height;
+		tracks[i].start_flux = 0;
+	}
+
 	return tracks;
+}
+
+void free_tracks( Track * tracks )
+{
+	free(tracks);
 }

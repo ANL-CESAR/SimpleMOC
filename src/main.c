@@ -7,8 +7,11 @@ int main( int argc, char * argv[] )
 	srand(time(NULL));
 
 	Input input = get_input();
+	print_input_summary(input);
 
 	Params params = build_tracks( input );
+	free_2D_tracks( params.tracks_2D );
+	free_tracks( params.tracks );
 
 	return 0;
 }

@@ -71,7 +71,24 @@ void fancy_int( int a )
 }
 
 // Prints out the summary of User input
-void print_input_summary(Input input)
+void print_input_summary(Input I)
 {
-	printf("INPUT SUMMARY\n");
+	center_print("INPUT SUMMARY", 79);
+	border_print();
+	printf("%-35s%d\n", "x-axis assemblies:", I.x_assemblies);
+	printf("%-35s%d\n", "y-axis assemblies:", I.y_assemblies);
+	printf("%-35s%d\n", "coarse axial intervals:", I.cai);
+	printf("%-35s%d\n", "fine axial intervals:", I.fai);
+	printf("%-35s%d\n", "axial source expansion order:", I.axial_exp);
+	printf("%-35s%.2lf\n", "radial ray separation:", I.radial_ray_sep);
+	printf("%-35s%.2lf\n", "axial z-ray separation:", I.axial_z_sep);
+	printf("%-35s%d\n", "azimuthal angles:", I.n_azimuthal);
+	printf("%-35s%d\n", "polar angles:", I.n_polar_angles);
+	printf("%-35s%d\n", "energy groups:", I.n_egroups);
+	printf("%-35s%d\n", "data decomposition:", I.decompose);
+	printf("%-35s%d\n", "assemblies per axial sub-domain:", I.decomp_assemblies_ax);
+	printf("%-35s%d\n", "avg segments per track:", I.segments_per_track);
+	printf("%-35s%.2lf\n", "assembly width:", I.assembly_width);
+	printf("%-35s%.2lf\n", "reactor height:", I.height);
+	border_print();
 }
