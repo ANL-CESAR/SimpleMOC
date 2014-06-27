@@ -18,11 +18,11 @@ program = SimpleMOC
 
 source = \
 main.c \
-tester.c \
-geometry.c \
+test.c \
 init.c \
 io.c \
-track_generator.c
+tracks.c \
+utils.c
 
 obj = $(source:.c=.o)
 

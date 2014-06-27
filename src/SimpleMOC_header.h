@@ -6,7 +6,6 @@
 #include<math.h>
 #include<string.h>
 #include<time.h>
-#include<rand.h>
 
 // User inputs
 typedef struct{
@@ -23,16 +22,9 @@ typedef struct{
 	int decompose;             // Turn decomposition on/off (1 on, 0 off)
 	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
 	long segments_per_track;   // Average number of segments per track
-} Input;
-
-//  Reactor definition
-typedef struct{
 	double assembly_width;     // Width of an assembly - 1.26 x 17 cm
 	double height;             // Height of the reactor - 400 cm
-	int n_radial_regions;      // Number of radial regions - default 10
-	int n_azimuthal_regions;   // Number of azimuthal regions - default 8
-	double * radii;            // Stores the radii of the radial regions
-} Reactor;
+} Input;
 
 // Localized geometrical region ID
 typedef struct{
@@ -50,7 +42,7 @@ typedef struct{
 
 // Segment Structure
 typedef struct{
-	double dist;
+	double length;
 	long source_id;
 } Segment;
 
@@ -73,16 +65,8 @@ typedef struct{
 	long rank_out;             // MPI rank to send to
 } Track;
 
-// 11 doubles
-
-// goemetry.c
-RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor );
-long get_region_index( RegionID id, Input input, Reactor reactor );
-double * determine_radii( Reactor reactor );
-
 // init.c
 Input get_input( void );
-Reactor reactor_init( void );
 
 // io.c
 void logo(int version);
@@ -91,8 +75,15 @@ void border_print(void);
 void fancy_int( int a );
 void print_input_summary(Input input);
 
-// tester.c
-void generate_2D_zone_points(Input input, Reactor reactor, int n_pts);
+// tracks.c
+Track2D * generate_2D_tracks( Input input );
+void generate_2D_segments( Input input, Track2D * tracks, long ntracks );
+void free_2D_tracks( Track2D * tracks );
+Track * generate_tracks(Input input, Track2D * tracks_2D);
+
+// utils.c
 double urand(void);
+
+// test.c
 
 #endif
