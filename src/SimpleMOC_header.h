@@ -77,7 +77,7 @@ typedef struct{
 typedef struct{
 	double XS[5];
 	double ** scattering_matrix;
-}
+} Source;
 
 // init.c
 Input get_input( void );
