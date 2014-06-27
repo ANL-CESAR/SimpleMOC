@@ -89,6 +89,8 @@ void generate_2D_segments( Input input, Track2D * tracks, long ntracks );
 void free_2D_tracks( Track2D * tracks );
 Track * generate_tracks(Input input, Track2D * tracks_2D);
 void free_tracks( Track * tracks );
+long segments_per_2D_track_distribution( Input I );
+long segments_per_3D_track_distribution( Input I );
 
 // utils.c
 double urand(void);

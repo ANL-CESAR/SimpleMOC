@@ -32,7 +32,7 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 	for( long i = 0; i < ntracks; i++ )
 	{
 		// TODO: Change from even to normal distribution
-		tracks[i].n_segments = rand() % I.segments_per_track;
+		tracks[i].n_segments = segments_per_track_distribution( I );
 		total_tracks += tracks[i].n_segments;
 	}
 	
@@ -52,12 +52,21 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 	{
 		for( long j = 0; j < tracks[i].n_segments; j++ )
 		{
-			// TODO: Needs to not be random!
 			tracks[i].segments[j].length  = urand();
 			// TODO: Perhaps this should be assigned in a less random fashion?
 			tracks[i].segments[j].source_id = rand() % num_source_regions_per_assembly;
 		}
 	}
+}
+
+long segments_per_2D_track_distribution( Input I )
+{
+	return rand() % I.segments_per_track;
+}
+
+long segments_per_3D_track_distribution( Input I )
+{
+	return (rand() % I.segments_per_track )* 0.5;
 }
 
 void free_2D_tracks( Track2D * tracks )
