@@ -5,6 +5,7 @@
 #include<stdlib.h>
 #include<math.h>
 #include<string.h>
+#include<time.h>
 
 // User inputs
 typedef struct{
@@ -20,17 +21,10 @@ typedef struct{
 	int n_egroups;             // Number of energy groups
 	int decompose;             // Turn decomposition on/off (1 on, 0 off)
 	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
-} Input;
-
-//  Reactor definition
-typedef struct{
-	double pin_cell_width;     // Width of a pin cell - Default 1.26 cm
-	double pin_radius;         // Radius of a fuel pin - 0.46 cm
+	long segments_per_track;   // Average number of segments per track
 	double assembly_width;     // Width of an assembly - 1.26 x 17 cm
-	int n_radial_regions;      // Number of radial regions - default 10
-	int n_azimuthal_regions;   // Number of azimuthal regions - default 8
-	double * radii;            // Stores the radii of the radial regions
-} Reactor;
+	double height;             // Height of the reactor - 400 cm
+} Input;
 
 // Localized geometrical region ID
 typedef struct{
@@ -39,14 +33,48 @@ typedef struct{
 	long zone;                 // Zone (inside pin cell) ID
 } RegionID;
 
-// goemetry.c
-RegionID get_region_id( double x, double y, double z, Input input, Reactor reactor );
-long get_region_index( RegionID id, Input input, Reactor reactor );
-double * determine_radii( Reactor reactor );
+// Cartesian Coordinate Struct
+typedef struct{
+	double x;
+	double y;
+	double z;
+} Coord;
+
+// Segment Structure
+typedef struct{
+	double length;
+	long source_id;
+} Segment;
+
+// Track2D Structure
+typedef struct{
+	double az_weight;          // Azimuthal Quadrature Weight (rand)
+	double p_weight;           // Polar Quadrature Weight     (rand)
+	long n_segments;           // Number of Segments (gaussian)
+	Segment * segments;        // Array of Segments
+} Track2D;
+
+// Track Structure
+typedef struct{
+	long track2D_id;           // Link into 2D geometry Track ID
+	double p_angle;            // Polar Angle
+	double z_height;           // Z-height
+	double start_flux;         // Starting (input) flux received from inputting neighbor
+	long rank_in;              // MPI rank to receive from
+	double end_flux;           // Attenuated (output) flux to send to output neighbor
+	long rank_out;             // MPI rank to send to
+} Track;
+
+// Params Structure for easier data pointer passing
+typedef struct{
+	Track2D * tracks_2D;
+	Track * tracks;
+	// Also need material, XS data etc.
+} Params;
 
 // init.c
 Input get_input( void );
-Reactor reactor_init( void );
+Params build_tracks( Input I );
 
 // io.c
 void logo(int version);
@@ -55,8 +83,16 @@ void border_print(void);
 void fancy_int( int a );
 void print_input_summary(Input input);
 
-// tester.c
-void generate_2D_zone_points(Input input, Reactor reactor, int n_pts);
+// tracks.c
+Track2D * generate_2D_tracks( Input input );
+void generate_2D_segments( Input input, Track2D * tracks, long ntracks );
+void free_2D_tracks( Track2D * tracks );
+Track * generate_tracks(Input input, Track2D * tracks_2D);
+void free_tracks( Track * tracks );
+
+// utils.c
 double urand(void);
+
+// test.c
 
 #endif

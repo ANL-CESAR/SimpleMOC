@@ -5,7 +5,7 @@
 COMPILER    = gnu
 MPI         = no
 OPTIMIZE    = no
-DEBUG       = no
+DEBUG       = yes
 PROFILE     = no
 PAPI        = no
 BENCHMARK   = no
@@ -18,10 +18,11 @@ program = SimpleMOC
 
 source = \
 main.c \
-tester.c \
-geometry.c \
+test.c \
 init.c \
-io.c
+io.c \
+tracks.c \
+utils.c
 
 obj = $(source:.c=.o)
 
