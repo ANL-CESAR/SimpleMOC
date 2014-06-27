@@ -75,8 +75,9 @@ typedef struct{
 
 // Flat Source Region Structure
 typedef struct{
-	double XS[5];
+	double * XS;
 	double ** scattering_matrix;
+	double Flux[100];
 } Source;
 
 // init.c
