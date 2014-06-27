@@ -77,7 +77,7 @@ typedef struct{
 typedef struct{
 	double * XS;
 	double ** scattering_matrix;
-	double Flux[100];
+	double * flux;
 } Source;
 
 // init.c

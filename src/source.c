@@ -25,11 +25,21 @@ Source * initialize_sources( Input I )
 		for( long j = 0; j < I.n_egroups; j++ )
 			matrices[i][j] = &data[i * I.n_egroups * I.n_egroups + j * n_egroups];
 
-	// Assign to source regions
+
+	// Allocate XS's
+	double * XS = (double *) malloc( n_xs_regions * 5 * sizeof( double ) );
+
+	// Allocate Fluxes
+	double * Flux = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups * sizeof(double));
 	
+	// Assign to source regions
 	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
 	{
-		sources[i].scattering_matrix = 
+		long idx = rand() % n_xs_regions;
+		sources[i].scattering_matrix = matrices[idx];
+		sources[i].XS = &XS[idx * 5];
+		sources[i].flux = &Flux[i * I.n_egroups];
 	}
 
+	return sources;
 }
