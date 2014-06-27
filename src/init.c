@@ -12,7 +12,7 @@ Input get_input( void )
 	I.axial_exp = 2;            // Axial source expansion order
 	I.radial_ray_sep = 0.1;     // Radial ray separation
 	I.axial_z_sep = 0.2;        // Axial stacked z-ray separation
-	I.n_azimuthal = 32;         // Number of azimuthal angles
+	I.n_azimuthal = 10;         // Number of azimuthal angles (should be 32)
 	I.n_polar_angles = 10;      // Number of polar angles
 	I.n_egroups = 100;          // Number of energy groups
 	I.decompose = 0;            // Turn decomposition on/off (1 on, 0 off)
