@@ -39,7 +39,7 @@ Source * initialize_sources( Input I )
 	// Allocate & Initialize Fluxes
 	double * Flux = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups * sizeof(double));
 	for( long i = 0; i < I.num_source_regions_per_assembly * I.n_egroups; i++ )
-		Flux[i] = urand();
+		Flux[i] = 1.0;
 	
 	// Assign to source regions
 	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
