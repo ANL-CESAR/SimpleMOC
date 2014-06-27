@@ -103,6 +103,10 @@ long segments_per_3D_track_distribution( Input I );
 // utils.c
 double urand(void);
 
+// source.c
+Source * initialize_sources( Input I );
+void free_sources( Input I, Source * sources );
+
 // test.c
 
 #endif

@@ -44,11 +44,29 @@ Source * initialize_sources( Input I )
 	// Assign to source regions
 	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
 	{
-		long idx = rand() % n_xs_regions;
+		long idx;
+		if( i == 0 )
+			idx = 0;
+		else
+			idx = rand() % n_xs_regions;
+
 		sources[i].scattering_matrix = matrices[idx];
 		sources[i].XS = &XS[idx * 5];
 		sources[i].flux = &Flux[i * I.n_egroups];
 	}
 
+	free( matrices );
+
 	return sources;
+}
+
+void free_sources( Input I, Source * sources )
+{
+	// Free XS's
+	free( sources[0].XS );
+	// Free Flux's
+	free( sources[0].flux );
+	// Free scattering matrices
+	free( sources[0].scattering_matrix[0] );
+	free( sources[0].scattering_matrix );
 }
