@@ -6,38 +6,65 @@ Source * initialize_sources( Input I )
 	Source * sources = (Source *) malloc( I.num_source_regions_per_assembly * sizeof(Source) );
 
 	// determine number of cross section regions
-	long n_xs_regions = I.num_source_regions_per_assembly / I.n_azimuthal;
+	long n_xs_regions = I.num_source_regions_per_assembly / 8;
 
 	// Allocate scattering matrix matrix ptrs
-	double *** matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
+	double *** s_matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
 
 	// Allocate space for ALL scattering matrix ptrs
-	double ** matrix_ptrs = (double **) malloc( n_xs_regions * I.n_egroups * sizeof(double *));
+	double ** s_matrix_ptrs = (double **) malloc( n_xs_regions * I.n_egroups * sizeof(double *));
 
 	// Allocate space for ALL scattering data
-	double * data = (double *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * sizeof(double));
+	double * s_matrix_data = (double *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * 
+			sizeof(double));
 
 	// Stitch allocation ptrs together
 	for( long i = 0; i < n_xs_regions; i++ )
-		matrices[i] = &matrix_ptrs[I.n_egroups];
+		s_matrices[i] = &s_matrix_ptrs[i * I.n_egroups];
 
 	for( long i = 0; i < n_xs_regions; i++ )
 		for( long j = 0; j < I.n_egroups; j++ )
-			matrices[i][j] = &data[i * I.n_egroups * I.n_egroups + j * I.n_egroups];
+			s_matrices[i][j] = &s_matrix_data[i * I.n_egroups * I.n_egroups + j * I.n_egroups];
 
 	// Iniitalize Scattering Matrix Values
 	for( long i = 0; i < n_xs_regions; i++ )
 		for( long j = 0; j < I.n_egroups; j++ )
 			for( long k = 0; k < I.n_egroups; k++ )
-				matrices[i][j][k] = urand();
+				s_matrices[i][j][k] = urand();
 
-	// Allocate & Initialize XS's
-	double * XS = (double *) malloc( n_xs_regions * 5 * sizeof( double ) );
-	for( long i = 0; i < n_xs_regions * 5; i++ )
-		XS[i] = urand();
+	/*
+	 * Create data scrtucture for storing XS data (and chi) as follows:
+	 * An array is created which stores in contigious memory as
+	 * [ ..., Total_XS, nu*SigmaF, Chi, ...]
+	 */
+
+
+	// Allocate space for XS ptrs (by region)
+	double *** XS = (double ***) malloc( n_xs_regions * sizeof( double ** ) );
+
+	// Allocate space for each XS type of interest (total, nu*SigmaF, and chi)
+	double ** XS_types = (double **) malloc (n_xs_regions * 3 * sizeof( double * ) );
+
+	// Allocate space for total XS data
+	double * XS_data = (double *) malloc( n_xs_regions * 3 * I.n_egroups * sizeof(double) );
+
+	// stitch allocation ptrs together for XS data
+	for( long i = 0; i < n_xs_regions; i++)
+		XS[i] = &XS_types[i * n_xs_regions * 3];
+
+	for( long i = 0; i < n_xs_regions; i++)
+		for(long j = 0; j < 3; j++)
+			XS[i][j] = &XS_data[i * 3 * I.n_egroups + j * I.n_egroups];
+
+	// Initialize XS data
+	for( long i = 0; i < n_xs_regions; i++)
+		for( int j = 0; j < 3; j++)
+			for( int k = 0; k < I.n_egroups; k++)
+				XS[i][j][k] = urand();
 
 	// Allocate & Initialize Fluxes
-	double * Flux = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups * sizeof(double));
+	double * Flux = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups 
+			* sizeof(double));
 	for( long i = 0; i < I.num_source_regions_per_assembly * I.n_egroups; i++ )
 		Flux[i] = 1.0;
 	
@@ -50,12 +77,13 @@ Source * initialize_sources( Input I )
 		else
 			idx = rand() % n_xs_regions;
 
-		sources[i].scattering_matrix = matrices[idx];
-		sources[i].XS = &XS[idx * 5];
+		sources[i].scattering_matrix = s_matrices[idx];
+		sources[i].XS = &XS[idx];
 		sources[i].flux = &Flux[i * I.n_egroups];
 	}
 
-	free( matrices );
+	free( s_matrices );
+	free( XS );
 
 	return sources;
 }

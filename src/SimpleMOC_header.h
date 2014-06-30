@@ -56,6 +56,7 @@ typedef struct{
 } Track2D;
 
 // Track Structure
+// FIXME: source zones should axially vary
 typedef struct{
 	long track2D_id;           // Link into 2D geometry Track ID
 	double p_angle;            // Polar Angle
