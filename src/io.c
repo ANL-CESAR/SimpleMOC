@@ -85,7 +85,10 @@ void print_input_summary(Input I)
 	printf("%-35s%d\n", "azimuthal angles:", I.n_azimuthal);
 	printf("%-35s%d\n", "polar angles:", I.n_polar_angles);
 	printf("%-35s%d\n", "energy groups:", I.n_egroups);
-	printf("%-35s%d\n", "data decomposition:", I.decompose);
+	if(I.decompose == 0)
+		printf("%-35s%s\n", "data decomposition:", "OFF");
+	else
+		printf("%-35s%s\n", "data decomposition:", "ON");
 	printf("%-35s%d\n", "assemblies per axial sub-domain:", I.decomp_assemblies_ax);
 	printf("%-35s%d\n", "avg segments per track:", I.segments_per_track);
 	printf("%-35s%.2lf\n", "assembly width:", I.assembly_width);
