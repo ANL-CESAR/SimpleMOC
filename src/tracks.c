@@ -3,8 +3,8 @@
 // Allocates and initializes an array of 2D tracks
 Track2D * generate_2D_tracks( Input I )
 {
-	// Determine number of 2D tracks
-	long ntracks = I.n_azimuthal * (I.assembly_width / I.radial_ray_sep);
+	// Determine number of 2D tracks, a conservative estimate
+	long ntracks = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	
 	// Allocate space for 2D tracks
 	Track2D * tracks = (Track2D *) malloc( ntracks * sizeof(Track2D));
@@ -25,17 +25,17 @@ Track2D * generate_2D_tracks( Input I )
 // Allocates and initializes all segments
 void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 {
-	// Randomize Number of segments per track, and accumulate total 2D tracks in assembly
-	long total_tracks = 0;
+	// Randomize Number of segments per track, and accumulate total 2D segments in assembly
+	long total_segments = 0;
 	for( long i = 0; i < ntracks; i++ )
 	{
 		// TODO: Change from even to normal distribution
 		tracks[i].n_segments = segments_per_2D_track_distribution( I );
-		total_tracks += tracks[i].n_segments;
+		total_segments += tracks[i].n_segments;
 	}
 	
 	// Allocate contiguous space for segments
-	Segment * contiguous_segments = (Segment *) malloc( total_tracks * sizeof(Segment));
+	Segment * contiguous_segments = (Segment *) malloc( total_segments * sizeof(Segment));
 
 	// Set segments arrays to correct locations within contiguous allocation
 	long idx = 0;
@@ -76,8 +76,8 @@ void free_2D_tracks( Track2D * tracks )
 Track * generate_tracks(Input I, Track2D * tracks_2D)
 {
 	// Determine total number of tracks
-	long ntracks_2D = I.n_azimuthal * (I.assembly_width / I.radial_ray_sep);
-	long ntracks = ntracks_2D * (I.n_polar_angles * ( I.height / I.axial_z_sep));  
+	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
+	long ntracks = ntracks_2D * (I.n_polar_angles * (int) ( I.height / I.axial_z_sep));  
 
 	// Allocate space
 	Track * tracks = (Track *) malloc( ntracks * sizeof(Track));
@@ -86,9 +86,14 @@ Track * generate_tracks(Input I, Track2D * tracks_2D)
 	// TODO: - a few things left to init regarding domains / MPI
 	for( long i = 0; i < ntracks; i++ )
 	{
+		// TODO: perhaps we might not want to make track2D_id associated randomly
+		// since we might parallelize over polar angles (i.e. we can pre-fetch
+		// 2D track data)
 		tracks[i].track2D_id = rand() % ntracks_2D;
-		tracks[i].p_angle = urand() * 2 * M_PI;
-		tracks[i].z_height = I.height;
+		tracks[i].p_angle = urand() * M_PI;
+		
+		// TODO: change these for domain decomposed
+		tracks[i].z_height = urand() * I.height;
 		tracks[i].start_flux = 0;
 	}
 
