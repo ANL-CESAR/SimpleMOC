@@ -64,8 +64,42 @@ double transport_sweep( Params params, Input I )
 					break;
 				}
 
-				// TODO: calculate which FSR to tally to
-				// TODO: tally to FSR using dist and XS data
+				// pick a random FSR (cache miss expected)
+				long source_id = rand() % I.num_source_regions_per_assembly;
+
+				// compute weight (azimuthal * polar)
+				//TODO: add track weight (area)
+				double weight = params.tracks_2D[id].az_weight * params.tracks[i].p_weight;
+
+				// cycle over energy groups
+				for( int k = 0; k < I.n_egroups; k++)
+				{
+					// load current angular flux
+
+
+					// TODO: rearrange sources data structure for better cache performance
+					// load XS data
+					double sigT = sources[source_id].XS[0][k];
+					double nuSigF = sources[source_id].XS[1][k];
+					double chi = sources[source_id].XS[2][k];
+
+					// calculate exponential
+					// TODO: Mayber compute (1 - exp) ?? (OpenMOC)
+					double exponential = exp( - sigT * dist );
+
+					// calculate change in angular flux
+					double delta_psi = (psi[k] - sources[source_id].source[k]/sigT) *
+						(1.0 - exponential);
+
+					// add contribution to new source flux
+					sources[source_id].Flux[k] += delta_psi * weight;
+					
+					// update angular flux
+					psi[k] -= delta_psi;
+
+				}	
+
+				// TODO: update source scalar flux with source contribution
 				// TODO: update source in FSR for next transport sweep
 
 				// set the new z coordinate

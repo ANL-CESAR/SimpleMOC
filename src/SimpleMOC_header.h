@@ -51,15 +51,16 @@ typedef struct{
 // Track2D Structure
 typedef struct{
 	double az_weight;          // Azimuthal Quadrature Weight (rand)
-	double p_weight;           // Polar Quadrature Weight     (rand)
 	long n_segments;           // Number of Segments (gaussian)
 	Segment * segments;        // Array of Segments
 } Track2D;
 
 // Track Structure
+// FIXME: Incoming and outgoing fluxes need to be vectors (energy groups)
 typedef struct{
 	long track2D_id;           // Link into 2D geometry Track ID
 	double p_angle;            // Polar Angle
+	double p_weight;           // Polar Quadrature Weight     (rand)
 	double z_height;           // Z-height
 	double start_flux;         // Starting (input) flux received from inputting neighbor
 	long rank_in;              // MPI rank to receive from

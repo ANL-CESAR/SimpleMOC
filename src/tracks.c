@@ -11,10 +11,7 @@ Track2D * generate_2D_tracks( Input I )
 
 	// Fill weights with randomized data
 	for( int i = 0; i < ntracks; i++ )
-	{
 		tracks[i].az_weight = urand();
-		tracks[i].p_weight = urand();
-	}
 
 	// Allocate and randomize segments
 	generate_2D_segments( I, tracks, ntracks );
@@ -50,9 +47,9 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 	{
 		for( long j = 0; j < tracks[i].n_segments; j++ )
 		{
-			tracks[i].segments[j].length  = urand();
-			// TODO: Perhaps this should be assigned in a less random fashion?
-			tracks[i].segments[j].source_id = rand() % I.num_source_regions_per_assembly;
+			tracks[i].segments[j].length  = urand() * I.assembly_width
+				/ tracks[i].n_segments;
+			// source ID to be calculated on the fly
 		}
 	}
 }
@@ -91,6 +88,7 @@ Track * generate_tracks(Input I, Track2D * tracks_2D)
 		// 2D track data)
 		tracks[i].track2D_id = rand() % ntracks_2D;
 		tracks[i].p_angle = urand() * M_PI;
+		tracks[i].p_weight = urand();
 		
 		// TODO: change these for domain decomposed
 		tracks[i].z_height = urand() * I.height;

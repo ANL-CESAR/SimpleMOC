@@ -67,6 +67,8 @@ Source * initialize_sources( Input I )
 			* sizeof(double));
 	for( long i = 0; i < I.num_source_regions_per_assembly * I.n_egroups; i++ )
 		Flux[i] = 1.0;
+
+	// TODO: inititalize "source" value
 	
 	// Assign to source regions
 	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
