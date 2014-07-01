@@ -68,7 +68,11 @@ Source * initialize_sources( Input I )
 	for( long i = 0; i < I.num_source_regions_per_assembly * I.n_egroups; i++ )
 		Flux[i] = 1.0;
 
-	// TODO: inititalize "source" value
+	// Allocate & Inititalize "source" values
+	double * Source = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups
+			* sizeof(double));
+	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
+		Source[i] = urand();
 	
 	// Assign to source regions
 	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
@@ -82,6 +86,7 @@ Source * initialize_sources( Input I )
 		sources[i].scattering_matrix = s_matrices[idx];
 		sources[i].XS = &XS[idx];
 		sources[i].flux = &Flux[i * I.n_egroups];
+		sources[i].source = &Source[i * I.n_egroups]; 
 	}
 
 	free( s_matrices );
@@ -99,4 +104,6 @@ void free_sources( Input I, Source * sources )
 	// Free scattering matrices
 	free( sources[0].scattering_matrix[0] );
 	free( sources[0].scattering_matrix );
+	// Free source values
+	free( sources[0].source );
 }

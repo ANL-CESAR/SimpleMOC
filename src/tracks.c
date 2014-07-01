@@ -92,7 +92,11 @@ Track * generate_tracks(Input I, Track2D * tracks_2D)
 		
 		// TODO: change these for domain decomposed
 		tracks[i].z_height = urand() * I.height;
-		tracks[i].start_flux = 0;
+		tracks[i].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
+
+		// set incoming flux to 0
+		for( int j = 0; j < I.n_egroups; j++)
+			tracks[i].start_flux[j] = 0;
 	}
 
 	return tracks;

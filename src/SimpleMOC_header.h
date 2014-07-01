@@ -56,15 +56,14 @@ typedef struct{
 } Track2D;
 
 // Track Structure
-// FIXME: Incoming and outgoing fluxes need to be vectors (energy groups)
 typedef struct{
 	long track2D_id;           // Link into 2D geometry Track ID
 	double p_angle;            // Polar Angle
 	double p_weight;           // Polar Quadrature Weight     (rand)
 	double z_height;           // Z-height
-	double start_flux;         // Starting (input) flux received from inputting neighbor
+	double * start_flux;       // Starting (input) flux array received from inputting neighbor
 	long rank_in;              // MPI rank to receive from
-	double end_flux;           // Attenuated (output) flux to send to output neighbor
+	double * end_flux;          // Attenuated (output) flux array to send to output neighbor
 	long rank_out;             // MPI rank to send to
 } Track;
 
@@ -80,6 +79,7 @@ typedef struct{
 	double * XS;
 	double ** scattering_matrix;
 	double * flux;
+	double * source;
 } Source;
 
 // init.c
