@@ -23,7 +23,8 @@ test.c \
 init.c \
 io.c \
 tracks.c \
-utils.c
+utils.c \
+solver.c
 
 obj = $(source:.c=.o)
 

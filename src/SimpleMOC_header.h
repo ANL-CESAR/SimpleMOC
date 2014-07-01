@@ -6,7 +6,8 @@
 #include<math.h>
 #include<string.h>
 #include<time.h>
-
+#include<stdbool.h>
+		
 // User inputs
 typedef struct{
 	int x_assemblies;          // Number of assemblies in the x-axis of the reactor
@@ -56,7 +57,6 @@ typedef struct{
 } Track2D;
 
 // Track Structure
-// FIXME: source zones should axially vary
 typedef struct{
 	long track2D_id;           // Link into 2D geometry Track ID
 	double p_angle;            // Polar Angle
@@ -71,7 +71,7 @@ typedef struct{
 typedef struct{
 	Track2D * tracks_2D;
 	Track * tracks;
-	// Also need material, XS data etc.
+	// TODO: Also need material, XS data etc.
 } Params;
 
 // Flat Source Region Structure
