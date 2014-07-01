@@ -84,7 +84,7 @@ double transport_sweep( Params params, Input I )
 					double chi = sources[source_id].XS[2][k];
 
 					// calculate exponential
-					// TODO: Mayber compute (1 - exp) ?? (OpenMOC)
+					// TODO: Maybe compute (1 - exp) ?? (OpenMOC)
 					double exponential = exp( - sigT * dist );
 
 					// calculate change in angular flux
