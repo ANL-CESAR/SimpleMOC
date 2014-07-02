@@ -77,14 +77,13 @@ double transport_sweep( Params params, Input I )
 					// load current angular flux
 
 
-					// TODO: rearrange sources data structure for better cache performance
 					// load XS data
-					double sigT = sources[source_id].XS[0][k];
-					double nuSigF = sources[source_id].XS[1][k];
-					double chi = sources[source_id].XS[2][k];
+					double sigT = sources[source_id].XS[k][0];
+					double nuSigF = sources[source_id].XS[k][1];
+					double chi = sources[source_id].XS[k][2];
 
 					// calculate exponential
-					// TODO: Maybe compute (1 - exp) ?? (OpenMOC)
+					// TODO: Maybe compute (1 - exp) ?? (OpenMOC), also use table lookup
 					double exponential = exp( - sigT * dist );
 
 					// calculate change in angular flux

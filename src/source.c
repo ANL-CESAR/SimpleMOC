@@ -40,26 +40,26 @@ Source * initialize_sources( Input I )
 
 
 	// Allocate space for XS ptrs (by region)
-	double *** XS = (double ***) malloc( n_xs_regions * sizeof( double ** ) );
+	double *** XS = (double ***) malloc( n_xs_regions * sizeof(double **) );
 
 	// Allocate space for each XS type of interest (total, nu*SigmaF, and chi)
-	double ** XS_types = (double **) malloc (n_xs_regions * 3 * sizeof( double * ) );
+	double ** XS_arrays = (double **) malloc (n_xs_regions * I.n_egroups * sizeof(double *) );
 
 	// Allocate space for total XS data
-	double * XS_data = (double *) malloc( n_xs_regions * 3 * I.n_egroups * sizeof(double) );
+	double * XS_data = (double *) malloc( n_xs_regions * I.n_egroups * 3 * sizeof(double) );
 
 	// stitch allocation ptrs together for XS data
 	for( long i = 0; i < n_xs_regions; i++)
-		XS[i] = &XS_types[i * n_xs_regions * 3];
+		XS[i] = &XS_arrays[i * n_xs_regions * I.n_egroups];
 
 	for( long i = 0; i < n_xs_regions; i++)
-		for(long j = 0; j < 3; j++)
-			XS[i][j] = &XS_data[i * 3 * I.n_egroups + j * I.n_egroups];
+		for(long j = 0; j < I.n_egroups; j++)
+			XS[i][j] = &XS_data[i * I.n_egroups * 3 + j * 3];
 
 	// Initialize XS data
 	for( long i = 0; i < n_xs_regions; i++)
-		for( int j = 0; j < 3; j++)
-			for( int k = 0; k < I.n_egroups; k++)
+		for( int j = 0; j < I.n_egroups; j++)
+			for( int k = 0; k < 3; k++)
 				XS[i][j][k] = urand();
 
 	// Allocate & Initialize Fluxes
