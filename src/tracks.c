@@ -76,7 +76,7 @@ Track * generate_tracks(Input I, Track2D * tracks_2D)
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	long ntracks = ntracks_2D * (I.n_polar_angles * (int) ( I.height / I.axial_z_sep));  
 
-	// Allocate space
+	// Allocate space for tracks (3D)
 	Track * tracks = (Track *) malloc( ntracks * sizeof(Track));
 
 	// Initialize tracks randomly
@@ -94,7 +94,6 @@ Track * generate_tracks(Input I, Track2D * tracks_2D)
 		tracks[i].z_height = urand() * I.height;
 		tracks[i].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
 		tracks[i].end_flux = (double *) malloc( I.n_egroups * sizeof(double) );
-
 
 		// set incoming flux to 0
 		for( int j = 0; j < I.n_egroups; j++)

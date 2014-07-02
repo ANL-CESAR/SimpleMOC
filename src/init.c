@@ -34,10 +34,12 @@ Params build_tracks( Input I )
 	center_print("INITIALIATION", 79);
 	border_print();
 	Params params;
-	printf("Intializing 2D tracks...\n");
+	printf("Initializing 2D tracks...\n");
 	params.tracks_2D = generate_2D_tracks(I); 
-	printf("Intializing 3D tracks...\n");
+	printf("Initializing 3D tracks...\n");
 	params.tracks = generate_tracks(I, params.tracks_2D);
+	printf("Initializing flat source regions...\n");
+	params.sources = initialize_sources(I); 
 	border_print();
 	return params;
 }

@@ -15,12 +15,18 @@ double transport_sweep( Params params, Input I )
 	// polar angles, and z stacked rays)
 	for (long i = 0; i < ntracks; i++)
 	{
+		// get 2D track ID
 		long id = params.tracks[i].track2D_id;
 
 		// initialize z and s 
 		// (s = current track length progressed along a 2D segment)
 		double z = params.tracks[i].z_height;
 		double s;
+
+		// allocate an array to store the temporary flux (psi)
+		double * psi = (double *) malloc( I.n_egroups * sizeof(double) );
+		for( int k = 0; k < I.n_egroups; k++)
+			psi[k] = params.tracks[i].start_flux[k];
 
 		// get 2D track segments
 		long num_2D_segs = params.tracks_2D[id].n_segments;
@@ -74,24 +80,21 @@ double transport_sweep( Params params, Input I )
 				// cycle over energy groups
 				for( int k = 0; k < I.n_egroups; k++)
 				{
-					// load current angular flux
-
-
 					// load XS data
-					double sigT = sources[source_id].XS[k][0];
-					double nuSigF = sources[source_id].XS[k][1];
-					double chi = sources[source_id].XS[k][2];
+					double sigT = params.sources[source_id].XS[k][0];
+					double nuSigF = params.sources[source_id].XS[k][1];
+					double chi = params.sources[source_id].XS[k][2];
 
 					// calculate exponential
 					// TODO: Maybe compute (1 - exp) ?? (OpenMOC), also use table lookup
 					double exponential = exp( - sigT * dist );
 
 					// calculate change in angular flux
-					double delta_psi = (psi[k] - sources[source_id].source[k]/sigT) *
+					double delta_psi = (psi[k] - params.sources[source_id].source[k]/sigT) *
 						(1.0 - exponential);
 
 					// add contribution to new source flux
-					sources[source_id].Flux[k] += delta_psi * weight;
+					params.sources[source_id].flux[k] += delta_psi * weight;
 					
 					// update angular flux
 					psi[k] -= delta_psi;
@@ -108,6 +111,7 @@ double transport_sweep( Params params, Input I )
 			if( !in_bounds )
 				break;
 		}
+		free(psi);
 	}
 
 	return 0;

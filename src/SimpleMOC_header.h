@@ -63,24 +63,25 @@ typedef struct{
 	double z_height;           // Z-height
 	double * start_flux;       // Starting (input) flux array received from inputting neighbor
 	long rank_in;              // MPI rank to receive from
-	double * end_flux;          // Attenuated (output) flux array to send to output neighbor
+	double * end_flux;         // Attenuated (output) flux array to send to output neighbor
 	long rank_out;             // MPI rank to send to
 } Track;
+
+// Flat Source Region Structure
+typedef struct{
+	double ** XS;
+	double ** scattering_matrix;
+	double * flux;
+	double * source;
+} Source;
 
 // Params Structure for easier data pointer passing
 typedef struct{
 	Track2D * tracks_2D;
 	Track * tracks;
-	// TODO: Also need material, XS data etc.
+	Source * sources; 
+	// TODO: Might need material, XS data etc. separate from source data
 } Params;
-
-// Flat Source Region Structure
-typedef struct{
-	double * XS;
-	double ** scattering_matrix;
-	double * flux;
-	double * source;
-} Source;
 
 // init.c
 Input get_input( void );
