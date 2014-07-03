@@ -10,6 +10,9 @@ int main( int argc, char * argv[] )
 	print_input_summary(input);
 
 	Params params = build_tracks( input );
+
+	double keff = transport_sweep(params);
+
 	free_2D_tracks( params.tracks_2D );
 	free_tracks( params.tracks );
 

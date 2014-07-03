@@ -3,6 +3,8 @@
 // run one full transport sweep, return k
 double transport_sweep( Params params, Input I )
 {
+	printf("Starting transport sweep ...\n");
+
 	// Determine total number of tracks
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	long ntracks = ntracks_2D * (I.n_polar_angles * (int) ( I.height / I.axial_z_sep));  
