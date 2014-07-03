@@ -90,12 +90,14 @@ Track * generate_tracks(Input I, Track2D * tracks_2D)
 		tracks[i].p_angle = urand() * M_PI;
 		tracks[i].p_weight = urand();
 		
-		// TODO: change these for domain decomposed
-		tracks[i].z_height = urand() * I.height;
+		// choose initial z height within the domain
+		tracks[i].z_height = urand() * I.height / I.decomp_assemblies_ax;
+
+		// Allocate start and end flux arrays
 		tracks[i].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
 		tracks[i].end_flux = (double *) malloc( I.n_egroups * sizeof(double) );
 
-		// set incoming flux to 0
+		// set incoming flux to 0, perhaps needs to be changed for inner assemblies
 		for( int j = 0; j < I.n_egroups; j++)
 			tracks[i].start_flux[j] = 0;
 	}

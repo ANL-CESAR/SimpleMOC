@@ -11,7 +11,7 @@ double transport_sweep( Params params, Input I )
 
 	// calculate the height of a node's domain and of each FSR
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
-	double source_delta_z = I.cai / I.fai;
+	double source_delta_z = I.height / (I.cai * I.fai);
 
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
 	// polar angles, and z stacked rays)
