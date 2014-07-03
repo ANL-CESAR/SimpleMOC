@@ -26,7 +26,6 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 	long total_segments = 0;
 	for( long i = 0; i < ntracks; i++ )
 	{
-		// TODO: Change from even to normal distribution
 		tracks[i].n_segments = segments_per_2D_track_distribution( I );
 		total_segments += tracks[i].n_segments;
 	}
