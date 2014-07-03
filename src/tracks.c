@@ -56,7 +56,7 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks )
 
 long segments_per_2D_track_distribution( Input I )
 {
-	return rand() % I.segments_per_track;
+	return nrand(I.segments_per_track, sqrt(I.segments_per_track));
 }
 
 long segments_per_3D_track_distribution( Input I )
