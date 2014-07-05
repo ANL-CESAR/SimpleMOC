@@ -16,6 +16,7 @@ void generate_normal_random_points(double mean, double sigma, int n_pts)
 		double random = nrand(mean,sigma);	
 		fprintf(out, "%f\n", random);
 	}
+
 	// close stream
 	fclose(out);
 
