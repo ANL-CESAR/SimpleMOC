@@ -35,13 +35,6 @@ typedef struct{
 	long zone;                 // Zone (inside pin cell) ID
 } RegionID;
 
-// Cartesian Coordinate Struct
-typedef struct{
-	double x;
-	double y;
-	double z;
-} Coord;
-
 // Segment Structure
 typedef struct{
 	double length;
@@ -105,6 +98,7 @@ long segments_per_3D_track_distribution( Input I );
 
 // utils.c
 double urand(void);
+double nrand(double mean, double sigma);
 
 // source.c
 Source * initialize_sources( Input I );
