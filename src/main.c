@@ -11,7 +11,7 @@ int main( int argc, char * argv[] )
 
 	Params params = build_tracks( input );
 
-	double keff = transport_sweep(params);
+	double keff = transport_sweep(params, input);
 
 	free_2D_tracks( params.tracks_2D );
 	free_tracks( params.tracks );

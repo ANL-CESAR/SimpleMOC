@@ -84,7 +84,7 @@ Source * initialize_sources( Input I )
 			idx = rand() % n_xs_regions;
 
 		sources[i].scattering_matrix = s_matrices[idx];
-		sources[i].XS = &XS[idx];
+		sources[i].XS = XS[idx];
 		sources[i].flux = &Flux[i * I.n_egroups];
 		sources[i].source = &Source[i * I.n_egroups]; 
 	}

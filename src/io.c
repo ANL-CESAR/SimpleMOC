@@ -90,9 +90,9 @@ void print_input_summary(Input I)
 	else
 		printf("%-35s%s\n", "data decomposition:", "ON");
 	printf("%-35s%d\n", "assemblies per axial sub-domain:", I.decomp_assemblies_ax);
-	printf("%-35s%d\n", "avg segments per track:", I.segments_per_track);
+	printf("%-35s%ld\n", "avg segments per track:", I.segments_per_track);
 	printf("%-35s%.2lf\n", "assembly width:", I.assembly_width);
 	printf("%-35s%.2lf\n", "reactor height:", I.height);
-	printf("%-35s%d\n", "Src regions per assembly:", I.num_source_regions_per_assembly);
+	printf("%-35s%ld\n", "Src regions per assembly:", I.num_source_regions_per_assembly);
 	border_print();
 }
