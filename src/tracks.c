@@ -58,11 +58,6 @@ long segments_per_2D_track_distribution( Input I )
 	return nrand(I.segments_per_track, sqrt(I.segments_per_track));
 }
 
-long segments_per_3D_track_distribution( Input I )
-{
-	return (rand() % I.segments_per_track )* 0.5;
-}
-
 void free_2D_tracks( Track2D * tracks )
 {
 	free(tracks[0].segments);
