@@ -21,9 +21,12 @@ Input get_input( void )
 	I.segments_per_track = 20;  // Average number of segments per track (123)
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
-	I.num_source_regions_per_assembly = 3000; // Change to 3M source regions per assembly (estimate)
+	I.n_2D_source_regions_per_assembly = 3000; // Change to 3M source regions per assembly (estimate)
 
 	// TODO: Add file/CLI user input
+
+	I.n_source_regions_per_node = I.n_2D_source_regions_per_assembly *
+		I.cai * I.fai / I.decomp_assemblies_ax;
 
 	return I;
 }

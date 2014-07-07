@@ -13,6 +13,8 @@ double transport_sweep( Params params, Input I )
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
 	double source_delta_z = I.height / (I.cai * I.fai);
 
+	// Start transport sweep
+
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
 	// polar angles, and z stacked rays)
 	for (long i = 0; i < ntracks; i++)
@@ -73,7 +75,7 @@ double transport_sweep( Params params, Input I )
 				}
 
 				// pick a random FSR (cache miss expected)
-				long source_id = rand() % I.num_source_regions_per_assembly;
+				long source_id = rand() % I.n_source_regions_per_node;
 
 				// compute weight (azimuthal * polar)
 				//TODO: add track weight (area)
@@ -103,8 +105,7 @@ double transport_sweep( Params params, Input I )
 
 				}	
 
-				// TODO: update source scalar flux with source contribution
-				// TODO: update source in FSR for next transport sweep
+				// TODO: initialize source scalar flux with source contribution
 
 				// set the new z coordinate
 				z = new_z;
@@ -115,6 +116,38 @@ double transport_sweep( Params params, Input I )
 		}
 		free(psi);
 	}
+
+	// add source contribution to scalar flux in each FSR
+	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	{
+		for( int k = 0; k < I.n_egroups; k++)
+		{
+			double sigT = params.sources[i].XS[k][0];
+
+			// TODO: determine why this line is here
+			params.sources[i].flux[k] *= 0.5;
+
+			// TODO: Use reduced source for computational efficiency
+			// ALSO, maybe store 1/volume instead of volume
+			params.sources[i].flux[k] = 4 * M_PI * params.sources[i].source[k]
+				/ sigT + params.sources[i].flux[k] / (sigT * params.sources[i].vol);
+		}
+	}
+
+	// TODO: normalize fluxes and calculate new source
+	// ...
+	//
+	// TODO: calculate fission source (divide by k)
+	//
+	// TODO: change k to a real value
+	double invserse_k = 2 * urand();
+	//
+	// TODO: calculate scattering source (do NOT divide by k)
+	// TODO: make sure that additions are done accurately (pairwise)
+	// TODO: from scattering source and fission source calculate new source
+	// TODO: See line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
+	// ...
+	//
 
 	return 0;
 }

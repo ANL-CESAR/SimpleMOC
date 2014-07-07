@@ -3,10 +3,10 @@
 Source * initialize_sources( Input I )
 {
 	// Allocate space
-	Source * sources = (Source *) malloc( I.num_source_regions_per_assembly * sizeof(Source) );
+	Source * sources = (Source *) malloc( I.n_source_regions_per_node * sizeof(Source) );
 
 	// determine number of cross section regions
-	long n_xs_regions = I.num_source_regions_per_assembly / 8;
+	long n_xs_regions = I.n_source_regions_per_node / 8;
 
 	// Allocate scattering matrix matrix ptrs
 	double *** s_matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
@@ -63,19 +63,19 @@ Source * initialize_sources( Input I )
 				XS[i][j][k] = urand();
 
 	// Allocate & Initialize Fluxes
-	double * Flux = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups 
+	double * Flux = (double *) malloc( I.n_source_regions_per_node * I.n_egroups 
 			* sizeof(double));
-	for( long i = 0; i < I.num_source_regions_per_assembly * I.n_egroups; i++ )
+	for( long i = 0; i < I.n_source_regions_per_node * I.n_egroups; i++ )
 		Flux[i] = 1.0;
 
 	// Allocate & Inititalize "source" values
-	double * Source = (double *) malloc( I.num_source_regions_per_assembly * I.n_egroups
+	double * Source = (double *) malloc( I.n_source_regions_per_node * I.n_egroups
 			* sizeof(double));
-	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
+	for( long i = 0; i < I.n_source_regions_per_node; i++ )
 		Source[i] = urand();
 	
 	// Assign to source regions
-	for( long i = 0; i < I.num_source_regions_per_assembly; i++ )
+	for( long i = 0; i < I.n_source_regions_per_node; i++ )
 	{
 		long idx;
 		if( i == 0 )
@@ -89,6 +89,10 @@ Source * initialize_sources( Input I )
 		sources[i].source = &Source[i * I.n_egroups]; 
 	}
 
+	// initialize FSR volume
+	sources[i].vol = urand();
+
+	// free memory of temporary variables
 	free( s_matrices );
 	free( XS );
 

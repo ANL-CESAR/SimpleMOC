@@ -25,7 +25,8 @@ typedef struct{
 	long segments_per_track;   // Average number of segments per track
 	double assembly_width;     // Width of an assembly - 1.26 x 17 cm
 	double height;             // Height of the reactor - 400 cm
-	long num_source_regions_per_assembly; // 3M source regions per assembly (estimate)
+	long n_2D_source_regions_per_assembly; // 3M source regions per assembly (estimate)
+	long n_source_regions_per_node; // Number of source regions in a given node
 } Input;
 
 // Localized geometrical region ID
@@ -66,6 +67,7 @@ typedef struct{
 	double ** scattering_matrix;
 	double * flux;
 	double * source;
+	double vol;
 } Source;
 
 // Params Structure for easier data pointer passing
@@ -73,7 +75,7 @@ typedef struct{
 	Track2D * tracks_2D;
 	Track * tracks;
 	Source * sources; 
-	// TODO: Might need material, XS data etc. separate from source data
+	// TODO: need material, XS data etc. separate from source data
 } Params;
 
 // init.c
