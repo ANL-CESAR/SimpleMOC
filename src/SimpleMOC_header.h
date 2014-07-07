@@ -103,6 +103,10 @@ double nrand(double mean, double sigma);
 Source * initialize_sources( Input I );
 void free_sources( Input I, Source * sources );
 
+// solver.c
+double transport_sweep( Params params, Input I );
+
+
 // test.c
 
 #endif
