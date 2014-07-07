@@ -7,7 +7,7 @@ Source * initialize_sources( Input I )
 
 	// determine number of cross section regions
 	long n_xs_regions = I.n_source_regions_per_node / 8;
-
+	
 	// Allocate scattering matrix matrix ptrs
 	double *** s_matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
 

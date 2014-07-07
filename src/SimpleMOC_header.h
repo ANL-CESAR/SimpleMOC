@@ -63,11 +63,11 @@ typedef struct{
 
 // Flat Source Region Structure
 typedef struct{
-	double ** XS;
-	double ** scattering_matrix;
 	double * flux;
 	double * source;
 	double vol;
+	double ** XS;
+	double ** scattering_matrix
 } Source;
 
 // Params Structure for easier data pointer passing
@@ -75,7 +75,6 @@ typedef struct{
 	Track2D * tracks_2D;
 	Track * tracks;
 	Source * sources; 
-	// TODO: need material, XS data etc. separate from source data
 } Params;
 
 // init.c
