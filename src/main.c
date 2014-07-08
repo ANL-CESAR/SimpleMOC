@@ -11,11 +11,14 @@ int main( int argc, char * argv[] )
 
 	Params params = build_tracks( input );
 
+	double res;
 	double keff = 1.0;
 	int num_iters = 100;
 	for( int i = 0; i < num_iters; i++)
 	{
 		keff = transport_sweep(params, input);
+		renormalize_flux(params, input);
+		res = update_sources(params, input, keff);
 	}
 
 	free_2D_tracks( params.tracks_2D );
