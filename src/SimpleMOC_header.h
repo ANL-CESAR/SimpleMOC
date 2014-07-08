@@ -106,8 +106,10 @@ void free_sources( Input I, Source * sources );
 
 // solver.c
 double transport_sweep( Params params, Input I );
-
+void renormalize_flux( Params params, Input I );
+double update_sources( Params params, Input I, double keff );
 
 // test.c
+void gen_norm_pts(double mean, double sigma, int n_pts);
 
 #endif

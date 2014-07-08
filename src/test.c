@@ -1,6 +1,6 @@
 #include"SimpleMOC_header.h"
 
-void generate_normal_random_points(double mean, double sigma, int n_pts)
+void gen_norm_pts(double mean, double sigma, int n_pts)
 {
 	// generate output file
 	FILE * out;

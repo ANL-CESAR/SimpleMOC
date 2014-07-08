@@ -128,6 +128,13 @@ double transport_sweep( Params params, Input I )
 		}
 	}
 
+	// TODO: calculate a real keff, but maybe this can be disregarded?
+	return 0;
+}
+
+
+void renormalize_flux( Params params, Input I )
+{
 	// add source contribution to scalar flux in each FSR
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
@@ -165,9 +172,17 @@ double transport_sweep( Params params, Input I )
 
 	// NOTE: Normalize boundary fluxes by same factor as well for
 	// non-vacuum boundary conditions
+	return;
+}
 
-	// TODO: change k to a real value
-	double inverse_k = 2 * urand();
+
+double update_sources( Params params, Input I, double keff )
+{
+	// source residual
+	double residual;
+
+	// calculate inverse multiplication facotr for efficiency
+	double inverse_k = 1.0 / keff;
 
 	// calculate new source
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
@@ -215,6 +230,7 @@ double transport_sweep( Params params, Input I )
 
 	// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
 
-	// TODO: calculate a real keff, but maybe this can be disregarded?
-	return 0;
+	// TODO: calculate real source residual
+	residual = 0;
+	return residual;
 }
