@@ -200,7 +200,7 @@ double transport_sweep( Params params, Input I )
 
 		// assign new source to the actual source (changing pointers)
 		for( int k = 0; k < I.n_egroups; k++ )
-			params.sources[i].flux[k] = new_source[k];
+			params.sources[i].source[k] = new_source[k];
 
 		// TODO: free old memory if needed
 
