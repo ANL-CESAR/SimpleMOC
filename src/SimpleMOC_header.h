@@ -67,7 +67,7 @@ typedef struct{
 	double * source;
 	double vol;
 	double ** XS;
-	double ** scattering_matrix
+	double ** scattering_matrix;
 } Source;
 
 // Params Structure for easier data pointer passing

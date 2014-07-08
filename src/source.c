@@ -87,10 +87,10 @@ Source * initialize_sources( Input I )
 		sources[i].XS = XS[idx];
 		sources[i].flux = &Flux[i * I.n_egroups];
 		sources[i].source = &Source[i * I.n_egroups]; 
-	}
 
-	// initialize FSR volume
-	sources[i].vol = urand();
+		// initialize FSR volume
+		sources[i].vol = urand();
+	}
 
 	// free memory of temporary variables
 	free( s_matrices );

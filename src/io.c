@@ -93,6 +93,7 @@ void print_input_summary(Input I)
 	printf("%-35s%ld\n", "avg segments per track:", I.segments_per_track);
 	printf("%-35s%.2lf\n", "assembly width:", I.assembly_width);
 	printf("%-35s%.2lf\n", "reactor height:", I.height);
-	printf("%-35s%ld\n", "Src regions per assembly:", I.num_source_regions_per_assembly);
+	printf("%-35s%ld\n", "2D Src regions per assembly:", 
+			I.n_2D_source_regions_per_assembly);
 	border_print();
 }

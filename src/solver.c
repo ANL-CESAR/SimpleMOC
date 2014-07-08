@@ -1,6 +1,11 @@
 #include"SimpleMOC_header.h"
 
 // run one full transport sweep, return k
+
+// TODO: crank more efficiency and accuracy out of code 
+// (i.e. less divisions, pairwise additions, precompute
+// values used in many iterations, etc) see OpenMOC
+
 double transport_sweep( Params params, Input I )
 {
 	printf("Starting transport sweep ...\n");
@@ -134,20 +139,75 @@ double transport_sweep( Params params, Input I )
 		}
 	}
 
-	// TODO: normalize fluxes and calculate new source
-	// ...
-	//
-	// TODO: calculate fission source (divide by k)
-	//
-	// TODO: change k to a real value
-	double invserse_k = 2 * urand();
-	//
-	// TODO: calculate scattering source (do NOT divide by k)
-	// TODO: make sure that additions are done accurately (pairwise)
-	// TODO: from scattering source and fission source calculate new source
-	// TODO: See line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
-	// ...
-	//
+	// tally total fission rate
+	// TODO: change to pair-wise summation
+	double total_fission_rate = 0;
+	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	{
+		for( int k = 0; k < I.n_egroups; k++)
+		{
+			total_fission_rate += params.sources[i].flux[k] * params.sources[i].vol
+				* params.sources[i].XS[k][1];
+		}
+	}
 
+	// normalize fluxes by fission reaction rate (TODO: Why by fission rate??)
+	double norm_factor = 1.0 / total_fission_rate;
+	for( int i = 0; i < I.n_source_regions_per_node; i++)
+		for( int k = 0; k < I.n_egroups; k++)
+			params.sources[i].flux[k] *= norm_factor;
+
+	// TODO: Normalize boundary fluxes by same factor as well
+
+	// TODO: change k to a real value
+	double inverse_k = 2 * urand();
+
+	// calculate new source
+	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	{
+		// allocate new source
+		double * new_source = (double * ) malloc(I.n_egroups * sizeof(double));
+
+		// calculate total fission source and scattering source
+		double fission_source = 0;
+		double scatter_source = 0;
+
+		// TODO: change to pair-wise summantion
+		for( int k = 0; k < I.n_egroups; k++ )
+		{
+			scatter_source = 0;
+			for( int k2 = 0; k2 < I.n_egroups; k2++ )
+			{
+				// compute fission source if not computed yet
+				if( k == 0)
+					fission_source += params.sources[i].flux[k2] *
+						params.sources[i].XS[k2][1];
+
+				// compute scatter source
+				// NOTE: this means scatter from k2 -> k
+				scatter_source += params.sources[i].scattering_matrix[k][k2] * 
+					params.sources[i].flux[k2];
+			}
+
+			// normalize fission source by multiplication factor if needed
+			if ( k == 0 )
+				fission_source *= inverse_k;
+
+			// compuate new total source
+			double chi = params.sources[i].XS[k][2];
+			new_source[k] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+		}
+
+		// assign new source to the actual source (changing pointers)
+		for( int k = 0; k < I.n_egroups; k++ )
+			params.sources[i].flux[k] = new_source[k];
+
+		// TODO: free old memory if needed
+
+	}
+
+	// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
+
+	// TODO: calculate a real keff
 	return 0;
 }
