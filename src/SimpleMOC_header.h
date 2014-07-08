@@ -73,7 +73,7 @@ typedef struct{
 // Params Structure for easier data pointer passing
 typedef struct{
 	Track2D * tracks_2D;
-	Track * tracks;
+	Track *** tracks;
 	Source * sources; 
 } Params;
 
@@ -92,8 +92,8 @@ void print_input_summary(Input input);
 Track2D * generate_2D_tracks( Input input );
 void generate_2D_segments( Input input, Track2D * tracks, long ntracks );
 void free_2D_tracks( Track2D * tracks );
-Track * generate_tracks(Input input, Track2D * tracks_2D);
-void free_tracks( Track * tracks );
+Track *** generate_tracks(Input input, Track2D * tracks_2D);
+void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );
 
 // utils.c

@@ -64,42 +64,67 @@ void free_2D_tracks( Track2D * tracks )
 	free(tracks);
 }
 
-Track * generate_tracks(Input I, Track2D * tracks_2D)
+Track *** generate_tracks(Input I, Track2D * tracks_2D)
 {
 	// Determine total number of tracks
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	long ntracks = ntracks_2D * (I.n_polar_angles * (int) ( I.height / I.axial_z_sep));  
+	int z_stacked = (int) (I.height / I.axial_z_sep);
+	long ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
 
 	// Allocate space for tracks (3D)
-	Track * tracks = (Track *) malloc( ntracks * sizeof(Track));
+	Track *** tracks = (Track ***) malloc( ntracks_2D * sizeof(Track **));
 
-	// Initialize tracks randomly
-	// TODO: - a few things left to init regarding domains / MPI
-	for( long i = 0; i < ntracks; i++ )
+	// Allocate pointers for tracks associated with a 2D track
+	Track ** tracks_in_track2D = (Track **) malloc( ntracks_2D *
+		   	I.n_polar_angles * sizeof(Track *));
+
+	// Allocate complete array of track data
+	Track * track_data = (Track *) malloc( ntracks * sizeof(Track) );
+
+	// stitch pointers together
+	for( long i = 0; i < ntracks_2D; i++ )
+		tracks[i] = &tracks_in_track2D[ i * I.n_polar_angles ];
+
+	for( long i = 0; i < ntracks_2D; i++ )
 	{
-		// TODO: perhaps we might not want to make track2D_id associated randomly
-		// since we might parallelize over polar angles (i.e. we can pre-fetch
-		// 2D track data)
-		tracks[i].track2D_id = rand() % ntracks_2D;
-		tracks[i].p_angle = urand() * M_PI;
-		tracks[i].p_weight = urand();
-		
-		// choose initial z height within the domain
-		tracks[i].z_height = urand() * I.height / I.decomp_assemblies_ax;
+		for( int j = 0; j < I.n_polar_angles; j++ )
+		{
+			tracks[i][j] = &track_data[ (i * I.n_polar_angles + j) * z_stacked ];
+		}
+	}
+	for( long i = 0; i < ntracks_2D; i++ )
+	{
+		for( int j = 0; j < I.n_polar_angles; j++ )
+		{
+			for( int k = 0; k < z_stacked; k++ )
+			{
+				// TODO: much of this information is redundant
+				tracks[i][j][k].track2D_id = i;
+				tracks[i][j][k].p_angle = M_PI * (j + 0.5) / I.n_polar_angles;
+				tracks[i][j][k].z_height = I.height / I.decomp_assemblies_ax *
+					k / (z_stacked - 1.0);
+				// NOTE: for efficiency, bottom z heights should only have upward
+				// directed polar angles ... similar for top
+				
+				// set polar weight, NOTE: this is the same for same polar angle
+				tracks[i][j][k].p_weight = urand();
 
-		// Allocate start and end flux arrays
-		tracks[i].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
-		tracks[i].end_flux = (double *) malloc( I.n_egroups * sizeof(double) );
+				// Allocate start and end flux arrays
+				tracks[i][j][k].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
+				tracks[i][j][k].end_flux = (double *) malloc( I.n_egroups * sizeof(double) );
 
-		// set incoming flux to 0, perhaps needs to be changed for inner assemblies
-		for( int j = 0; j < I.n_egroups; j++)
-			tracks[i].start_flux[j] = 0;
+				// set incoming flux to 0, perhaps needs to be changed for inner assemblies
+				for( int g = 0; g < I.n_egroups; g++)
+					tracks[i][j][k].start_flux[g] = 0;
+			}
+		}
 	}
 
 	return tracks;
 }
+				
 
-void free_tracks( Track * tracks )
+void free_tracks( Track *** tracks )
 {
 	free(tracks);
 }
