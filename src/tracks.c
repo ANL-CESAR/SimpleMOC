@@ -112,6 +112,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D)
 				// Allocate start and end flux arrays
 				tracks[i][j][k].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
 				tracks[i][j][k].end_flux = (double *) malloc( I.n_egroups * sizeof(double) );
+				tracks[i][j][k].psi = (double *) malloc( I.n_egroups * sizeof(double) );
 
 				// set incoming flux to 0, perhaps needs to be changed for inner assemblies
 				for( int g = 0; g < I.n_egroups; g++)

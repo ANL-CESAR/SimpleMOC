@@ -59,6 +59,7 @@ typedef struct{
 	long rank_in;              // MPI rank to receive from
 	double * end_flux;         // Attenuated (output) flux array to send to output neighbor
 	long rank_out;             // MPI rank to send to
+	double * psi;			   // current angular flux along track
 } Track;
 
 // Flat Source Region Structure
@@ -106,6 +107,7 @@ void free_sources( Input I, Source * sources );
 
 // solver.c
 double transport_sweep( Params params, Input I );
+void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ); 
 void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 

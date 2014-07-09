@@ -17,113 +17,179 @@ double transport_sweep( Params params, Input I )
 
 	// calculate the height of a node's domain and of each FSR
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
-	double source_delta_z = I.height / (I.cai * I.fai);
+	double fine_delta_z = I.height / (I.cai * I.fai);
 
+	// initialize fluxes in transport sweep
+	// TODO: optimize this: it is probably unnecessary
+	for( int i = 0; i < ntracks_2D; i++)
+		for( int j = 0; j < I.n_polar_angles; j++)
+			for( int k = 0; k < z_stacked; k++)
+				for( int g = 0; g < I.n_egroups; g++)
+					params.tracks[i][j][k].psi[g] = 
+						params.tracks[i][j][k].start_flux[g];
+	
 	// Start transport sweep
 
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
 	// polar angles, and z stacked rays)
+	bool new_track;
 	for (long i = 0; i < ntracks_2D; i++)
 	{
-		for( int j = 0; j < I.n_polar_angles; j++)
+		// treat positive-z traveling rays first
+		for( int j = 0; j < I.n_polar_angles / 2; j++)
 		{
-			for( int k = 0; k < z_stacked; k++)
+			int end_stacked = z_stacked;
+			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 			{
+				// calculate distance traveled in cell if segment completed
+				double s = params.tracks_2D[i].segments[n].length /
+					sin(params.tracks[i][j][0].p_angle);
 
-				// initialize z and s 
-				// (s = current track length progressed along a 2D segment)
-				double z = params.tracks[i][j][k].z_height;
-				double s;
+				// allocate varaible for distance traveled in an FSR
+				double ds;
 
-				// allocate an array to store the temporary flux (psi)
-				double * psi = (double *) malloc( I.n_egroups * sizeof(double) );
-				for( int g = 0; g < I.n_egroups; g++)
-					psi[g] = params.tracks[i][j][k].start_flux[g];
-
-				// get 2D track segments
-				long num_2D_segs = params.tracks_2D[i].n_segments;
-
-				// booleans to determine whether in bounds
-				bool in_bounds = true;
-
-				// cycle through all segments in the 2D track laydown
-				for (long n =0; n < num_2D_segs; n++)
+				// loop over remaining z-stacked rays
+				for( int k = 0; k < end_stacked; k++)
 				{
+					// set flag for completeion of segment
 					bool seg_complete = false;
-					s = 0;
 					while( !seg_complete )
 					{
-						// calculate new z coordinate if segment is completed
-						double new_z = z + ( params.tracks_2D[i].segments[n].length - s )
-				   			/ tan( params.tracks[i][j][k].p_angle );
+						// calculate new height based on s (distance traveled in FSR)
+						double z = params.tracks[i][j][k].z_height
+							+ s * cos(params.tracks[i][j][k].p_angle);
 
-						// check if segment is completed
-						if( (int) ( new_z / source_delta_z ) == 
-								(int) ( z / source_delta_z) )
+						// check if still in same FSR (fine axial interval)
+						if( (int) ( params.tracks[i][j][k].z_height / fine_delta_z ) ==
+								(int) ( z / fine_delta_z ) )
+						{
 							seg_complete = true;
+							ds = s;
+						}
 
-						// otherwise calculate new z coordinate 
-						// (hitting the edge of an FSR)
+						// otherwise, we need to recalculate distances
 						else
 						{
-							new_z = (double) ( (int) (z / source_delta_z) );
-							if( params.tracks[i][j][k].p_angle < M_PI / 2.0)
-								new_z += source_delta_z;
-							s += ( new_z - z) * tan(params.tracks[i][j][k].p_angle);
+							// correct z
+							int interval = (int) (params.tracks[i][j][k].z_height
+									/ fine_delta_z);
+							z = fine_delta_z * (double) (interval + 1);
+
+							// calculate distance travelled in FSR (ds)
+							ds = (z - params.tracks[i][j][k].z_height)
+							   	/ cos(params.tracks[i][j][k].p_angle);
+
+							// update track length remaining
+							s -= ds;
+
+							// check if out of bounds or track complete
+							if( s <= 0 || z >= node_delta_z )
+							{
+								// mark segment as completed
+								seg_complete = true;
+
+								// remember to no longer treat this track
+								end_stacked--;
+
+								// TODO: reset z height (calculate from k)
+								params.tracks[i][j][k].z_height = 0;
+							}
 						}
 
-						// calculate distance traveled in the FSR
-						double dist = (new_z - z) / cos(params.tracks[i][j][k].p_angle);
-					
-						// determine if ray is out of bounds
-						if( new_z <= 0 || new_z >= node_delta_z)
-						{
-							in_bounds = false;
-							break;
-						}
+						// update with new z height or reset if finished
+						if( n == params.tracks_2D[i].n_segments - 1 )
+							// TODO: reset height!!!
+							params.tracks[i][j][k].z_height = 0;
+						else
+							params.tracks[i][j][k].z_height = z;
 
 						// pick a random FSR (cache miss expected)
-						long id = rand() % I.n_source_regions_per_node;
+						long FSR_id = rand() % I.n_source_regions_per_node;
 
-						// compute weight (azimuthal * polar)
-						//TODO: add track weight (area)
-						double weight = params.tracks_2D[i].az_weight * 
-							params.tracks[i][j][k].p_weight;
-
-						// cycle over energy groups
-						for( int g = 0; g < I.n_egroups; g++)
-						{
-							// load XS data
-							double sigT = params.sources[id].XS[g][0];
-							double nuSigF = params.sources[id].XS[g][1];
-							double chi = params.sources[id].XS[g][2];
-
-							// calculate exponential
-							// TODO: Maybe compute (1 - exp) ?? (OpenMOC), also use table lookup
-							double exponential = exp( - sigT * dist );
-
-							// calculate change in angular flux
-							double delta_psi = (psi[g] - params.sources[id].source[g]/sigT) *
-								(1.0 - exponential);
-
-							// add contribution to new source flux
-							params.sources[id].flux[g] += delta_psi * weight;
-					
-							// update angular flux
-							psi[g] -= delta_psi;
-
-						}	
-
-						// TODO: initialize source scalar flux with source contribution
-
-						// set the new z coordinate
-						z = new_z;
-
+						// update sources and fluxes from attenuation over FSR
+						attenuate_fluxes( &params.tracks[i][j][k], &params.sources[FSR_id]
+								, ds, I.n_egroups);
 					}
-					if( !in_bounds )
-						break;
 				}
-				free(psi);
+			}
+		}
+		// treat negative-z traveling rays next
+		for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
+		{
+			int begin_stacked = 0;
+			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
+			{
+				// calculate distance traveled in cell if segment completed
+				double s = params.tracks_2D[i].segments[n].length /
+					sin(params.tracks[i][j][0].p_angle);
+
+				// allocate varaible for distance traveled in an FSR
+				double ds;
+
+				// for( int k = 0; k < z_stacked; k++)
+				for( int k = begin_stacked; k < z_stacked; k++)
+				{
+					// set flag for completeion of segment
+					bool seg_complete = false;
+					while( !seg_complete )
+					{
+						// calculate new height based on s (distance traveled in FSR)
+						double z = params.tracks[i][j][k].z_height
+							+ s * cos(params.tracks[i][j][k].p_angle);
+
+						// check if still in same FSR (fine axial interval)
+						if( (int) ( params.tracks[i][j][k].z_height / fine_delta_z ) ==
+								(int) ( z / fine_delta_z ) )
+						{
+							seg_complete = true;
+							ds = s;
+						}
+
+						// otherwise, we need to recalculate distances
+						else
+						{
+							// correct z
+							int interval = (int) (params.tracks[i][j][k].z_height
+									/ fine_delta_z);
+							z = fine_delta_z * (double) interval;
+
+							// calculate distance travelled in FSR (ds)
+							ds = ( params.tracks[i][j][k].z_height - z)
+							   	/ cos(params.tracks[i][j][k].p_angle);
+
+							// update track length remaining
+							s -= ds;
+
+							// check if out of bounds or track complete
+							if( s <= 0 || z <= 0 )
+							{
+								// mark segment as completed
+								seg_complete = true;
+
+								// remember to no longer treat this track
+								begin_stacked++;
+
+								// TODO: reset z height (calculate from k)
+								params.tracks[i][j][k].z_height = 0;
+
+							}
+						}
+
+						// update with new z height or reset if finished
+						if( n == params.tracks_2D[i].n_segments - 1 )
+							// TODO: reset height!!!
+							params.tracks[i][j][k].z_height = 0;
+						else
+							params.tracks[i][j][k].z_height = z;
+
+						// pick a random FSR (cache miss expected)
+						long FSR_id = rand() % I.n_source_regions_per_node;
+
+						// update sources and fluxes from attenuation over FSR
+						attenuate_fluxes( &params.tracks[i][j][k] , &params.sources[FSR_id]
+								, ds, I.n_egroups);
+					}
+				}
 			}
 		}
 	}
@@ -131,6 +197,37 @@ double transport_sweep( Params params, Input I )
 	// TODO: calculate a real keff, but maybe this can be disregarded?
 	return 0;
 }
+
+void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ) 
+{
+	// compute weight (azimuthal * polar)
+	// TODO: add track weight (area), also add azimuthal (tracks_2D[i].az_weight)
+	double weight = track->p_weight;
+
+	// cycle over energy groups
+	for( int g = 0; g < groups; g++)
+	{
+		// load XS data
+		double sigT = FSR->XS[g][0];
+		double nuSigF = FSR->XS[g][1];
+		double chi = FSR->XS[g][2];
+
+		// calculate exponential
+		// TODO: Maybe compute (1 - exp) ?? (OpenMOC), also use table lookup
+		double exponential = exp( - sigT * ds );
+
+		// calculate change in angular flux
+		double delta_psi = (track->psi[g] - FSR->source[g]/sigT) *
+					(1.0 - exponential);
+
+		// add contribution to new source flux
+		FSR->flux[g] += delta_psi * weight;
+					
+		// update angular flux
+		track->psi[g] -= delta_psi;
+	}
+
+}	
 
 
 void renormalize_flux( Params params, Input I )
