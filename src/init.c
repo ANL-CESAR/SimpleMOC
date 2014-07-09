@@ -34,15 +34,19 @@ Input get_input( void )
 // Initializes all track data
 Params build_tracks( Input I )
 {
+	size_t nbytes = 0;
 	center_print("INITIALIATION", 79);
 	border_print();
 	Params params;
 	printf("Initializing 2D tracks...\n");
-	params.tracks_2D = generate_2D_tracks(I); 
+    params.tracks_2D = generate_2D_tracks(I, &nbytes); 
+	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 	printf("Initializing 3D tracks...\n");
-	params.tracks = generate_tracks(I, params.tracks_2D);
+	params.tracks = generate_tracks(I, params.tracks_2D, &nbytes);
+	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 	printf("Initializing flat source regions...\n");
-	params.sources = initialize_sources(I); 
+	params.sources = initialize_sources(I, &nbytes); 
+	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 	border_print();
 	return params;
 }
