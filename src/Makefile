@@ -51,13 +51,11 @@ LDFLAGS = -lm
 # Debug Flags
 ifeq ($(DEBUG),yes)
   CFLAGS += -g
-  LDFLAGS  += -g
 endif
 
 # Profiling Flags
 ifeq ($(PROFILE),yes)
   CFLAGS += -pg
-  LDFLAGS  += -pg
 endif
 
 # Optimization Flags

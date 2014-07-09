@@ -18,6 +18,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	*nbytes += n_xs_regions * sizeof(double **);
 
 	// Allocate space for ALL scattering data
+	printf("Scattering data requires %zu MB of data...\n", n_xs_regions * I.n_egroups * I.n_egroups * sizeof(double) / 1024 / 1024);
 	double * s_matrix_data = (double *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * 
 			sizeof(double));
 	*nbytes += n_xs_regions * I.n_egroups * I.n_egroups * sizeof(double);
@@ -41,21 +42,32 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	 * An array is created which stores in contigious memory as
 	 * [ ..., Total_XS, nu*SigmaF, Chi, ...]
 	 */
-
+	
+	printf("Beginning XS Allocation...\n");
 
 	// Allocate space for XS ptrs (by region)
 	double *** XS = (double ***) malloc( n_xs_regions * sizeof(double **) );
+	if( XS == NULL )
+		printf("NULL\n");
 	*nbytes += n_xs_regions * sizeof(double **);
+	printf("OK!\n");
 
 	// Allocate space for each XS type of interest (total, nu*SigmaF, and chi)
 	double ** XS_arrays = (double **) malloc (n_xs_regions * I.n_egroups * sizeof(double *) );
+	if( XS_arrays == NULL )
+		printf("NULL\n");
 	*nbytes += n_xs_regions * I.n_egroups * sizeof(double *);
+	printf("OK!\n");
 
 	// Allocate space for total XS data
 	double * XS_data = (double *) malloc( n_xs_regions * I.n_egroups * 3 * sizeof(double) );
+	if( XS_data == NULL )
+		printf("NULL\n");
 	*nbytes += n_xs_regions * I.n_egroups * 3 * sizeof(double);
+	printf("OK!\n");
 
 	// stitch allocation ptrs together for XS data
+	// There is a problem here. There are only n_xs_regions * I.n_egroups elements in XS_arrays
 	for( long i = 0; i < n_xs_regions; i++)
 		XS[i] = &XS_arrays[i * n_xs_regions * I.n_egroups];
 
@@ -70,8 +82,12 @@ Source * initialize_sources( Input I, size_t * nbytes )
 				XS[i][j][k] = urand();
 
 	// Allocate & Initialize Fluxes
+	printf("attempting fluxes...\n"); 
 	double * Flux = (double *) malloc( I.n_source_regions_per_node * I.n_egroups 
 			* sizeof(double));
+	if( Flux == NULL )
+		printf("NULL\n");
+	printf("OK!\n");
 	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double);
 	for( long i = 0; i < I.n_source_regions_per_node * I.n_egroups; i++ )
 		Flux[i] = 1.0;
@@ -79,6 +95,9 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	// Allocate & Inititalize "source" values
 	double * Source = (double *) malloc( I.n_source_regions_per_node * I.n_egroups
 			* sizeof(double));
+	if( Source == NULL )
+		printf("NULL\n");
+	printf("OK!\n");
 	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double);
 	for( long i = 0; i < I.n_source_regions_per_node; i++ )
 		Source[i] = urand();

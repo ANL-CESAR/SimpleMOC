@@ -36,6 +36,7 @@ double transport_sweep( Params params, Input I )
 				double s;
 
 				// allocate an array to store the temporary flux (psi)
+				exit(5);
 				double * psi = (double *) malloc( I.n_egroups * sizeof(double) );
 				for( int g = 0; g < I.n_egroups; g++)
 					psi[g] = params.tracks[i][j][k].start_flux[g];
