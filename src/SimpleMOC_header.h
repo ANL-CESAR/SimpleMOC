@@ -89,10 +89,10 @@ void fancy_int( int a );
 void print_input_summary(Input input);
 
 // tracks.c
-Track2D * generate_2D_tracks( Input input );
-void generate_2D_segments( Input input, Track2D * tracks, long ntracks );
+Track2D * generate_2D_tracks( Input input, size_t * nbytes );
+void generate_2D_segments( Input input, Track2D * tracks, long ntracks, size_t * nbytes );
 void free_2D_tracks( Track2D * tracks );
-Track *** generate_tracks(Input input, Track2D * tracks_2D);
+Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );
 
@@ -101,7 +101,7 @@ double urand(void);
 double nrand(double mean, double sigma);
 
 // source.c
-Source * initialize_sources( Input I );
+Source * initialize_sources( Input I, size_t * nbytes );
 void free_sources( Input I, Source * sources );
 
 // solver.c

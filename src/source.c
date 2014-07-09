@@ -1,22 +1,26 @@
 #include"SimpleMOC_header.h"
 
-Source * initialize_sources( Input I )
+Source * initialize_sources( Input I, size_t * nbytes )
 {
 	// Allocate space
 	Source * sources = (Source *) malloc( I.n_source_regions_per_node * sizeof(Source) );
+	*nbytes += I.n_source_regions_per_node * sizeof(Source);
 
 	// determine number of cross section regions
 	long n_xs_regions = I.n_source_regions_per_node / (8 * I.fai);
 	
 	// Allocate scattering matrix matrix ptrs
 	double *** s_matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
+	*nbytes += n_xs_regions * sizeof(double **);
 
 	// Allocate space for ALL scattering matrix ptrs
 	double ** s_matrix_ptrs = (double **) malloc( n_xs_regions * I.n_egroups * sizeof(double *));
+	*nbytes += n_xs_regions * sizeof(double **);
 
 	// Allocate space for ALL scattering data
 	double * s_matrix_data = (double *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * 
 			sizeof(double));
+	*nbytes += n_xs_regions * I.n_egroups * I.n_egroups * sizeof(double);
 
 	// Stitch allocation ptrs together
 	for( long i = 0; i < n_xs_regions; i++ )
@@ -41,12 +45,15 @@ Source * initialize_sources( Input I )
 
 	// Allocate space for XS ptrs (by region)
 	double *** XS = (double ***) malloc( n_xs_regions * sizeof(double **) );
+	*nbytes += n_xs_regions * sizeof(double **);
 
 	// Allocate space for each XS type of interest (total, nu*SigmaF, and chi)
 	double ** XS_arrays = (double **) malloc (n_xs_regions * I.n_egroups * sizeof(double *) );
+	*nbytes += n_xs_regions * I.n_egroups * sizeof(double *);
 
 	// Allocate space for total XS data
 	double * XS_data = (double *) malloc( n_xs_regions * I.n_egroups * 3 * sizeof(double) );
+	*nbytes += n_xs_regions * I.n_egroups * 3 * sizeof(double);
 
 	// stitch allocation ptrs together for XS data
 	for( long i = 0; i < n_xs_regions; i++)
@@ -65,12 +72,14 @@ Source * initialize_sources( Input I )
 	// Allocate & Initialize Fluxes
 	double * Flux = (double *) malloc( I.n_source_regions_per_node * I.n_egroups 
 			* sizeof(double));
+	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double);
 	for( long i = 0; i < I.n_source_regions_per_node * I.n_egroups; i++ )
 		Flux[i] = 1.0;
 
 	// Allocate & Inititalize "source" values
 	double * Source = (double *) malloc( I.n_source_regions_per_node * I.n_egroups
 			* sizeof(double));
+	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double);
 	for( long i = 0; i < I.n_source_regions_per_node; i++ )
 		Source[i] = urand();
 	
