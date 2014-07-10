@@ -91,15 +91,16 @@ double transport_sweep( Params params, Input I )
 								// remember to no longer treat this track
 								end_stacked--;
 
-								// TODO: reset z height (calculate from k)
-								params.tracks[i][j][k].z_height = 0;
+								// reset z height (calculate from k)
+								params.tracks[i][j][k].z_height = I.height / 
+									I.decomp_assemblies_ax * k / (z_stacked - 1.0);
 							}
 						}
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 )
-							// TODO: reset height!!!
-							params.tracks[i][j][k].z_height = 0;
+							params.tracks[i][j][k].z_height = I.height / 
+								I.decomp_assemblies_ax * k / (z_stacked - 1.0);
 						else
 							params.tracks[i][j][k].z_height = z;
 
@@ -169,16 +170,16 @@ double transport_sweep( Params params, Input I )
 								// remember to no longer treat this track
 								begin_stacked++;
 
-								// TODO: reset z height (calculate from k)
-								params.tracks[i][j][k].z_height = 0;
-
+								// reset z height (calculate from k)
+								params.tracks[i][j][k].z_height = I.height / 
+									I.decomp_assemblies_ax * k / (z_stacked - 1.0);
 							}
 						}
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 )
-							// TODO: reset height!!!
-							params.tracks[i][j][k].z_height = 0;
+							params.tracks[i][j][k].z_height = I.height / 
+								I.decomp_assemblies_ax * k / (z_stacked - 1.0);
 						else
 							params.tracks[i][j][k].z_height = z;
 

@@ -20,7 +20,7 @@ typedef struct{
 	int n_azimuthal;           // Number of azimuthal angles
 	int n_polar_angles;        // Number of polar angles
 	int n_egroups;             // Number of energy groups
-	int decompose;             // Turn decomposition on/off (1 on, 0 off)
+	bool decompose;             // Turn decomposition on/off (1 on, 0 off)
 	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
 	long segments_per_track;   // Average number of segments per track
 	double assembly_width;     // Width of an assembly - 1.26 x 17 cm

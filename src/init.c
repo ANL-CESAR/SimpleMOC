@@ -11,12 +11,12 @@ Input get_input( void )
 	I.fai = 5;                  // This is the number of fine axial intervals per coarse
    								//	axial interval
 	I.axial_exp = 2;            // Axial source expansion order
-	I.radial_ray_sep = 0.1;     // Radial ray separation
+	I.radial_ray_sep = 0.5;     // Radial ray separation
 	I.axial_z_sep = 0.2;        // Axial stacked z-ray separation
 	I.n_azimuthal = 10;         // Number of azimuthal angles (should be 32)
 	I.n_polar_angles = 10;      // Number of polar angles
-	I.n_egroups = 10;          // Number of energy groups
-	I.decompose = 0;            // Turn decomposition on/off (1 on, 0 off)
+	I.n_egroups = 2;          // Number of energy groups
+	I.decompose = false;            // Turn decomposition on/off (true = on, flase = off)
 	I.decomp_assemblies_ax = 1; // Number of assemblies per sub-domain (axially)
 	I.segments_per_track = 20;  // Average number of segments per track (123)
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm

@@ -100,7 +100,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	}
 
 	// Allocate space for Flux Arrays
-	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups * 2 * sizeof(double);
+	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups * 3 * sizeof(double);
 	printf("Flux Arrays Require %zu MB of data...\n", flux_bytes_needed / 1024 / 1024);
 	double * flux_space = (double *) malloc( flux_bytes_needed );
 	*nbytes += flux_bytes_needed;
@@ -131,7 +131,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 				flux_idx += I.n_egroups;
 				tracks[i][j][k].end_flux = &flux_space[flux_idx];
 				flux_idx += I.n_egroups;
-				tracks[i][j][k].psi = (double *) malloc( I.n_egroups * sizeof(double) );
+				tracks[i][j][k].psi = &flux_space[flux_idx];
 				flux_idx += I.n_egroups;
 
 				// set incoming flux to 0, perhaps needs to be changed for inner assemblies
