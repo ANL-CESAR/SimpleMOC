@@ -272,7 +272,7 @@ void add_source_to_flux( Params params, Input I )
 		Source src = params.sources[i];
 		double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
 		for( int g = 0; g < I.n_egroups; g++)
-			g_fisison_rates[g] = src.flux[g] * src.vol * src.XS[g][1];
+			g_fission_rates[g] = src.flux[g] * src.vol * src.XS[g][1];
 		fission_rates[i] = pairwise_sum( g_fission_rates, I.n_egroups );
 	}
 	double total_fission_rate = pairwise_sum(fission_rates, 
