@@ -7,8 +7,8 @@ Input get_input( void )
 
 	I.x_assemblies = 15;        // Number of assemblies in the x-axis of the reactor
 	I.y_assemblies = 15;        // Number of assemblies in the y-axis of the reactor
-	I.cai = 27;                 // This is the number of coarse axial intervals
-	I.fai = 5;                  // This is the number of fine axial intervals per coarse
+	I.cai = 5;                 // This is the number of coarse axial intervals
+	I.fai = 3;                  // This is the number of fine axial intervals per coarse
    								//	axial interval
 	I.axial_exp = 2;            // Axial source expansion order
 	I.radial_ray_sep = 0.5;     // Radial ray separation

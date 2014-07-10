@@ -35,9 +35,14 @@ double transport_sweep( Params params, Input I )
 	bool new_track;
 	for (long i = 0; i < ntracks_2D; i++)
 	{
+		// print progress
+		if( i % 50 == 0)
+			printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", ntracks_2D);
+
 		// treat positive-z traveling rays first
 		for( int j = 0; j < I.n_polar_angles / 2; j++)
 		{
+			// start with all z stacked rays
 			int end_stacked = z_stacked;
 			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 			{
@@ -114,6 +119,7 @@ double transport_sweep( Params params, Input I )
 				}
 			}
 		}
+
 		// treat negative-z traveling rays next
 		for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
 		{
@@ -132,15 +138,20 @@ double transport_sweep( Params params, Input I )
 				{
 					// set flag for completeion of segment
 					bool seg_complete = false;
+					
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
 						double z = params.tracks[i][j][k].z_height
 							+ s * cos(params.tracks[i][j][k].p_angle);
-
+						
 						// check if still in same FSR (fine axial interval)
-						if( (int) ( params.tracks[i][j][k].z_height / fine_delta_z ) ==
-								(int) ( z / fine_delta_z ) )
+						// NOTE: a bit of trickery this time using the fact that 
+						// 2147483647 is the largest integer value
+						int val1 = 2147483647 - (int) (2147483647 - 
+								params.tracks[i][j][k].z_height / fine_delta_z);
+						int val2 = 2147483647 - (int) (2147483647 - z / fine_delta_z);
+						if( val1 == val2  )
 						{
 							seg_complete = true;
 							ds = s;
@@ -150,8 +161,7 @@ double transport_sweep( Params params, Input I )
 						else
 						{
 							// correct z
-							int interval = (int) (params.tracks[i][j][k].z_height
-									/ fine_delta_z);
+							int interval = val1 - 1;
 							z = fine_delta_z * (double) interval;
 
 							// calculate distance travelled in FSR (ds)
