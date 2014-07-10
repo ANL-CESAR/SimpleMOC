@@ -58,6 +58,7 @@ double transport_sweep( Params params, Input I )
 				{
 					// set flag for completeion of segment
 					bool seg_complete = false;
+
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
@@ -133,18 +134,26 @@ double transport_sweep( Params params, Input I )
 				// allocate varaible for distance traveled in an FSR
 				double ds;
 
-				// for( int k = 0; k < z_stacked; k++)
+				// loop over all z stacked rays to begin
 				for( int k = begin_stacked; k < z_stacked; k++)
 				{
 					// set flag for completeion of segment
 					bool seg_complete = false;
 					
+					//FIXME: debugging
+					int count = 0;
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
 						double z = params.tracks[i][j][k].z_height
 							+ s * cos(params.tracks[i][j][k].p_angle);
-						
+						//FIXME
+						count++;
+						if(count > 100){
+							printf("%s%f\n","z = ",params.tracks[i][j][k].z_height);
+							printf("%s%f\n","New z = ",z);
+							printf("%s%f\n","S = ",s);
+						}
 						// check if still in same FSR (fine axial interval)
 						// NOTE: a bit of trickery this time using the fact that 
 						// 2147483647 is the largest integer value
@@ -165,14 +174,14 @@ double transport_sweep( Params params, Input I )
 							z = fine_delta_z * (double) interval;
 
 							// calculate distance travelled in FSR (ds)
-							ds = ( params.tracks[i][j][k].z_height - z)
+							ds = ( z - params.tracks[i][j][k].z_height )
 							   	/ cos(params.tracks[i][j][k].p_angle);
 
 							// update track length remaining
 							s -= ds;
 
 							// check if out of bounds or track complete
-							if( s <= 0 || z <= 0 )
+							if( z <= 0 )
 							{
 								// mark segment as completed
 								seg_complete = true;
