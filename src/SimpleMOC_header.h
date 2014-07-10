@@ -100,6 +100,7 @@ double * generate_polar_angles( Input I );
 // utils.c
 double urand(void);
 double nrand(double mean, double sigma);
+double pairwise_sum(double * vector, long size);
 
 // source.c
 Source * initialize_sources( Input I, size_t * nbytes );
@@ -109,7 +110,7 @@ void free_sources( Input I, Source * sources );
 double transport_sweep( Params params, Input I );
 void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ); 
 void transfer_boundary_fluxes( Params params);
-void renormalize_flux( Params params, Input I );
+void add_source_to_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 
 // test.c

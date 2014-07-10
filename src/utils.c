@@ -25,3 +25,23 @@ double nrand(double mean, double sigma)
 	// shift random number to appropriate normal distribution and return
 	return x * sigma + mean;
 }
+
+// pairwise summation for long arrays
+// Note: should be templated, but this is C
+double pairwise_sum( double * vector, long size ){
+	double sum = 0;
+
+	// Base case: perform summation if size <= 16
+	if( size <= 16)
+		for( int i = 0; i < size; i++ )
+			sum += vector[i];
+
+	else
+	{
+		// otherwise, split
+		sum = pairwise_sum( &vector[0], size/2 ) +
+			pairwise_sum( &vector[size/2], size - size/2 );
+	}
+	
+	return sum;
+}

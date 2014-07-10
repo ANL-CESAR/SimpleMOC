@@ -124,8 +124,6 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 
 				// Allocate start and end flux arrays
 				// (Moved allocations out of loop so they are contiguous)
-				//tracks[i][j][k].start_flux = (double *) malloc( I.n_egroups * sizeof(double) );
-				//tracks[i][j][k].end_flux = (double *) malloc( I.n_egroups * sizeof(double) );
 				tracks[i][j][k].start_flux = &flux_space[flux_idx];
 				flux_idx += I.n_egroups;
 				tracks[i][j][k].end_flux = &flux_space[flux_idx];

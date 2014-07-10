@@ -20,7 +20,9 @@ double transport_sweep( Params params, Input I )
 	double fine_delta_z = I.height / (I.cai * I.fai);
 
 	// initialize fluxes in transport sweep
-	// TODO: optimize this: it is probably unnecessary
+	// TODO: optimize this: it is probably unnecessary depending on how we strcuture
+	// communication between nodes; it may be necessary to have this step followed
+	// by a barrier
 	for( int i = 0; i < ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
@@ -244,7 +246,7 @@ void transfer_boundary_fluxes( Params params)
 	return;
 }
 
-void renormalize_flux( Params params, Input I )
+void add_source_to_flux( Params params, Input I )
 {
 	// add source contribution to scalar flux in each FSR
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
@@ -263,17 +265,18 @@ void renormalize_flux( Params params, Input I )
 		}
 	}
 
-	// tally total fission rate
-	// TODO: change to pair-wise summation
-	double total_fission_rate = 0;
+	// tally total fission rate (pair-wise sum)
+	double * fission_rates = malloc( I.n_source_regions_per_node * sizeof(double) );
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
-		for( int k = 0; k < I.n_egroups; k++)
-		{
-			total_fission_rate += params.sources[i].flux[k] * params.sources[i].vol
-				* params.sources[i].XS[k][1];
-		}
+		Source src = params.sources[i];
+		double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
+		for( int g = 0; g < I.n_egroups; g++)
+			g_fisison_rates[g] = src.flux[g] * src.vol * src.XS[g][1];
+		fission_rates[i] = pairwise_sum( g_fission_rates, I.n_egroups );
 	}
+	double total_fission_rate = pairwise_sum(fission_rates, 
+			I.n_source_regions_per_node);
 
 	// normalize fluxes by fission reaction rate (TODO: Why by fission rate??)
 	double norm_factor = 1.0 / total_fission_rate;
@@ -281,7 +284,7 @@ void renormalize_flux( Params params, Input I )
 		for( int k = 0; k < I.n_egroups; k++)
 			params.sources[i].flux[k] *= norm_factor;
 
-	// NOTE: Normalize boundary fluxes by same factor as well for
+	// TODO: Normalize boundary fluxes by same factor as well for
 	// non-vacuum boundary conditions
 	return;
 }
@@ -298,44 +301,52 @@ double update_sources( Params params, Input I, double keff )
 	// calculate new source
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
+		Source src = params.sources[i];
+		
 		// allocate new source
 		double * new_source = (double * ) malloc(I.n_egroups * sizeof(double));
 
 		// calculate total fission source and scattering source
-		double fission_source = 0;
-		double scatter_source = 0;
+		double fission_source;
+		double scatter_source;
 
-		// TODO: change to pair-wise summantion
-		for( int k = 0; k < I.n_egroups; k++ )
+		// allocate arrays for summation
+		double * fission_rates = malloc(I.n_egroups * sizeof(double));
+		double * scatter_rates = malloc(I.n_egroups * sizeof(double));
+	
+		// compute total fission source
+		for( int g = 0; g < I.n_egroups; g++ )
+			fission_rates[g] = src.flux[g] * src.XS[g][1];
+		fission_source = pairwise_sum( fission_rates, (long) I.n_egroups);
+		free(fission_rates);
+
+		// normalize fission source by multiplication factor
+		fission_source *= inverse_k;
+
+		// compute scattering and new total source for each group
+		for( int g = 0; g < I.n_egroups; g++ )
 		{
-			scatter_source = 0;
-			for( int k2 = 0; k2 < I.n_egroups; k2++ )
+			double * scatter_vector = src.scattering_matrix[g];
+			for( int g2 = 0; g2 < I.n_egroups; g2++ )
 			{
-				// compute fission source if not computed yet
-				if( k == 0)
-					fission_source += params.sources[i].flux[k2] *
-						params.sources[i].XS[k2][1];
-
-				// compute scatter source
-				// NOTE: this means scatter from k2 -> k
-				scatter_source += params.sources[i].scattering_matrix[k][k2] * 
-					params.sources[i].flux[k2];
+				// compute scatter source originating from g2 -> g
+				scatter_rates[g2] = src.scattering_matrix[g][g2] * 
+					src.flux[g2];
 			}
-
-			// normalize fission source by multiplication factor if needed
-			if ( k == 0 )
-				fission_source *= inverse_k;
+			scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
 
 			// compuate new total source
-			double chi = params.sources[i].XS[k][2];
-			new_source[k] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+			double chi = src.XS[g][2];
+			new_source[g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
 		}
 
-		// assign new source to the actual source (changing pointers)
-		for( int k = 0; k < I.n_egroups; k++ )
-			params.sources[i].source[k] = new_source[k];
+		free(scatter_rates);
 
-		// TODO: free old memory if needed
+		// assign new source to the actual source (changing pointers)
+		for( int g = 0; g < I.n_egroups; g++ )
+			src.source[g] = new_source[g];
+
+		free(new_source);
 
 	}
 
