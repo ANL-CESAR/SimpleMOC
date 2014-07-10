@@ -43,6 +43,7 @@ Params build_tracks( Input I )
 	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 	printf("Initializing 3D tracks...\n");
 	params.tracks = generate_tracks(I, params.tracks_2D, &nbytes);
+	params.polar_angles = generate_polar_angles( I ); 
 	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 	printf("Initializing flat source regions...\n");
 	params.sources = initialize_sources(I, &nbytes); 

@@ -70,7 +70,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 {
 	// Determine total number of tracks
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	int z_stacked = (int) (I.height / I.axial_z_sep);
+	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
 	long ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
 
 	// Allocate space for tracks (3D)
@@ -112,13 +112,12 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 		{
 			for( int k = 0; k < z_stacked; k++ )
 			{
-				// TODO: much of this information is redundant
-				tracks[i][j][k].track2D_id = i;
-				tracks[i][j][k].p_angle = M_PI * (j + 0.5) / I.n_polar_angles;
-				tracks[i][j][k].z_height = I.height / I.decomp_assemblies_ax *
-					k / (z_stacked - 1.0);
-				// NOTE: for efficiency, bottom z heights should only have upward
-				// directed polar angles ... similar for top
+				// bottom z heights should only have upward directed polar angles
+				// similarly top should only have downward directed polar angles
+				if( j < I.n_polar_angles/2 )
+					tracks[i][j][k].z_height = I.axial_z_sep * k;
+				else
+					tracks[i][j][k].z_height = I.axial_z_sep * ( k + 1 );
 				
 				// set polar weight, NOTE: this is the same for same polar angle
 				tracks[i][j][k].p_weight = urand();
@@ -143,9 +142,17 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 
 	return tracks;
 }
-				
 
 void free_tracks( Track *** tracks )
 {
 	free(tracks);
+}
+
+// assign polar angles
+double * generate_polar_angles( Input I )
+{
+	double * polar_angles = (double *) malloc( I.n_polar_angles * sizeof(double) );
+	for( int i = 0; i < I.n_polar_angles; i++)
+		polar_angles[i] = M_PI * (i + 0.5) / I.n_polar_angles;
+	return polar_angles;
 }

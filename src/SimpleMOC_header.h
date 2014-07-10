@@ -51,8 +51,6 @@ typedef struct{
 
 // Track Structure
 typedef struct{
-	long track2D_id;           // Link into 2D geometry Track ID
-	double p_angle;            // Polar Angle
 	double p_weight;           // Polar Quadrature Weight     (rand)
 	double z_height;           // Z-height
 	double * start_flux;       // Starting (input) flux array received from inputting neighbor
@@ -75,7 +73,8 @@ typedef struct{
 typedef struct{
 	Track2D * tracks_2D;
 	Track *** tracks;
-	Source * sources; 
+	Source * sources;
+   	double * polar_angles;	
 } Params;
 
 // init.c
@@ -96,6 +95,7 @@ void free_2D_tracks( Track2D * tracks );
 Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );
+double * generate_polar_angles( Input I );
 
 // utils.c
 double urand(void);
@@ -108,6 +108,7 @@ void free_sources( Input I, Source * sources );
 // solver.c
 double transport_sweep( Params params, Input I );
 void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ); 
+void transfer_boundary_fluxes( Params params);
 void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 

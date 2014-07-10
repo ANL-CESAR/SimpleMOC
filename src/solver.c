@@ -12,7 +12,7 @@ double transport_sweep( Params params, Input I )
 
 	// Determine total number of tracks
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	int z_stacked = (int) ( I.height / I.axial_z_sep );
+	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
 	long ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
 
 	// calculate the height of a node's domain and of each FSR
@@ -48,7 +48,7 @@ double transport_sweep( Params params, Input I )
 			{
 				// calculate distance traveled in cell if segment completed
 				double s = params.tracks_2D[i].segments[n].length /
-					sin(params.tracks[i][j][0].p_angle);
+					sin(params.polar_angles[j]);
 
 				// allocate varaible for distance traveled in an FSR
 				double ds;
@@ -63,7 +63,7 @@ double transport_sweep( Params params, Input I )
 					{
 						// calculate new height based on s (distance traveled in FSR)
 						double z = params.tracks[i][j][k].z_height
-							+ s * cos(params.tracks[i][j][k].p_angle);
+							+ s * cos(params.polar_angles[j]);
 
 						// check if still in same FSR (fine axial interval)
 						if( (int) ( params.tracks[i][j][k].z_height / fine_delta_z ) ==
@@ -83,7 +83,7 @@ double transport_sweep( Params params, Input I )
 
 							// calculate distance travelled in FSR (ds)
 							ds = (z - params.tracks[i][j][k].z_height)
-							   	/ cos(params.tracks[i][j][k].p_angle);
+							   	/ cos(params.polar_angles[j]);
 
 							// update track length remaining
 							s -= ds;
@@ -98,15 +98,13 @@ double transport_sweep( Params params, Input I )
 								end_stacked--;
 
 								// reset z height (calculate from k)
-								params.tracks[i][j][k].z_height = I.height / 
-									I.decomp_assemblies_ax * k / (z_stacked - 1.0);
+								params.tracks[i][j][k].z_height = I.axial_z_sep * k;
 							}
 						}
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 )
-							params.tracks[i][j][k].z_height = I.height / 
-								I.decomp_assemblies_ax * k / (z_stacked - 1.0);
+							params.tracks[i][j][k].z_height = I.axial_z_sep * k;
 						else
 							params.tracks[i][j][k].z_height = z;
 
@@ -129,7 +127,7 @@ double transport_sweep( Params params, Input I )
 			{
 				// calculate distance traveled in cell if segment completed
 				double s = params.tracks_2D[i].segments[n].length /
-					sin(params.tracks[i][j][0].p_angle);
+					sin(params.polar_angles[j]);
 
 				// allocate varaible for distance traveled in an FSR
 				double ds;
@@ -144,7 +142,7 @@ double transport_sweep( Params params, Input I )
 					{
 						// calculate new height based on s (distance traveled in FSR)
 						double z = params.tracks[i][j][k].z_height
-							+ s * cos(params.tracks[i][j][k].p_angle);
+							+ s * cos(params.polar_angles[j]);
 						
 						// check if still in same FSR (fine axial interval)
 						// NOTE: a bit of trickery this time using the fact that 
@@ -167,7 +165,7 @@ double transport_sweep( Params params, Input I )
 
 							// calculate distance travelled in FSR (ds)
 							ds = ( z - params.tracks[i][j][k].z_height )
-							   	/ cos(params.tracks[i][j][k].p_angle);
+							   	/ cos(params.polar_angles[j]);
 
 							// update track length remaining
 							s -= ds;
@@ -182,15 +180,13 @@ double transport_sweep( Params params, Input I )
 								begin_stacked++;
 
 								// reset z height (calculate from k)
-								params.tracks[i][j][k].z_height = I.height / 
-									I.decomp_assemblies_ax * k / (z_stacked - 1.0);
+								params.tracks[i][j][k].z_height = I.axial_z_sep * (k+1);
 							}
 						}
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 )
-							params.tracks[i][j][k].z_height = I.height / 
-								I.decomp_assemblies_ax * k / (z_stacked - 1.0);
+							params.tracks[i][j][k].z_height = I.axial_z_sep * (k+1); 
 						else
 							params.tracks[i][j][k].z_height = z;
 
@@ -205,6 +201,8 @@ double transport_sweep( Params params, Input I )
 			}
 		}
 	}
+
+	transfer_boundary_fluxes(params);
 
 	// TODO: calculate a real keff, but maybe this can be disregarded?
 	return 0;
@@ -241,6 +239,10 @@ void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups )
 
 }	
 
+void transfer_boundary_fluxes( Params params)
+{
+	return;
+}
 
 void renormalize_flux( Params params, Input I )
 {
