@@ -34,7 +34,6 @@ double transport_sweep( Params params, Input I )
 
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
 	// polar angles, and z stacked rays)
-	bool new_track;
 	for (long i = 0; i < ntracks_2D; i++)
 	{
 		// print progress
@@ -44,13 +43,14 @@ double transport_sweep( Params params, Input I )
 		// treat positive-z traveling rays first
 		for( int j = 0; j < I.n_polar_angles / 2; j++)
 		{
+			double p_angle = params.polar_angles[j];
+
 			// start with all z stacked rays
 			int end_stacked = z_stacked;
 			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 			{
 				// calculate distance traveled in cell if segment completed
-				double s = params.tracks_2D[i].segments[n].length /
-					sin(params.polar_angles[j]);
+				double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
 
 				// allocate varaible for distance traveled in an FSR
 				double ds;
@@ -58,17 +58,19 @@ double transport_sweep( Params params, Input I )
 				// loop over remaining z-stacked rays
 				for( int k = 0; k < end_stacked; k++)
 				{
+					// select current track
+					Track * track = &params.tracks[i][j][k];
+
 					// set flag for completeion of segment
 					bool seg_complete = false;
 
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
-						double z = params.tracks[i][j][k].z_height
-							+ s * cos(params.polar_angles[j]);
+						double z = track->z_height + s * cos(p_angle);
 
 						// check if still in same FSR (fine axial interval)
-						if( (int) ( params.tracks[i][j][k].z_height / fine_delta_z ) ==
+						if( (int) ( track->z_height / fine_delta_z ) == 
 								(int) ( z / fine_delta_z ) )
 						{
 							seg_complete = true;
@@ -79,13 +81,11 @@ double transport_sweep( Params params, Input I )
 						else
 						{
 							// correct z
-							int interval = (int) (params.tracks[i][j][k].z_height
-									/ fine_delta_z);
+							int interval = (int) (track->z_height / fine_delta_z);
 							z = fine_delta_z * (double) (interval + 1);
 
 							// calculate distance travelled in FSR (ds)
-							ds = (z - params.tracks[i][j][k].z_height)
-							   	/ cos(params.polar_angles[j]);
+							ds = (z - track->z_height) / cos(p_angle);
 
 							// update track length remaining
 							s -= ds;
@@ -100,22 +100,21 @@ double transport_sweep( Params params, Input I )
 								end_stacked--;
 
 								// reset z height (calculate from k)
-								params.tracks[i][j][k].z_height = I.axial_z_sep * k;
+								track->z_height = I.axial_z_sep * k;
 							}
 						}
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 )
-							params.tracks[i][j][k].z_height = I.axial_z_sep * k;
+							track->z_height = I.axial_z_sep * k;
 						else
-							params.tracks[i][j][k].z_height = z;
+							track->z_height = z;
 
 						// pick a random FSR (cache miss expected)
 						long FSR_id = rand() % I.n_source_regions_per_node;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( &params.tracks[i][j][k], &params.sources[FSR_id]
-								, ds, I.n_egroups);
+						attenuate_fluxes( track, &params.sources[FSR_id], ds, I.n_egroups);
 					}
 				}
 			}
@@ -124,12 +123,13 @@ double transport_sweep( Params params, Input I )
 		// treat negative-z traveling rays next
 		for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
 		{
+			double p_angle = params.polar_angles[j];
 			int begin_stacked = 0;
+
 			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 			{
 				// calculate distance traveled in cell if segment completed
-				double s = params.tracks_2D[i].segments[n].length /
-					sin(params.polar_angles[j]);
+				double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
 
 				// allocate varaible for distance traveled in an FSR
 				double ds;
@@ -137,20 +137,22 @@ double transport_sweep( Params params, Input I )
 				// loop over all z stacked rays to begin
 				for( int k = begin_stacked; k < z_stacked; k++)
 				{
+					// select current track
+					Track * track = &params.tracks[i][j][k];
+
 					// set flag for completeion of segment
 					bool seg_complete = false;
 					
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
-						double z = params.tracks[i][j][k].z_height
-							+ s * cos(params.polar_angles[j]);
+						double z = track->z_height + s * cos(p_angle);
 						
 						// check if still in same FSR (fine axial interval)
 						// NOTE: a bit of trickery this time using the fact that 
 						// 2147483647 is the largest integer value
-						int val1 = 2147483647 - (int) (2147483647 - 
-								params.tracks[i][j][k].z_height / fine_delta_z);
+						int val1 = 2147483647 - (int) (2147483647 - track->z_height
+							   	/ fine_delta_z);
 						int val2 = 2147483647 - (int) (2147483647 - z / fine_delta_z);
 						if( val1 == val2  )
 						{
@@ -166,8 +168,7 @@ double transport_sweep( Params params, Input I )
 							z = fine_delta_z * (double) interval;
 
 							// calculate distance travelled in FSR (ds)
-							ds = ( z - params.tracks[i][j][k].z_height )
-							   	/ cos(params.polar_angles[j]);
+							ds = ( z - track->z_height )	/ cos(p_angle);
 
 							// update track length remaining
 							s -= ds;
@@ -182,22 +183,21 @@ double transport_sweep( Params params, Input I )
 								begin_stacked++;
 
 								// reset z height (calculate from k)
-								params.tracks[i][j][k].z_height = I.axial_z_sep * (k+1);
+								track->z_height = I.axial_z_sep * (k+1);
 							}
 						}
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 )
-							params.tracks[i][j][k].z_height = I.axial_z_sep * (k+1); 
+							track->z_height = I.axial_z_sep * (k+1); 
 						else
-							params.tracks[i][j][k].z_height = z;
+							track->z_height = z;
 
 						// pick a random FSR (cache miss expected)
 						long FSR_id = rand() % I.n_source_regions_per_node;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( &params.tracks[i][j][k] , &params.sources[FSR_id]
-								, ds, I.n_egroups);
+						attenuate_fluxes( track , &params.sources[FSR_id], ds, I.n_egroups);
 					}
 				}
 			}
@@ -251,17 +251,18 @@ void add_source_to_flux( Params params, Input I )
 	// add source contribution to scalar flux in each FSR
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
+		Source src = params.sources[i];
 		for( int k = 0; k < I.n_egroups; k++)
 		{
-			double sigT = params.sources[i].XS[k][0];
+			double sigT = src.XS[k][0];
 
 			// TODO: determine why this line is here
-			params.sources[i].flux[k] *= 0.5;
+			src.flux[k] *= 0.5;
 
 			// TODO: Use reduced source for computational efficiency
 			// ALSO, maybe store 1/volume instead of volume
-			params.sources[i].flux[k] = 4 * M_PI * params.sources[i].source[k]
-				/ sigT + params.sources[i].flux[k] / (sigT * params.sources[i].vol);
+			src.flux[k] = (4 * M_PI * src.source[k]/ sigT + src.flux[k] / src.vol )
+			   	/ sigT;
 		}
 	}
 
