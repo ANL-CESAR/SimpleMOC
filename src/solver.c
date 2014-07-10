@@ -140,20 +140,12 @@ double transport_sweep( Params params, Input I )
 					// set flag for completeion of segment
 					bool seg_complete = false;
 					
-					//FIXME: debugging
-					int count = 0;
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
 						double z = params.tracks[i][j][k].z_height
 							+ s * cos(params.tracks[i][j][k].p_angle);
-						//FIXME
-						count++;
-						if(count > 100){
-							printf("%s%f\n","z = ",params.tracks[i][j][k].z_height);
-							printf("%s%f\n","New z = ",z);
-							printf("%s%f\n","S = ",s);
-						}
+						
 						// check if still in same FSR (fine axial interval)
 						// NOTE: a bit of trickery this time using the fact that 
 						// 2147483647 is the largest integer value
