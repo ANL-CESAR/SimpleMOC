@@ -26,9 +26,9 @@ double transport_sweep( Params params, Input I )
 	for( int i = 0; i < ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
+				Track * track = params.tracks[i][j][k];
 				for( int g = 0; g < I.n_egroups; g++)
-					params.tracks[i][j][k].psi[g] = 
-						params.tracks[i][j][k].start_flux[g];
+					track->psi[g] = track->start_flux[g];
 	
 	// Start transport sweep
 
@@ -114,7 +114,7 @@ double transport_sweep( Params params, Input I )
 						long FSR_id = rand() % I.n_source_regions_per_node;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track, &params.sources[FSR_id], ds, I.n_egroups);
+						attenuate_fluxes( track, &params.sources[FSR_id], ds, I.n_egroups );
 					}
 				}
 			}
@@ -197,7 +197,7 @@ double transport_sweep( Params params, Input I )
 						long FSR_id = rand() % I.n_source_regions_per_node;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track , &params.sources[FSR_id], ds, I.n_egroups);
+						attenuate_fluxes( track , &params.sources[FSR_id], ds, I.n_egroups );
 					}
 				}
 			}
