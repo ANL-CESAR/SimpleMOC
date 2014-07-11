@@ -60,10 +60,10 @@ typedef struct{
 	double * psi;			   // current angular flux along track
 } Track;
 
-// Flat Source Region Structure
+// Source Region Structure
 typedef struct{
-	double * flux;
-	double * source;
+	double ** fine_flux;
+	double ** source_params;
 	double vol;
 	double ** XS;
 	double ** scattering_matrix;

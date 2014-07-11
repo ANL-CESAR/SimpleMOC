@@ -6,8 +6,8 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	Source * sources = (Source *) malloc( I.n_source_regions_per_node * sizeof(Source) );
 	*nbytes += I.n_source_regions_per_node * sizeof(Source);
 
-	// determine number of cross section regions
-	long n_xs_regions = I.n_source_regions_per_node / (8 * I.fai);
+	// determine number of cross section and coarse axial regions
+	long n_xs_regions = I.n_source_regions_per_node / 8;
 	
 	// Allocate scattering matrix matrix ptrs
 	double *** s_matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
@@ -58,9 +58,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	*nbytes += n_xs_regions * I.n_egroups * 3 * sizeof(double);
 
 	// stitch allocation ptrs together for XS data
-	// There is a problem here. There are only n_xs_regions * I.n_egroups elements in XS_arrays
 	for( long i = 0; i < n_xs_regions; i++)
-		//XS[i] = &XS_arrays[i * n_xs_regions * I.n_egroups];
 		XS[i] = &XS_arrays[i * I.n_egroups];
 
 	for( long i = 0; i < n_xs_regions; i++)
@@ -73,21 +71,75 @@ Source * initialize_sources( Input I, size_t * nbytes )
 			for( int k = 0; k < 3; k++)
 				XS[i][j][k] = urand();
 
-	// Allocate & Initialize Fluxes
-	printf("attempting fluxes...\n"); 
-	double * Flux = (double *) malloc( I.n_source_regions_per_node * I.n_egroups 
-			* sizeof(double));
-	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double);
-	for( long i = 0; i < I.n_source_regions_per_node * I.n_egroups; i++ )
-		Flux[i] = 1.0;
+	/////////////////////////////////////////////////////////////////////////////////
 
-	// Allocate & Inititalize "source" values
-	double * Source = (double *) malloc( I.n_source_regions_per_node * I.n_egroups
-			* sizeof(double));
-	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double);
-	for( long i = 0; i < I.n_source_regions_per_node; i++ )
-		Source[i] = urand();
-	
+	printf("Beginning Source Parameter Allocation...\n");
+
+	// Allocate space for source parameters (quadratic axially)
+	double *** sourceParams = (double ***) malloc( I.n_source_regions_per_node
+		   	* sizeof(double **) );
+	*nbytes += I.n_source_regions_per_node * sizeof(double **);
+
+	// Allocate space for array pointers to parameters
+	double ** sourceParamPtrs = (double **) malloc ( I.n_source_regions_per_node
+		   	* I.n_egroups * sizeof(double *) );
+	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double *);
+
+	// Allocate space for parameter data
+	double * sourceParamData = (double *) malloc( I.n_source_regions_per_node
+		   	* I.n_egroups * 3 * sizeof(double) );
+	*nbytes += I.n_source_regions_per_node * I.n_egroups * 3 * sizeof(double);
+
+	// stitch allocation ptrs together for source parameter data
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+		sourceParams[i] = &sourceParamPtrs[i * I.n_egroups];
+
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+		for(long j = 0; j < I.n_egroups; j++)
+			XS[i][j] = &SourceParamData[i * I.n_egroups * 3 + j * 3];
+
+	// Initialize source parameters
+	for( long i = 0; i < I.source_regions_per_node; i++)
+		for( int j = 0; j < I.n_egroups; j++)
+			for( int k = 0; k < 3; k++)
+				sourceParams[i][j][k] = urand();
+
+	////////////////////////////////////////////////////////////////////////////////////
+
+	printf("Beginning Fine Flux Allocation...\n");
+
+	// Allocate space for source parameters (quadratic axially)
+	double *** fineFlux = (double ***) malloc( I.n_source_regions_per_node
+		   	* sizeof(double **) );
+	*nbytes += I.n_source_regions_per_node * sizeof(double **);
+
+	// Allocate space for array pointers to parameters
+	double ** fineFluxPtrs = (double **) malloc ( I.n_source_regions_per_node
+		   	* I.fai * sizeof(double *) );
+	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(double *);
+
+	// Allocate space for parameter data
+	double * fineFluxData = (double *) malloc( I.n_source_regions_per_node
+		   	* I.fai * I.n_egroups * sizeof(double) );
+	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(double);
+
+	// stitch allocation ptrs together for source parameter data
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+		fineFlux[i] = &fineFluxPtrs[i * I.fai];
+
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+		for(long j = 0; j < I.n_egroups; j++)
+			fineFlux[i][j] = &fineFluxData[i * I.n_egroups * I.fai + j
+			   	* I.n_egroups];
+
+	// Initialize source parameters
+	for( long i = 0; i < I.source_regions_per_node; i++)
+		for( int j = 0; j < I.fai; j++)
+			for( int k = 0; k < I.n_egroups; k++)
+				fineFlux[i][j][k] = 0;
+
+	////////////////////////////////////////////////////////////////////////////////////
+
 	// Assign to source regions
 	for( long i = 0; i < I.n_source_regions_per_node; i++ )
 	{
@@ -99,8 +151,8 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 		sources[i].scattering_matrix = s_matrices[idx];
 		sources[i].XS = XS[idx];
-		sources[i].flux = &Flux[i * I.n_egroups];
-		sources[i].source = &Source[i * I.n_egroups]; 
+		sources[i].fine_flux = fineFlux[i];
+		sources[i].souce_params = sourceParams[i]; 
 
 		// initialize FSR volume
 		sources[i].vol = urand();
