@@ -96,7 +96,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for(long j = 0; j < I.n_egroups; j++)
-			XS[i][j] = &SourceParamData[i * I.n_egroups * 3 + j * 3];
+			sourceParams[i][j] = &SourceParamData[i * I.n_egroups * 3 + j * 3];
 
 	// Initialize source parameters
 	for( long i = 0; i < I.source_regions_per_node; i++)

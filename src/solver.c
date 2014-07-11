@@ -168,7 +168,7 @@ double transport_sweep( Params params, Input I )
 							z = fine_delta_z * (double) interval;
 
 							// calculate distance travelled in FSR (ds)
-							ds = ( z - track->z_height )	/ cos(p_angle);
+							ds = ( z - track->z_height ) / cos(p_angle);
 
 							// update track length remaining
 							s -= ds;
@@ -246,6 +246,7 @@ void transfer_boundary_fluxes( Params params)
 	return;
 }
 
+// This function might now be obsolete
 void add_source_to_flux( Params params, Input I )
 {
 	// add source contribution to scalar flux in each FSR
