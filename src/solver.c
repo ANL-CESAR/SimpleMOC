@@ -210,6 +210,7 @@ double transport_sweep( Params params, Input I )
 	return 0;
 }
 
+// FIXME: Change to obtaining quadratic parameters
 void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ) 
 {
 	// compute weight (azimuthal * polar)
@@ -241,6 +242,7 @@ void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups )
 
 }	
 
+// Transfer information between nodes (angular fluxes)
 void transfer_boundary_fluxes( Params params)
 {
 	return;
@@ -291,7 +293,8 @@ void add_source_to_flux( Params params, Input I )
 	return;
 }
 
-
+// Updates sources for next iteration
+// FIXME: change to quadratic source
 double update_sources( Params params, Input I, double keff )
 {
 	// source residual
