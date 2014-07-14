@@ -26,10 +26,12 @@ double transport_sweep( Params params, Input I )
 	for( int i = 0; i < ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
+			{
 				Track * track = params.tracks[i][j][k];
 				for( int g = 0; g < I.n_egroups; g++)
 					track->psi[g] = track->start_flux[g];
-	
+			}
+
 	// Start transport sweep
 
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
@@ -142,18 +144,18 @@ double transport_sweep( Params params, Input I )
 
 					// set flag for completeion of segment
 					bool seg_complete = false;
-					
+
 					while( !seg_complete )
 					{
 						// calculate new height based on s (distance traveled in FSR)
 						double z = track->z_height + s * cos(p_angle);
-						
+
 						// check if still in same FSR (fine axial interval)
 						// NOTE: a bit of trickery this time using the fact that 
 						// 2147483647 is the largest integer value
-						int val1 = 2147483647 - (int) (2147483647 - track->z_height
-							   	/ fine_delta_z);
-						int val2 = 2147483647 - (int) (2147483647 - z / fine_delta_z);
+						int val1 = INT_MAX - (int) (INT_MAX - track->z_height
+								/ fine_delta_z);
+						int val2 = INT_MAX - (int) (INT_MAX - z / fine_delta_z);
 						if( val1 == val2  )
 						{
 							seg_complete = true;
@@ -231,11 +233,11 @@ void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups )
 
 		// calculate change in angular flux
 		double delta_psi = (track->psi[g] - FSR->source[g]/sigT) *
-					(1.0 - exponential);
+			(1.0 - exponential);
 
 		// add contribution to new source flux
 		FSR->flux[g] += delta_psi * weight;
-					
+
 		// update angular flux
 		track->psi[g] -= delta_psi;
 	}
@@ -265,7 +267,7 @@ void add_source_to_flux( Params params, Input I )
 			// TODO: Use reduced source for computational efficiency
 			// ALSO, maybe store 1/volume instead of volume
 			src.flux[k] = (4 * M_PI * src.source[k]/ sigT + src.flux[k] / src.vol )
-			   	/ sigT;
+				/ sigT;
 		}
 	}
 
@@ -307,7 +309,7 @@ double update_sources( Params params, Input I, double keff )
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source src = params.sources[i];
-		
+
 		// allocate new source
 		double * new_source = (double * ) malloc(I.n_egroups * sizeof(double));
 
@@ -318,7 +320,7 @@ double update_sources( Params params, Input I, double keff )
 		// allocate arrays for summation
 		double * fission_rates = malloc(I.n_egroups * sizeof(double));
 		double * scatter_rates = malloc(I.n_egroups * sizeof(double));
-	
+
 		// compute total fission source
 		for( int g = 0; g < I.n_egroups; g++ )
 			fission_rates[g] = src.flux[g] * src.XS[g][1];
