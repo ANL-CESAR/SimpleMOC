@@ -96,10 +96,10 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for(long j = 0; j < I.n_egroups; j++)
-			sourceParams[i][j] = &SourceParamData[i * I.n_egroups * 3 + j * 3];
+			sourceParams[i][j] = &sourceParamData[i * I.n_egroups * 3 + j * 3];
 
 	// Initialize source parameters
-	for( long i = 0; i < I.source_regions_per_node; i++)
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for( int j = 0; j < I.n_egroups; j++)
 			for( int k = 0; k < 3; k++)
 				sourceParams[i][j][k] = urand();
@@ -133,7 +133,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 			   	* I.n_egroups];
 
 	// Initialize source parameters
-	for( long i = 0; i < I.source_regions_per_node; i++)
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for( int j = 0; j < I.fai; j++)
 			for( int k = 0; k < I.n_egroups; k++)
 				fineFlux[i][j][k] = 0;
@@ -152,7 +152,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 		sources[i].scattering_matrix = s_matrices[idx];
 		sources[i].XS = XS[idx];
 		sources[i].fine_flux = fineFlux[i];
-		sources[i].souce_params = sourceParams[i]; 
+		sources[i].source_params = sourceParams[i]; 
 
 		// initialize FSR volume
 		sources[i].vol = urand();
@@ -170,10 +170,12 @@ void free_sources( Input I, Source * sources )
 	// Free XS's
 	free( sources[0].XS );
 	// Free Flux's
-	free( sources[0].flux );
+	free( sources[0].fine_flux[0] );
+	free( sources[0].fine_flux );
 	// Free scattering matrices
 	free( sources[0].scattering_matrix[0] );
 	free( sources[0].scattering_matrix );
 	// Free source values
-	free( sources[0].source );
+	free( sources[0].source_params[0] );
+	free( sources[0].source_params );
 }
