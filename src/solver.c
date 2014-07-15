@@ -27,7 +27,7 @@ double transport_sweep( Params params, Input I )
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
 			{
-				Track * track = params.tracks[i][j][k];
+				Track * track = &params.tracks[i][j][k];
 				for( int g = 0; g < I.n_egroups; g++)
 					track->psi[g] = track->start_flux[g];
 			}
@@ -46,6 +46,7 @@ double transport_sweep( Params params, Input I )
 		for( int j = 0; j < I.n_polar_angles / 2; j++)
 		{
 			double p_angle = params.polar_angles[j];
+			double mu = cos(p_angle);
 
 			// start with all z stacked rays
 			int end_stacked = z_stacked;
@@ -113,10 +114,12 @@ double transport_sweep( Params params, Input I )
 							track->z_height = z;
 
 						// pick a random FSR (cache miss expected)
-						long FSR_id = rand() % I.n_source_regions_per_node;
+						long QSR_id = rand() % I.n_source_regions_per_node;
+						int fine_id = rand() % I.fai;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track, &params.sources[FSR_id], ds, I.n_egroups );
+						attenuate_fluxes( track, &params.sources[QSR_id], fine_id, 
+								ds, I.n_egroups, mu );
 					}
 				}
 			}
@@ -126,6 +129,7 @@ double transport_sweep( Params params, Input I )
 		for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
 		{
 			double p_angle = params.polar_angles[j];
+			double mu = cos(p_angle);
 			int begin_stacked = 0;
 
 			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
@@ -197,9 +201,11 @@ double transport_sweep( Params params, Input I )
 
 						// pick a random FSR (cache miss expected)
 						long FSR_id = rand() % I.n_source_regions_per_node;
+						int fine_id = rand() % I.fai;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track , &params.sources[FSR_id], ds, I.n_egroups );
+						attenuate_fluxes( track , &params.sources[FSR_id], fine_id,
+								ds, I.n_egroups, mu );
 					}
 				}
 			}
@@ -213,35 +219,49 @@ double transport_sweep( Params params, Input I )
 }
 
 // FIXME: Change to obtaining quadratic parameters
-void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ) 
+void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int groups, double mu ) 
 {
 	// compute weight (azimuthal * polar)
-	// TODO: add track weight (area), also add azimuthal (tracks_2D[i].az_weight)
+	// TODO: add track weight (area), also add azimuthal 
+	// (tracks_2D[i].az_weight)
 	double weight = track->p_weight;
+	double mu2 = mu * mu;
+
+	// load fine source region flux vector
+	double * FSR_flux = QSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
 	for( int g = 0; g < groups; g++)
 	{
-		// load XS data
-		double sigT = FSR->XS[g][0];
-		double nuSigF = FSR->XS[g][1];
-		double chi = FSR->XS[g][2];
+		// load total cross section
+		double sigT = QSR->XS[g][0];
+
+		// load source components
+		double * sourceParams = QSR->source_params[g];
+		double q0 = sourceParams[0];
+		double q1 = sourceParams[1];
+		double q2 = sourceParams[2];
 
 		// calculate exponential
-		// TODO: Maybe compute (1 - exp) ?? (OpenMOC), also use table lookup
-		double exponential = exp( - sigT * ds );
-
-		// calculate change in angular flux
-		double delta_psi = (track->psi[g] - FSR->source[g]/sigT) *
-			(1.0 - exponential);
+		// TODO: Compute (1 - exp) {OpenMOC} using table lookup
+		double expVal = 1.0 - exp( - sigT * ds );
 
 		// add contribution to new source flux
-		FSR->flux[g] += delta_psi * weight;
+		double tau = sigT * ds;
+		double sigT2 = sigT * sigT;
+		double flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
+				/ sigT2
+				+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
+				/ (sigT * sigT2)
+				+ q2 * mu2 * (tau * (tau * (tau - 3) + 6) - 6 * expVal)
+			   / (3 * sigT2 * sigT2);
+		FSR_flux[g] += weight * flux_integral;
 
 		// update angular flux
-		track->psi[g] -= delta_psi;
+		track->psi[g] = track->psi[g] * (1.0 - expVal) + q0 * expVal / sigT
+				+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
+				(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
 	}
-
 }	
 
 // Transfer information between nodes (angular fluxes)
@@ -250,45 +270,43 @@ void transfer_boundary_fluxes( Params params)
 	return;
 }
 
-// This function might now be obsolete
-void add_source_to_flux( Params params, Input I )
+// renormalize flux for next transport sweep iteration
+void renormalize_flux( Params params, Input I )
 {
-	// add source contribution to scalar flux in each FSR
-	for( int i = 0; i < I.n_source_regions_per_node; i++)
-	{
-		Source src = params.sources[i];
-		for( int k = 0; k < I.n_egroups; k++)
-		{
-			double sigT = src.XS[k][0];
-
-			// TODO: determine why this line is here
-			src.flux[k] *= 0.5;
-
-			// TODO: Use reduced source for computational efficiency
-			// ALSO, maybe store 1/volume instead of volume
-			src.flux[k] = (4 * M_PI * src.source[k]/ sigT + src.flux[k] / src.vol )
-				/ sigT;
-		}
-	}
-
 	// tally total fission rate (pair-wise sum)
 	double * fission_rates = malloc( I.n_source_regions_per_node * sizeof(double) );
+	double * fine_fission_rates = malloc( I.fai * sizeof(double) );
+	double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
+
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source src = params.sources[i];
-		double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
-		for( int g = 0; g < I.n_egroups; g++)
-			g_fission_rates[g] = src.flux[g] * src.vol * src.XS[g][1];
-		fission_rates[i] = pairwise_sum( g_fission_rates, I.n_egroups );
+		for( int j = 0; j < I.fai; j++)
+		{
+			for( int g = 0; g < I.n_egroups; g++)
+				g_fission_rates[g] = src.fine_flux[j][g] * src.vol * src.XS[g][1];
+			fine_fission_rates[j] = pairwise_sum( g_fission_rates, I.n_egroups );
+		}
+		fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
 	}
 	double total_fission_rate = pairwise_sum(fission_rates, 
 			I.n_source_regions_per_node);
 
-	// normalize fluxes by fission reaction rate (TODO: Why by fission rate??)
+	// free allocated memory
+	free(fission_rates);
+	free(fine_fission_rates);
+	free(g_fission_rates);
+
+	// normalize fluxes by fission reaction rate
 	double norm_factor = 1.0 / total_fission_rate;
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
-		for( int k = 0; k < I.n_egroups; k++)
-			params.sources[i].flux[k] *= norm_factor;
+	{
+		Source * src = &params.sources[i];
+		double adjust = norm_factor * 4 * M_PI * I.fai / src->vol;
+		for( int k = 0; k < I.fai; k++)
+			for( int g = 0; g < I.n_egroups; g++)
+				src->fine_flux[k][g] *= adjust;
+	}
 
 	// TODO: Normalize boundary fluxes by same factor as well for
 	// non-vacuum boundary conditions
@@ -297,6 +315,8 @@ void add_source_to_flux( Params params, Input I )
 
 // Updates sources for next iteration
 // FIXME: change to quadratic source
+// TODO: determine if this is even needed
+/*
 double update_sources( Params params, Input I, double keff )
 {
 	// source residual
@@ -363,3 +383,4 @@ double update_sources( Params params, Input I, double keff )
 	residual = 0;
 	return residual;
 }
+*/

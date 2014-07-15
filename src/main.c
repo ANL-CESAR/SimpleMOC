@@ -17,8 +17,9 @@ int main( int argc, char * argv[] )
 	for( int i = 0; i < num_iters; i++)
 	{
 		keff = transport_sweep(params, input);
-		add_source_to_flux(params, input);
-		res = update_sources(params, input, keff);
+		renormalize_flux(params,input);
+		//add_source_to_flux(params, input);
+		//res = update_sources(params, input, keff);
 	}
 
 	free_2D_tracks( params.tracks_2D );

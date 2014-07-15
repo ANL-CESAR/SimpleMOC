@@ -7,7 +7,8 @@
 #include<string.h>
 #include<time.h>
 #include<stdbool.h>
-		
+#include<limits.h>
+
 // User inputs
 typedef struct{
 	int x_assemblies;          // Number of assemblies in the x-axis of the reactor
@@ -108,9 +109,9 @@ void free_sources( Input I, Source * sources );
 
 // solver.c
 double transport_sweep( Params params, Input I );
-void attenuate_fluxes( Track * track, Source * FSR, double ds, int groups ); 
+void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int groups, double mu ); 
 void transfer_boundary_fluxes( Params params);
-void add_source_to_flux( Params params, Input I );
+void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 
 // test.c
