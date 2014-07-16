@@ -23,6 +23,10 @@ int main( int argc, char * argv[] )
 	srand(time(NULL) * (mype+1));
 
 	Input input = get_input();
+	
+	#ifdef MPI
+	CommGrid grid = init_mpi_grid( input );
+	#endif
 
 	if( mype == 0 )
 		print_input_summary(input);
@@ -35,9 +39,11 @@ int main( int argc, char * argv[] )
 
 	for( int i = 0; i < num_iters; i++)
 	{
-		keff = transport_sweep(params, input);
-		renormalize_flux(params,input);
-		//res = update_sources(params, input, keff);
+		transport_sweep(params, input);               // Local
+		//TODO: calculate_keff(params, input);        // MPI Global Accumulate
+		transfer_boundary_fluxes(params);             // MPI Caretesian Shift Comms
+		renormalize_flux(params,input);               // MPI Global Accumulate
+		//res = update_sources(params, input, keff);  // Local
 	}
 
 	free_2D_tracks( params.tracks_2D );

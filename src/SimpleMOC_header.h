@@ -9,6 +9,10 @@
 #include<stdbool.h>
 #include<limits.h>
 
+#ifdef MPI
+#include<mpi.h>
+#endif
+
 // User inputs
 typedef struct{
 	int x_assemblies;          // Number of assemblies in the x-axis of the reactor
@@ -79,9 +83,27 @@ typedef struct{
    	double * polar_angles;	
 } Params;
 
+// MPI 3D Grid info
+typedef struct{
+	MPI_Comm cart_comm_3d;
+	int x_pos_src;
+	int x_pos_dest;
+	int x_neg_src;
+	int x_neg_dest;
+	int y_pos_src;
+	int y_pos_dest;
+	int y_neg_src;
+	int y_neg_dest;
+	int z_pos_src;
+	int z_pos_dest;
+	int z_neg_src;
+	int z_neg_dest;
+} CommGrid;
+
 // init.c
 Input get_input( void );
 Params build_tracks( Input I );
+CommGrid init_mpi_grid( Input I );
 
 // io.c
 void logo(int version);
