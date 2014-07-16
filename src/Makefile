@@ -37,6 +37,11 @@ ifeq ($(COMPILER),gnu)
   CC = gcc
 endif
 
+# intel Compiler
+ifeq ($(COMPILER),intel)
+  CC = icc
+endif
+
 # BG/Q gcc Cross-Compiler
 ifeq ($(MACHINE),bluegene)
   CC = mpicc

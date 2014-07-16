@@ -128,7 +128,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 		fineFlux[i] = &fineFluxPtrs[i * I.fai];
 
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		for(long j = 0; j < I.n_egroups; j++)
+		for(int j = 0; j < I.fai; j++)
 			fineFlux[i][j] = &fineFluxData[i * I.n_egroups * I.fai + j
 			   	* I.n_egroups];
 
