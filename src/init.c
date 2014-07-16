@@ -1,5 +1,9 @@
 #include"SimpleMOC_header.h"
 
+#ifdef MPI
+#include<mpi.h>
+#endif
+
 // Gets I from user and sets defaults
 Input get_input( void )
 {
@@ -22,6 +26,13 @@ Input get_input( void )
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
 	I.n_2D_source_regions_per_assembly = 3000; // Change to 3M source regions per assembly (estimate)
+	I.mype = 0;                 // MPI Rank
+
+	#ifdef MPI
+	int mype;
+	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
+	I.mype = mype;
+	#endif
 
 	// TODO: Add file/CLI user input
 
@@ -35,19 +46,38 @@ Input get_input( void )
 Params build_tracks( Input I )
 {
 	size_t nbytes = 0;
-	center_print("INITIALIATION", 79);
-	border_print();
 	Params params;
-	printf("Initializing 2D tracks...\n");
+
+	if(I.mype == 0)
+	{
+		center_print("INITIALIATION", 79);
+		border_print();
+		printf("Initializing 2D tracks...\n");
+	}
+
     params.tracks_2D = generate_2D_tracks(I, &nbytes); 
-	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
-	printf("Initializing 3D tracks...\n");
+
+	if(I.mype == 0)
+	{
+		printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
+		printf("Initializing 3D tracks...\n");
+	}
+
 	params.tracks = generate_tracks(I, params.tracks_2D, &nbytes);
 	params.polar_angles = generate_polar_angles( I ); 
-	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
-	printf("Initializing flat source regions...\n");
+
+	if(I.mype == 0)
+	{
+		printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
+		printf("Initializing flat source regions...\n");
+	}
+
 	params.sources = initialize_sources(I, &nbytes); 
-	printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
-	border_print();
+
+	if(I.mype == 0)
+	{
+		printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
+		border_print();
+	}
 	return params;
 }

@@ -1,5 +1,9 @@
 #include "SimpleMOC_header.h"
 
+#ifdef MPI
+#include<mpi.h>
+#endif
+
 // Prints program logo
 void logo(int version)
 {
@@ -75,6 +79,11 @@ void print_input_summary(Input I)
 {
 	center_print("INPUT SUMMARY", 79);
 	border_print();
+	#ifdef MPI
+	int nranks;
+	MPI_Comm_size(MPI_COMM_WORLD, &nranks);
+	printf("%-35s%d\n", "MPI Ranks:", nranks); 
+	#endif
 	printf("%-35s%d\n", "x-axis assemblies:", I.x_assemblies);
 	printf("%-35s%d\n", "y-axis assemblies:", I.y_assemblies);
 	printf("%-35s%d\n", "coarse axial intervals:", I.cai);

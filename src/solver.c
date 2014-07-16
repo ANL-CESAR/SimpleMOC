@@ -8,7 +8,7 @@
 
 double transport_sweep( Params params, Input I )
 {
-	printf("Starting transport sweep ...\n");
+	if(I.mype==0) printf("Starting transport sweep ...\n");
 
 	// Determine total number of tracks
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
@@ -40,7 +40,7 @@ double transport_sweep( Params params, Input I )
 	{
 		// print progress
 		if( i % 50 == 0)
-			printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", ntracks_2D);
+			if(I.mype==0) printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", ntracks_2D);
 
 		// treat positive-z traveling rays first
 		for( int j = 0; j < I.n_polar_angles / 2; j++)

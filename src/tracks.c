@@ -85,7 +85,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	// Allocate complete array of track data
 	Track * track_data = (Track *) malloc( ntracks * sizeof(Track) );
 	*nbytes += ntracks * sizeof(Track);
-	printf("3D track data requires %zu MB of data...\n", ntracks * sizeof(Track) / 1024 / 1024 );
+	if(I.mype==0) printf("3D track data requires %zu MB of data...\n", ntracks * sizeof(Track) / 1024 / 1024 );
 
 	// stitch pointers together
 	for( long i = 0; i < ntracks_2D; i++ )
@@ -101,7 +101,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 
 	// Allocate space for Flux Arrays
 	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups * 3 * sizeof(double);
-	printf("Flux Arrays Require %zu MB of data...\n", flux_bytes_needed / 1024 / 1024);
+	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", flux_bytes_needed / 1024 / 1024);
 	double * flux_space = (double *) malloc( flux_bytes_needed );
 	*nbytes += flux_bytes_needed;
 	size_t flux_idx = 0;
