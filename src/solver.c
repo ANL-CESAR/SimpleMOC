@@ -218,7 +218,6 @@ double transport_sweep( Params params, Input I )
 	return 0;
 }
 
-// FIXME: Change to obtaining quadratic parameters
 void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int groups, double mu ) 
 {
 	// compute weight (azimuthal * polar)
