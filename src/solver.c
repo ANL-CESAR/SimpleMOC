@@ -20,9 +20,7 @@ double transport_sweep( Params params, Input I )
 	double fine_delta_z = I.height / (I.cai * I.fai);
 
 	// initialize fluxes in transport sweep
-	// TODO: optimize this: it is probably unnecessary depending on how we strcuture
-	// communication between nodes; it may be necessary to have this step followed
-	// by a barrier
+	// TODO: insert a barrier
 	for( int i = 0; i < ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
@@ -214,7 +212,7 @@ double transport_sweep( Params params, Input I )
 
 	transfer_boundary_fluxes(params);
 
-	// TODO: calculate a real keff, but maybe this can be disregarded?
+	// TODO: calculate a real keff
 	return 0;
 }
 
@@ -277,6 +275,8 @@ void renormalize_flux( Params params, Input I )
 	double * fine_fission_rates = malloc( I.fai * sizeof(double) );
 	double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
 
+	// TODO: Add communication between ranks to accumulate total fission rate
+	// (another for loop will be required over ranks)
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source src = params.sources[i];
