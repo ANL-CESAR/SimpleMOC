@@ -31,7 +31,7 @@ int main( int argc, char * argv[] )
 
 	double res;
 	double keff = 1.0;
-	int num_iters = 100;
+	int num_iters = 1;
 
 	for( int i = 0; i < num_iters; i++)
 	{

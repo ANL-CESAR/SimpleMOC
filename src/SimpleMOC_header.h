@@ -87,6 +87,7 @@ typedef struct{
    	double * polar_angles;	
 } Params;
 
+#ifdef MPI
 // MPI 3D Grid info
 typedef struct{
 	MPI_Comm cart_comm_3d;
@@ -104,11 +105,14 @@ typedef struct{
 	int z_neg_src;
 	int z_neg_dest;
 } CommGrid;
+#endif
 
 // init.c
 Input get_input( void );
 Params build_tracks( Input I );
+#ifdef MPI
 CommGrid init_mpi_grid( Input I );
+#endif
 
 // io.c
 void logo(int version);
@@ -145,6 +149,8 @@ double update_sources( Params params, Input I, double keff );
 void gen_norm_pts(double mean, double sigma, int n_pts);
 
 // comms.c
+#ifdef MPI
 void transfer_boundary_fluxes( Params params, Input I, CommGrid grid);
+#endif
 
 #endif

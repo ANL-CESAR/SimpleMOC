@@ -3,7 +3,7 @@
 #===============================================================================
 
 COMPILER    = gnu
-MPI         = yes
+MPI         = no
 OPTIMIZE    = no
 DEBUG       = yes
 PROFILE     = no

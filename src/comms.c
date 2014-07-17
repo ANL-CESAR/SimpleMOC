@@ -3,6 +3,7 @@
 
 #ifdef MPI
 // Transfer information between nodes (angular fluxes)
+// TODO: Need to handle border cases!
 void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 {
 	if(I.mype==0) printf("Beginning Inter-Node Border Flux Transfer...\n");
