@@ -356,7 +356,7 @@ double update_sources( Params params, Input I, double keff )
 				{
 					// compute scatter source originating from g2 -> g
 					scatter_rates[g2] = src.scattering_matrix[g][g2] * 
-						src.flux[g2];
+						src.fine_flux[j][g2];
 				}
 				scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
 
