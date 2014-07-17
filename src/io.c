@@ -1,9 +1,5 @@
 #include "SimpleMOC_header.h"
 
-#ifdef MPI
-#include<mpi.h>
-#endif
-
 // Prints program logo
 void logo(int version)
 {

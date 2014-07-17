@@ -1,9 +1,5 @@
 #include"SimpleMOC_header.h"
 
-#ifdef MPI
-#include<mpi.h>
-#endif
-
 // Gets I from user and sets defaults
 Input get_input( void )
 {
@@ -33,6 +29,11 @@ Input get_input( void )
 	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 	I.mype = mype;
 	#endif
+
+	// Some derived calculations
+	I.ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
+	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	I.ntracks = I.ntracks_2D * I.n_polar_angles * I.z_stacked;  
 
 	// TODO: Add file/CLI user input
 
@@ -81,3 +82,69 @@ Params build_tracks( Input I )
 	}
 	return params;
 }
+
+#ifdef MPI
+// Initializes 3D Cartesian Communication Grid + Shift Ranks
+CommGrid init_mpi_grid( Input I )
+{
+	MPI_Comm cart_comm_3d;
+	int ndims = 3;
+	int dims[3] = {2,2,2};
+	int period[3] = {0,0,0};
+   	int reorder = 1;
+
+	// TODO: Set params based off of user inputs
+
+	MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, period, reorder, &cart_comm_3d);
+
+	// X Shifts
+	int x_pos_src;
+	int x_pos_dest;
+	int x_neg_src;
+	int x_neg_dest;
+	MPI_Cart_shift( cart_comm_3d, 0,  1, &x_pos_src, &x_pos_dest );
+	MPI_Cart_shift( cart_comm_3d, 0, -1, &x_neg_src, &x_neg_dest );
+
+	// Y Shifts
+	int y_pos_src;
+	int y_pos_dest;
+	int y_neg_src;
+	int y_neg_dest;
+	MPI_Cart_shift( cart_comm_3d, 1,  1, &y_pos_src, &y_pos_dest );
+	MPI_Cart_shift( cart_comm_3d, 1, -1, &y_neg_src, &y_neg_dest );
+
+	// Z Shifts
+	int z_pos_src;
+	int z_pos_dest;
+	int z_neg_src;
+	// X negative
+	int z_neg_dest;
+	MPI_Cart_shift( cart_comm_3d, 2,  1, &z_pos_src, &z_pos_dest );
+	MPI_Cart_shift( cart_comm_3d, 2, -1, &z_neg_src, &z_neg_dest );
+
+	CommGrid grid;
+	grid.cart_comm_3d = cart_comm_3d;
+	grid.x_pos_src    = x_pos_src;
+	grid.x_pos_dest   = x_pos_dest;
+	grid.x_neg_src    = x_neg_src;
+	grid.x_neg_dest   = x_neg_dest;
+	grid.y_pos_src    = y_pos_src;
+	grid.y_pos_dest   = y_pos_dest;
+	grid.y_neg_src    = y_neg_src;
+	grid.y_neg_dest   = y_neg_dest;
+	grid.z_pos_src    = z_pos_src;
+	grid.z_pos_dest   = z_pos_dest;
+	grid.z_neg_src    = z_neg_src;
+	grid.z_neg_dest   = z_neg_dest;
+
+
+	// Init flux buffer MPI type
+	MPI_Datatype flux_array;
+	MPI_Type_contiguous(I.n_egroups, MPI_DOUBLE, &flux_array);
+	MPI_Type_commit(&flux_array);
+
+	grid.Flux_Array = flux_array;
+
+	return grid;
+}
+#endif

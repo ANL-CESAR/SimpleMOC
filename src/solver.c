@@ -210,7 +210,6 @@ double transport_sweep( Params params, Input I )
 		}
 	}
 
-	transfer_boundary_fluxes(params);
 
 	// TODO: calculate a real keff
 	return 0;
@@ -247,25 +246,20 @@ void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int 
 		double tau = sigT * ds;
 		double sigT2 = sigT * sigT;
 		double flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
-				/ sigT2
-				+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
-				/ (sigT * sigT2)
-				+ q2 * mu2 * (tau * (tau * (tau - 3) + 6) - 6 * expVal)
-			   / (3 * sigT2 * sigT2);
+			/ sigT2
+			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
+			/ (sigT * sigT2)
+			+ q2 * mu2 * (tau * (tau * (tau - 3) + 6) - 6 * expVal)
+			/ (3 * sigT2 * sigT2);
 		FSR_flux[g] += weight * flux_integral;
 
 		// update angular flux
 		track->psi[g] = track->psi[g] * (1.0 - expVal) + q0 * expVal / sigT
-				+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
-				(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
+			+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
+			(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
 	}
 }	
 
-// Transfer information between nodes (angular fluxes)
-void transfer_boundary_fluxes( Params params)
-{
-	return;
-}
 
 // renormalize flux for next transport sweep iteration
 void renormalize_flux( Params params, Input I )
@@ -316,70 +310,70 @@ void renormalize_flux( Params params, Input I )
 // FIXME: change to quadratic source
 // TODO: determine if this is even needed
 /*
-double update_sources( Params params, Input I, double keff )
+   double update_sources( Params params, Input I, double keff )
+   {
+// source residual
+double residual;
+
+// calculate inverse multiplication facotr for efficiency
+double inverse_k = 1.0 / keff;
+
+// calculate new source
+for( int i = 0; i < I.n_source_regions_per_node; i++)
 {
-	// source residual
-	double residual;
+Source src = params.sources[i];
 
-	// calculate inverse multiplication facotr for efficiency
-	double inverse_k = 1.0 / keff;
+// allocate new source
+double * new_source = (double * ) malloc(I.n_egroups * sizeof(double));
 
-	// calculate new source
-	for( int i = 0; i < I.n_source_regions_per_node; i++)
-	{
-		Source src = params.sources[i];
+// calculate total fission source and scattering source
+double fission_source;
+double scatter_source;
 
-		// allocate new source
-		double * new_source = (double * ) malloc(I.n_egroups * sizeof(double));
+// allocate arrays for summation
+double * fission_rates = malloc(I.n_egroups * sizeof(double));
+double * scatter_rates = malloc(I.n_egroups * sizeof(double));
 
-		// calculate total fission source and scattering source
-		double fission_source;
-		double scatter_source;
+// compute total fission source
+for( int g = 0; g < I.n_egroups; g++ )
+fission_rates[g] = src.flux[g] * src.XS[g][1];
+fission_source = pairwise_sum( fission_rates, (long) I.n_egroups);
+free(fission_rates);
 
-		// allocate arrays for summation
-		double * fission_rates = malloc(I.n_egroups * sizeof(double));
-		double * scatter_rates = malloc(I.n_egroups * sizeof(double));
+// normalize fission source by multiplication factor
+fission_source *= inverse_k;
 
-		// compute total fission source
-		for( int g = 0; g < I.n_egroups; g++ )
-			fission_rates[g] = src.flux[g] * src.XS[g][1];
-		fission_source = pairwise_sum( fission_rates, (long) I.n_egroups);
-		free(fission_rates);
+// compute scattering and new total source for each group
+for( int g = 0; g < I.n_egroups; g++ )
+{
+double * scatter_vector = src.scattering_matrix[g];
+for( int g2 = 0; g2 < I.n_egroups; g2++ )
+{
+// compute scatter source originating from g2 -> g
+scatter_rates[g2] = src.scattering_matrix[g][g2] * 
+src.flux[g2];
+}
+scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
 
-		// normalize fission source by multiplication factor
-		fission_source *= inverse_k;
+// compuate new total source
+double chi = src.XS[g][2];
+new_source[g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+}
 
-		// compute scattering and new total source for each group
-		for( int g = 0; g < I.n_egroups; g++ )
-		{
-			double * scatter_vector = src.scattering_matrix[g];
-			for( int g2 = 0; g2 < I.n_egroups; g2++ )
-			{
-				// compute scatter source originating from g2 -> g
-				scatter_rates[g2] = src.scattering_matrix[g][g2] * 
-					src.flux[g2];
-			}
-			scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
+free(scatter_rates);
 
-			// compuate new total source
-			double chi = src.XS[g][2];
-			new_source[g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
-		}
+// assign new source to the actual source (changing pointers)
+for( int g = 0; g < I.n_egroups; g++ )
+src.source[g] = new_source[g];
 
-		free(scatter_rates);
+free(new_source);
 
-		// assign new source to the actual source (changing pointers)
-		for( int g = 0; g < I.n_egroups; g++ )
-			src.source[g] = new_source[g];
+}
 
-		free(new_source);
+// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
 
-	}
-
-	// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
-
-	// TODO: calculate real source residual
-	residual = 0;
-	return residual;
+// TODO: calculate real source residual
+residual = 0;
+return residual;
 }
 */
