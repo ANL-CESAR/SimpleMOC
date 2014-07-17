@@ -35,11 +35,13 @@ int main( int argc, char * argv[] )
 
 	for( int i = 0; i < num_iters; i++)
 	{
-		transport_sweep(params, input);               // Local
-		//TODO: calculate_keff(params, input);        // MPI Global Accumulate
-		transfer_boundary_fluxes(params);             // MPI Caretesian Shift Comms
-		renormalize_flux(params,input);               // MPI Global Accumulate
-		//res = update_sources(params, input, keff);  // Local
+		transport_sweep(params, input);                // Local
+		//TODO: calculate_keff(params, input);         // MPI Global Accumulate
+		#ifdef MPI
+		transfer_boundary_fluxes(params, input, grid); // MPI Caretesian Shift Comms
+		#endif
+		renormalize_flux(params,input);                // MPI Global Accumulate
+		//res = update_sources(params, input, keff);   // Local
 	}
 
 	free_2D_tracks( params.tracks_2D );

@@ -33,7 +33,7 @@ Input get_input( void )
 	// Some derived calculations
 	I.ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
-	I.ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
+	I.ntracks = I.ntracks_2D * I.n_polar_angles * I.z_stacked;  
 
 	// TODO: Add file/CLI user input
 
@@ -89,7 +89,7 @@ CommGrid init_mpi_grid( Input I )
 {
 	MPI_Comm cart_comm_3d;
 	int ndims = 3;
-	int dims[3];
+	int dims[3] = {2,2,2};
 	int period[3] = {0,0,0};
    	int reorder = 1;
 
