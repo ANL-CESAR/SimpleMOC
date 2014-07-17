@@ -45,3 +45,9 @@ double pairwise_sum( double * vector, long size ){
 	
 	return sum;
 }
+
+double * quadratic_fit(double * data, double xlen, int nx)
+{
+	double * params = (double *) malloc(3 * sizeof(double));
+	return params;
+}
