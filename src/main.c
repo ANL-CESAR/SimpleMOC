@@ -41,7 +41,7 @@ int main( int argc, char * argv[] )
 		transfer_boundary_fluxes(params, input, grid); // MPI Caretesian Shift Comms
 		#endif
 		renormalize_flux(params,input);                // MPI Global Accumulate
-		//res = update_sources(params, input, keff);   // Local
+		res = update_sources(params, input, keff);     // Local
 	}
 
 	free_2D_tracks( params.tracks_2D );

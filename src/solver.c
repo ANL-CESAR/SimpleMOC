@@ -233,10 +233,13 @@ void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int 
 		double sigT = QSR->XS[g][0];
 
 		// load source components
-		double * sourceParams = QSR->source_params[g];
-		double q0 = sourceParams[0];
-		double q1 = sourceParams[1];
-		double q2 = sourceParams[2];
+		// TODO: load 3 source values for "fitting"
+		double fs1 = QSR->fine_source[fine_id][g];
+
+		// TODO calculate q0, q1, q2
+		double q0 = 1;
+		double q1 = 1;
+		double q2 = 1;
 
 		// calculate exponential
 		// TODO: Compute (1 - exp) {OpenMOC} using table lookup
@@ -367,15 +370,7 @@ double update_sources( Params params, Input I, double keff )
 				new_source[j][g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
 			}
 		}
-		// fit quadratic function to fine sources for each energy group
-		for( int g = 0; g < I.n_egroups; g++)
-		{
-			for( int j = 0; j < I.fai; j++)
-				fit_array[j] = new_source[j][g];
-			src.source_params[g] = quadratic_fit(fit_array, 
-					(int) I.height / (I.fai * I.cai), I.fai);
-		}
-
+		//TODO: update fine source with new source
 	}
 
 	// free memory

@@ -76,33 +76,34 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	if(I.mype==0) printf("Beginning Source Parameter Allocation...\n");
 
 	// Allocate space for source parameters (quadratic axially)
-	double *** sourceParams = (double ***) malloc( I.n_source_regions_per_node
+	double *** fineSource = (double ***) malloc( I.n_source_regions_per_node
 		   	* sizeof(double **) );
 	*nbytes += I.n_source_regions_per_node * sizeof(double **);
 
 	// Allocate space for array pointers to parameters
-	double ** sourceParamPtrs = (double **) malloc ( I.n_source_regions_per_node
-		   	* I.n_egroups * sizeof(double *) );
-	*nbytes += I.n_source_regions_per_node * I.n_egroups * sizeof(double *);
+	double ** fineSourcePtrs = (double **) malloc ( I.n_source_regions_per_node
+		   	* I.fai * sizeof(double *) );
+	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(double *);
 
 	// Allocate space for parameter data
-	double * sourceParamData = (double *) malloc( I.n_source_regions_per_node
-		   	* I.n_egroups * 3 * sizeof(double) );
-	*nbytes += I.n_source_regions_per_node * I.n_egroups * 3 * sizeof(double);
+	double * fineSourceData = (double *) malloc( I.n_source_regions_per_node
+		   	* I.fai * I.n_egroups * sizeof(double) );
+	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(double);
 
 	// stitch allocation ptrs together for source parameter data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		sourceParams[i] = &sourceParamPtrs[i * I.n_egroups];
+		fineSource[i] = &fineSourcePtrs[i * I.fai];
 
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		for(long j = 0; j < I.n_egroups; j++)
-			sourceParams[i][j] = &sourceParamData[i * I.n_egroups * 3 + j * 3];
+		for(long j = 0; j < I.fai; j++)
+			fineSource[i][j] = &fineSourceData[i * I.fai * I.n_egroups
+			   	+ j * I.n_egroups];
 
 	// Initialize source parameters
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		for( int j = 0; j < I.n_egroups; j++)
-			for( int k = 0; k < 3; k++)
-				sourceParams[i][j][k] = urand();
+		for( int j = 0; j < I.fai; j++)
+			for( int k = 0; k < I.n_egroups; k++)
+				fineSource[i][j][k] = urand();
 
 	////////////////////////////////////////////////////////////////////////////////////
 
@@ -152,12 +153,13 @@ Source * initialize_sources( Input I, size_t * nbytes )
 		sources[i].scattering_matrix = s_matrices[idx];
 		sources[i].XS = XS[idx];
 		sources[i].fine_flux = fineFlux[i];
-		sources[i].source_params = sourceParams[i]; 
+		sources[i].fine_source = fineSource[i]; 
 
 		// initialize FSR volume
 		sources[i].vol = urand();
 	}
 
+	// TODO: Free more memory
 	// free memory of temporary variables
 	free( s_matrices );
 	free( XS );
@@ -176,6 +178,6 @@ void free_sources( Input I, Source * sources )
 	free( sources[0].scattering_matrix[0] );
 	free( sources[0].scattering_matrix );
 	// Free source values
-	free( sources[0].source_params[0] );
-	free( sources[0].source_params );
+	free( sources[0].fine_source[0] );
+	free( sources[0].fine_source );
 }
