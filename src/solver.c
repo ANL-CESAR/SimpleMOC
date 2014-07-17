@@ -260,16 +260,6 @@ void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int 
 	}
 }	
 
-// Transfer information between nodes (angular fluxes)
-void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
-{
-	int mype = I.mype;
-
-	// Setup parameters based on Input deck
-
-
-	return;
-}
 
 // renormalize flux for next transport sweep iteration
 void renormalize_flux( Params params, Input I )

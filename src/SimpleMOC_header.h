@@ -8,6 +8,7 @@
 #include<time.h>
 #include<stdbool.h>
 #include<limits.h>
+#include<assert.h>
 
 #ifdef MPI
 #include<mpi.h>
@@ -33,6 +34,9 @@ typedef struct{
 	long n_2D_source_regions_per_assembly; // 3M source regions per assembly (estimate)
 	long n_source_regions_per_node; // Number of source regions in a given node
 	long mype;                 // MPI Rank
+	long ntracks_2D;           // Number of 2D tracks (derived)
+	int z_stacked;             // Number of z rays (derived)
+	long ntracks;              // Total number of 3D tracks per assembly (derived)
 } Input;
 
 // Localized geometrical region ID
@@ -86,6 +90,7 @@ typedef struct{
 // MPI 3D Grid info
 typedef struct{
 	MPI_Comm cart_comm_3d;
+	MPI_Datatype Flux_Array;
 	int x_pos_src;
 	int x_pos_dest;
 	int x_neg_src;
@@ -139,5 +144,8 @@ double update_sources( Params params, Input I, double keff );
 
 // test.c
 void gen_norm_pts(double mean, double sigma, int n_pts);
+
+// comms.c
+void transfer_boundary_fluxes( Params params, Input I, CommGrid grid);
 
 #endif

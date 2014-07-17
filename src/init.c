@@ -1,9 +1,5 @@
 #include"SimpleMOC_header.h"
 
-#ifdef MPI
-#include<mpi.h>
-#endif
-
 // Gets I from user and sets defaults
 Input get_input( void )
 {
@@ -33,6 +29,11 @@ Input get_input( void )
 	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 	I.mype = mype;
 	#endif
+
+	// Some derived calculations
+	I.ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
+	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	I.ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
 
 	// TODO: Add file/CLI user input
 
@@ -116,6 +117,7 @@ CommGrid init_mpi_grid( Input I )
 	int z_pos_src;
 	int z_pos_dest;
 	int z_neg_src;
+	// X negative
 	int z_neg_dest;
 	MPI_Cart_shift( cart_comm_3d, 2,  1, &z_pos_src, &z_pos_dest );
 	MPI_Cart_shift( cart_comm_3d, 2, -1, &z_neg_src, &z_neg_dest );
@@ -134,6 +136,14 @@ CommGrid init_mpi_grid( Input I )
 	grid.z_pos_dest   = z_pos_dest;
 	grid.z_neg_src    = z_neg_src;
 	grid.z_neg_dest   = z_neg_dest;
+
+
+	// Init flux buffer MPI type
+	MPI_Datatype flux_array;
+	MPI_Type_contiguous(I.n_egroups, MPI_DOUBLE, &flux_array);
+	MPI_Type_commit(&flux_array);
+
+	grid.Flux_Array = flux_array;
 
 	return grid;
 }

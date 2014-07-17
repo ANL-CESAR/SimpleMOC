@@ -18,6 +18,7 @@ program = SimpleMOC
 
 source = \
 main.c \
+comms.c \
 source.c \
 test.c \
 init.c \
