@@ -307,73 +307,88 @@ void renormalize_flux( Params params, Input I )
 }
 
 // Updates sources for next iteration
-// FIXME: change to quadratic source
-// TODO: determine if this is even needed
-/*
-   double update_sources( Params params, Input I, double keff )
-   {
-// source residual
-double residual;
-
-// calculate inverse multiplication facotr for efficiency
-double inverse_k = 1.0 / keff;
-
-// calculate new source
-for( int i = 0; i < I.n_source_regions_per_node; i++)
+double update_sources( Params params, Input I, double keff )
 {
-Source src = params.sources[i];
+	// source residual
+	double residual;
 
-// allocate new source
-double * new_source = (double * ) malloc(I.n_egroups * sizeof(double));
+	// calculate inverse multiplication facotr for efficiency
+	double inverse_k = 1.0 / keff;
 
-// calculate total fission source and scattering source
-double fission_source;
-double scatter_source;
+	// allocate fine sources
+	double ** new_source = (double **) malloc(I.fai * sizeof(double *));
+	double * new_source_data = 
+		(double *) malloc(I.fai * I.n_egroups * sizeof(double));
+	for( int i = 0; i < I.fai; i++)
+		new_source[i] = &new_source_data[I.n_egroups * i];
+		
+	// allocate arrays for summation
+	double * fission_rates = malloc(I.n_egroups * sizeof(double));
+	double * scatter_rates = malloc(I.n_egroups * sizeof(double));
 
-// allocate arrays for summation
-double * fission_rates = malloc(I.n_egroups * sizeof(double));
-double * scatter_rates = malloc(I.n_egroups * sizeof(double));
+	// allocate array for data fitting
+	double * fit_array = malloc(I.fai * sizeof(double));
 
-// compute total fission source
-for( int g = 0; g < I.n_egroups; g++ )
-fission_rates[g] = src.flux[g] * src.XS[g][1];
-fission_source = pairwise_sum( fission_rates, (long) I.n_egroups);
-free(fission_rates);
+	// cycle through all coarse axial intervals to update source
+	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	{
+		Source src = params.sources[i];
 
-// normalize fission source by multiplication factor
-fission_source *= inverse_k;
+		// cycle thorugh all fine axial regions to calculate new source
+		for( int j = 0; j < I.fai; j++)
+		{
+			// calculate total fission source and scattering source
+			double fission_source;
+			double scatter_source;
 
-// compute scattering and new total source for each group
-for( int g = 0; g < I.n_egroups; g++ )
-{
-double * scatter_vector = src.scattering_matrix[g];
-for( int g2 = 0; g2 < I.n_egroups; g2++ )
-{
-// compute scatter source originating from g2 -> g
-scatter_rates[g2] = src.scattering_matrix[g][g2] * 
-src.flux[g2];
+			// compute total fission source
+			for( int g = 0; g < I.n_egroups; g++ )
+				fission_rates[g] = src.fine_flux[j][g] * src.XS[g][1];
+			fission_source = pairwise_sum( fission_rates, (long) I.n_egroups);
+
+			// normalize fission source by multiplication factor
+			fission_source *= inverse_k;
+
+			// compute scattering and new total source for each group
+			for( int g = 0; g < I.n_egroups; g++ )
+			{
+				for( int g2 = 0; g2 < I.n_egroups; g2++ )
+				{
+					// compute scatter source originating from g2 -> g
+					scatter_rates[g2] = src.scattering_matrix[g][g2] * 
+						src.flux[g2];
+				}
+				scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
+
+				// compuate new total source
+				double chi = src.XS[g][2];
+
+				// calculate new source in fine axial interval assuming isotropic
+				new_source[j][g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+			}
+		}
+		// fit quadratic function to fine sources for each energy group
+		for( int g = 0; g < I.n_egroups; g++)
+		{
+			for( int j = 0; j < I.fai; j++)
+				fit_array[j] = new_source[j][g];
+			src.source_params[g] = quadratic_fit(fit_array, 
+					(int) I.height / (I.fai * I.cai), I.fai);
+		}
+
+	}
+
+	// free memory
+	free(new_source);
+	free(new_source_data);
+	free(fission_rates);
+	free(scatter_rates);
+	free(fit_array);
+
+	// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
+
+	// TODO: calculate real source residual
+	residual = 0;
+	return residual;
 }
-scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
 
-// compuate new total source
-double chi = src.XS[g][2];
-new_source[g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
-}
-
-free(scatter_rates);
-
-// assign new source to the actual source (changing pointers)
-for( int g = 0; g < I.n_egroups; g++ )
-src.source[g] = new_source[g];
-
-free(new_source);
-
-}
-
-// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
-
-// TODO: calculate real source residual
-residual = 0;
-return residual;
-}
-*/
