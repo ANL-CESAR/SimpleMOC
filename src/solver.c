@@ -261,7 +261,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double m
 			q1 = c1;
 			q2 = 0;
 		}
-		else if( fine_id == I.fai-1)
+		else if( fine_id == I.fai - 1 )
 		{
 			// load neighboring sources
 			double y1 = QSR->fine_source[fine_id-1][g];
@@ -357,11 +357,17 @@ void renormalize_flux( Params params, Input I )
 				src->fine_flux[k][g] *= adjust;
 	}
 
-	// normalize boundary fluxes by same factor as well
-	for( int i = 0; i < I.ntracks; i++)
-		for( int g = 0; g < I.n_egroups; g++ )
-			params.tracks[i].start_flux[g] *= norm_factor;
-
+	// calculate track dimensions
+	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
+	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	
+	// normalize boundary fluxes by same factor
+	for( int i = 0; i < ntracks_2D; i++)
+		for( int j = 0; j < I.n_polar_angles; j++)
+			for( int k = 0; k < z_stacked; k++)
+				for( int g = 0; g < I.n_egroups; g++)
+					params.tracks[i][j][k].start_flux[g] *= norm_factor;
+	
 	return;
 }
 
@@ -374,22 +380,18 @@ double update_sources( Params params, Input I, double keff )
 	// calculate inverse multiplication facotr for efficiency
 	double inverse_k = 1.0 / keff;
 
-	// allocate fine sources
-	double ** new_source = (double **) malloc(I.fai * sizeof(double *));
-	double * new_source_data = 
-		(double *) malloc(I.fai * I.n_egroups * sizeof(double));
-	for( int i = 0; i < I.fai; i++)
-		new_source[i] = &new_source_data[I.n_egroups * i];
+	// allocate residual arrays
+	double * group_res = (double *) malloc(I.n_egroups * sizeof(double));
+	double * fine_res = (double *) malloc(I.n_egroups * sizeof(double));
+	double * residuals = (double *) malloc(I.n_source_regions_per_node 
+			* sizeof(double));
 		
 	// allocate arrays for summation
 	double * fission_rates = malloc(I.n_egroups * sizeof(double));
 	double * scatter_rates = malloc(I.n_egroups * sizeof(double));
 
-	// allocate array for data fitting
-	double * fit_array = malloc(I.fai * sizeof(double));
-
 	// cycle through all coarse axial intervals to update source
-	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source src = params.sources[i];
 
@@ -422,23 +424,35 @@ double update_sources( Params params, Input I, double keff )
 				// compuate new total source
 				double chi = src.XS[g][2];
 
+				// calculate new fine source
+				double newSrc = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+
+				// calculate residual
+				double oldSrc = src.fine_source[j][g];
+				group_res[g] = (newSrc - oldSrc) * (newSrc - oldSrc)
+					/ (oldSrc * oldSrc);
+
 				// calculate new source in fine axial interval assuming isotropic
-				new_source[j][g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+				src.fine_source[j][g] = newSrc;
 			}
+			fine_res[j] = pairwise_sum(group_res, (long) I.n_egroups);
 		}
+		residuals[i] = pairwise_sum(fine_res, (long) I.fai);
 	}
 
+	// calculate source residual
+	residual = pairwise_sum(residuals, I.n_source_regions_per_node);
+	
 	// free memory
-	free(new_source);
-	free(new_source_data);
 	free(fission_rates);
 	free(scatter_rates);
-	free(fit_array);
+	free(group_res);
+	free(fine_res);
+	free(residuals);
+
 
 	// NOTE: See code around line 600 of CPUSolver.cpp in ClosedMOC/ OpenMOC
 
-	// TODO: calculate real source residual
-	residual = 0;
 	return residual;
 }
 
