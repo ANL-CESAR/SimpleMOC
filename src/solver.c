@@ -357,8 +357,11 @@ void renormalize_flux( Params params, Input I )
 				src->fine_flux[k][g] *= adjust;
 	}
 
-	// TODO: Normalize boundary fluxes by same factor as well for
-	// non-vacuum boundary conditions
+	// normalize boundary fluxes by same factor as well
+	for( int i = 0; i < I.ntracks; i++)
+		for( int g = 0; g < I.n_egroups; g++ )
+			params.tracks[i].start_flux[g] *= norm_factor;
+
 	return;
 }
 
