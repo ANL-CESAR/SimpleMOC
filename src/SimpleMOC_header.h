@@ -140,8 +140,8 @@ Source * initialize_sources( Input I, size_t * nbytes );
 void free_sources( Input I, Source * sources );
 
 // solver.c
-double transport_sweep( Params params, Input I );
-void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int groups, double mu ); 
+void transport_sweep( Params params, Input I );
+void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double mu ); 
 void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 

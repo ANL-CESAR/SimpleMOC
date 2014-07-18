@@ -6,7 +6,7 @@
 // (i.e. less divisions, pairwise additions, precompute
 // values used in many iterations, etc) see OpenMOC
 
-double transport_sweep( Params params, Input I )
+void transport_sweep( Params params, Input I )
 {
 	if(I.mype==0) printf("Starting transport sweep ...\n");
 
@@ -17,7 +17,7 @@ double transport_sweep( Params params, Input I )
 
 	// calculate the height of a node's domain and of each FSR
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
-	double fine_delta_z = I.height / (I.cai * I.fai);
+	double fine_delta_z = node_delta_z / (I.cai * I.fai);
 
 	// initialize fluxes in transport sweep
 	// TODO: insert a barrier
@@ -67,6 +67,9 @@ double transport_sweep( Params params, Input I )
 
 					while( !seg_complete )
 					{
+						// flag to reset z position
+						bool reset = false;
+						
 						// calculate new height based on s (distance traveled in FSR)
 						double z = track->z_height + s * cos(p_angle);
 
@@ -100,24 +103,23 @@ double transport_sweep( Params params, Input I )
 								// remember to no longer treat this track
 								end_stacked--;
 
-								// reset z height (calculate from k)
-								track->z_height = I.axial_z_sep * k;
+								// reset z height
+								reset = true;
 							}
 						}
 
+						// pick a random FSR (cache miss expected)
+						long QSR_id = rand() % I.n_source_regions_per_node;
+						
+						// update sources and fluxes from attenuation over FSR
+						attenuate_fluxes( track, &params.sources[QSR_id], I, ds, mu );
+
 						// update with new z height or reset if finished
-						if( n == params.tracks_2D[i].n_segments - 1 )
+						if( n == params.tracks_2D[i].n_segments - 1  || reset)
 							track->z_height = I.axial_z_sep * k;
 						else
 							track->z_height = z;
 
-						// pick a random FSR (cache miss expected)
-						long QSR_id = rand() % I.n_source_regions_per_node;
-						int fine_id = rand() % I.fai;
-
-						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track, &params.sources[QSR_id], fine_id, 
-								ds, I.n_egroups, mu );
 					}
 				}
 			}
@@ -149,6 +151,9 @@ double transport_sweep( Params params, Input I )
 
 					while( !seg_complete )
 					{
+						// flag to reset z position
+						bool reset = false;
+
 						// calculate new height based on s (distance traveled in FSR)
 						double z = track->z_height + s * cos(p_angle);
 
@@ -186,37 +191,42 @@ double transport_sweep( Params params, Input I )
 								// remember to no longer treat this track
 								begin_stacked++;
 
-								// reset z height (calculate from k)
-								track->z_height = I.axial_z_sep * (k+1);
+								// reset z height 
+								reset = true;
 							}
 						}
 
+						// pick a random FSR (cache miss expected)
+						long QSR_id = rand() % I.n_source_regions_per_node;
+
+						// update sources and fluxes from attenuation over FSR
+						attenuate_fluxes( track , &params.sources[QSR_id], I, ds, mu );
+					
 						// update with new z height or reset if finished
-						if( n == params.tracks_2D[i].n_segments - 1 )
+						if( n == params.tracks_2D[i].n_segments - 1 || reset)
 							track->z_height = I.axial_z_sep * (k+1); 
 						else
 							track->z_height = z;
-
-						// pick a random FSR (cache miss expected)
-						long FSR_id = rand() % I.n_source_regions_per_node;
-						int fine_id = rand() % I.fai;
-
-						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track , &params.sources[FSR_id], fine_id,
-								ds, I.n_egroups, mu );
 					}
 				}
 			}
 		}
 	}
 
-
-	// TODO: calculate a real keff
-	return 0;
+	return;
 }
 
-void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int groups, double mu ) 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double mu ) 
 {
+	// compute fine axial interval spacing
+	double dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+	
+	// compute fine axial region ID
+	int fine_id = (int) ( I.height / dz ) % I.cai;
+
+	// compute z height in cell
+	double zin = track->z_height - dz * ( (int) ( track->z_height / dz ) + 0.5 );
+
 	// compute weight (azimuthal * polar)
 	// TODO: add track weight (area), also add azimuthal 
 	// (tracks_2D[i].az_weight)
@@ -227,19 +237,62 @@ void attenuate_fluxes( Track * track, Source * QSR, int fine_id, double ds, int 
 	double * FSR_flux = QSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
-	for( int g = 0; g < groups; g++)
+	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
 		double sigT = QSR->XS[g][0];
 
-		// load source components
-		// TODO: load 3 source values for "fitting"
-		double fs1 = QSR->fine_source[fine_id][g];
+		// define source parameters
+		double q0, q1, q2;
 
-		// TODO calculate q0, q1, q2
-		double q0 = 1;
-		double q1 = 1;
-		double q2 = 1;
+		// calculate source components
+		if( fine_id == 0)
+		{
+			// load neighboring sources
+			double y2 = QSR->fine_source[fine_id][g];
+			double y3 = QSR->fine_source[fine_id+1][g];
+
+			// do linear "fitting"
+			double c0 = y2;
+			double c1 = (y3 - y2) / dz;
+
+			// calculate q0, q1, q2
+			q0 = c0 + c1*zin;
+			q1 = c1;
+			q2 = 0;
+		}
+		else if( fine_id == I.fai-1)
+		{
+			// load neighboring sources
+			double y1 = QSR->fine_source[fine_id-1][g];
+			double y2 = QSR->fine_source[fine_id][g];
+
+			// do linear "fitting"
+			double c0 = y2;
+			double c1 = (y2 - y1) / dz;
+
+			// calculate q0, q1, q2
+			q0 = c0 + c1*zin;
+			q1 = c1;
+			q2 = 0;
+		}		
+		else
+		{
+			// load neighboring sources
+			double y1 = QSR->fine_source[fine_id-1][g];
+			double y2 = QSR->fine_source[fine_id][g];
+			double y3 = QSR->fine_source[fine_id+1][g];
+
+			// do quadratic "fitting"
+			double c0 = y2;
+			double c1 = (y1 - y3) / (2*dz);
+			double c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
+
+			// calculate q0, q1, q2
+			q0 = c0 + c1*zin + c2*zin*zin;
+			q1 = c1 + 2*c2*zin;
+			q2 = c2;
+		}
 
 		// calculate exponential
 		// TODO: Compute (1 - exp) {OpenMOC} using table lookup
@@ -370,7 +423,6 @@ double update_sources( Params params, Input I, double keff )
 				new_source[j][g] = (fission_source * chi + scatter_source) / (4.0 * M_PI);
 			}
 		}
-		//TODO: update fine source with new source
 	}
 
 	// free memory
