@@ -1,5 +1,225 @@
 #include"SimpleMOC_header.h"
 
+#ifdef MPI
+// Faster Transfer information between nodes (angular fluxes)
+// TODO: Need to handle border cases!
+void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
+{
+	if(I.mype==0) printf("Beginning Inter-Node Border Flux Transfer...\n");
+
+	// Note we are introducing a new input restriction for convenience,
+	// namely, that the total number of tracks is divisible by 6
+	int elements = I.ntracks / 6;
+
+	//TODO: Proper checking of this -- right now we aren't actually send all data
+	//assert( I.ntracks % 6 == 0 );
+	long send_idx = 0;
+	MPI_Status stat;
+	MPI_Request *request = (MPI_Request *) malloc( 2 * I.ntracks * sizeof(MPI_Request));
+
+	double * flux_array = params.tracks[0][0][0].start_flux;
+
+	long msg_id = 0;
+
+	/////////////////// Launch All Sends ////////////////////////
+
+	// Launch X positive Sends
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Isend(
+				&flux_array[send_idx],   // Send Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.x_pos_dest,         // Destination MPI rank
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		send_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+
+	// Launch X negative Sends
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Isend(
+				&flux_array[send_idx],   // Send Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.x_neg_dest,         // Destination MPI rank
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		send_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	// Launch Y positive Sends
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Isend(
+				&flux_array[send_idx],   // Send Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.y_pos_dest,         // Destination MPI rank
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		send_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+
+	// Launch Y negative Sends
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Isend(
+				&flux_array[send_idx],   // Send Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.y_neg_dest,         // Destination MPI rank
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		send_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	// Launch Z positive Sends
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Isend(
+				&flux_array[send_idx],   // Send Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.z_pos_dest,         // Destination MPI rank
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		send_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+
+	// Launch Z negative Sends
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Isend(
+				&flux_array[send_idx],   // Send Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.z_neg_dest,         // Destination MPI rank
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		send_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+
+	/////////////////// Launch All Receives ////////////////////////
+
+	msg_id = 0;
+	long recv_idx = send_idx;
+
+	// Launch X positive Receives
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Irecv(
+				&flux_array[recv_idx],   // Recv Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.x_pos_src,          // MPI rank to Receive From
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		recv_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	// Launch X negative Receives
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Irecv(
+				&flux_array[recv_idx],   // Recv Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.x_neg_src,          // MPI rank to Receive From
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		recv_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	// Launch Y positive Receives
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Irecv(
+				&flux_array[recv_idx],   // Recv Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.y_pos_src,          // MPI rank to Receive From
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		recv_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	// Launch Y negative Receives
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Irecv(
+				&flux_array[recv_idx],   // Recv Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.y_neg_src,          // MPI rank to Receive From
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		recv_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+
+	// Launch Z positive Receives
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Irecv(
+				&flux_array[recv_idx],   // Recv Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.z_pos_src,          // MPI rank to Receive From
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		recv_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	// Launch Z negative Receives
+	for( long i = 0; i < elements; i++ )
+	{
+		MPI_Irecv(
+				&flux_array[recv_idx],   // Recv Buffer
+				1,                       // Number of Elements
+				grid.Flux_Array,         // Type of element (all energy group array)
+				grid.z_neg_src,          // MPI rank to Receive From
+				msg_id,                  // Message ID
+				grid.cart_comm_3d,       // MPI Communicator
+				&request[msg_id] );      // MPI Request (to monitor when call finishes)
+		recv_idx += (long) I.n_egroups;
+		msg_id++;
+	}
+	
+	/////////////////////////////////////////////////////////////////////////
+
+	// Wait for all Communication to Complete
+	for( long i = 0; i < I.ntracks * 2; i++ )
+		MPI_Wait( &request[i], &stat );
+
+	MPI_Barrier( grid.cart_comm_3d );
+
+	if(I.mype==0) printf("Finished Inter-Node Border Flux Transfer.\n");
+}
+#endif
+
 
 #ifdef MPI
 // Transfer information between nodes (angular fluxes)
