@@ -20,6 +20,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// FIXME: I think this may be incorrect
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
+	long dim = (long) elements * (long) I.n_egroups;
 	long msg_id = 0;
 
 	/////////////////// Launch All Sends ////////////////////////
@@ -27,8 +28,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.x_pos_dest == NULL )
 	{
-		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
-		send_idx += elements * I.n_egroups;
+		params.leakage += pairwise_sum( flux_array[send_idx], dim );
+		send_idx += dim;
 	}
 	else
 	{
@@ -49,10 +50,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_dest == NULL )
+	if( grid.x_neg_dest == NULL )
 	{
-		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
-		send_idx += elements * I.n_egroups;
+		params.leakage += pairwise_sum( flux_array[send_idx], dim );
+		send_idx += dim;
 	}
 	else
 	{
@@ -73,10 +74,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_dest == NULL )
+	if( grid.y_pos_dest == NULL )
 	{
-		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
-		send_idx += elements * I.n_egroups;
+		params.leakage += pairwise_sum( flux_array[send_idx], dim );
+		send_idx += dim;
 	}
 	else
 	{	
@@ -96,10 +97,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		}
 	}
 	// check if border assembly
-	if( grid.x_pos_dest == NULL )
+	if( grid.y_neg_dest == NULL )
 	{
-		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
-		send_idx += elements * I.n_egroups;
+		params.leakage += pairwise_sum( flux_array[send_idx], dim );
+		send_idx += dim;
 	}
 	else
 	{	
@@ -120,10 +121,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 	
 	// check if border assembly
-	if( grid.x_pos_dest == NULL )
+	if( grid.z_pos_dest == NULL )
 	{
-		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
-		send_idx += elements * I.n_egroups;
+		params.leakage += pairwise_sum( flux_array[send_idx], dim );
+		send_idx += dim;
 	}
 	else
 	{	
@@ -143,10 +144,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_dest == NULL )
+	if( grid.z_neg_dest == NULL )
 	{
-		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
-		send_idx += elements * I.n_egroups;
+		params.leakage += pairwise_sum( flux_array[send_idx], dim );
+		send_idx += dim;
 	}
 	else
 	{	
@@ -171,10 +172,19 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	msg_id = 0;
 	long recv_idx = send_idx;
 
-	// Launch X positive Receives
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_src == NULL)
 	{
-		MPI_Irecv(
+		for( long i =0; i < dim; i++)
+			flux_array[recv_idx + i] = 0;
+		recv_idx += dim;
+	}
+	else
+	{
+		// Launch X positive Receives
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -182,14 +192,24 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		recv_idx += (long) I.n_egroups;
-		msg_id++;
+			recv_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 	
-	// Launch X negative Receives
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_src == NULL)
 	{
-		MPI_Irecv(
+		for( long i =0; i < dim; i++)
+			flux_array[recv_idx + i] = 0;
+		recv_idx += dim;
+	}
+	else
+	{
+		// Launch X negative Receives
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -197,14 +217,24 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		recv_idx += (long) I.n_egroups;
-		msg_id++;
+			recv_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 	
-	// Launch Y positive Receives
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_src == NULL)
 	{
-		MPI_Irecv(
+		for( long i =0; i < dim; i++)
+			flux_array[recv_idx + i] = 0;
+		recv_idx += dim;
+	}
+	else
+	{
+		// Launch Y positive Receives
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -212,14 +242,24 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		recv_idx += (long) I.n_egroups;
-		msg_id++;
+			recv_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 	
-	// Launch Y negative Receives
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_src == NULL)
 	{
-		MPI_Irecv(
+		for( long i =0; i < dim; i++)
+			flux_array[recv_idx + i] = 0;
+		recv_idx += dim;
+	}
+	else
+	{
+		// Launch Y negative Receives
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -227,14 +267,24 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		recv_idx += (long) I.n_egroups;
-		msg_id++;
+			recv_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 
-	// Launch Z positive Receives
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_src == NULL)
 	{
-		MPI_Irecv(
+		for( long i =0; i < dim; i++)
+			flux_array[recv_idx + i] = 0;
+		recv_idx += dim;
+	}
+	else
+	{
+		// Launch Z positive Receives
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -242,14 +292,24 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		recv_idx += (long) I.n_egroups;
-		msg_id++;
+			recv_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 	
-	// Launch Z negative Receives
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_src == NULL)
 	{
-		MPI_Irecv(
+		for( long i =0; i < dim; i++)
+			flux_array[recv_idx + i] = 0;
+		recv_idx += dim;
+	}
+	else
+	{
+		// Launch Z negative Receives
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -257,8 +317,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		recv_idx += (long) I.n_egroups;
-		msg_id++;
+			recv_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 	
 	/////////////////////////////////////////////////////////////////////////
@@ -330,7 +391,8 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// FIXME: determine vacant neighbors using NULL or something else 
 	if( grid.x_pos_dest == NULL)
 	{
-		leakage += flux_array[send_idx];
+		leakage += pairwise_sum(flux_array[send_idx], 
+				(long) elements * (long) I.n_egroups);
 		// FIXME: Do simple receive
 	}
 	else if( grid.x_pos_src == NULL )
