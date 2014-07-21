@@ -385,20 +385,20 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	// X Positive Direction
 	send_idx = 0;
-	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
+	long dim = (long) elements * (long) I.n_egroups;
+	recv_idx = send_idx + dim;
 
 	// TODO: DO THIS FOR ALL TRANSFERS
 	// FIXME: determine vacant neighbors using NULL or something else 
 	if( grid.x_pos_dest == NULL)
 	{
-		leakage += pairwise_sum(flux_array[send_idx], 
-				(long) elements * (long) I.n_egroups);
+		leakage += pairwise_sum(flux_array[send_idx], dim);
 		// FIXME: Do simple receive
 	}
 	else if( grid.x_pos_src == NULL )
 	{
 		// FIXME: Do simple send
-		for( long i = 0; i < elements * I.n_egroups; i++)
+		for( long i = 0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
 	}
 	else{
@@ -419,8 +419,8 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// X Negative Direction
-	send_idx = recv_idx + (long) elements * (long) I.n_egroups;
-	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
+	send_idx = recv_idx + dim;
+	recv_idx = send_idx + dim;
 	MPI_Sendrecv(
 			&flux_array[send_idx], // send buffer
 			elements,              // Number of elements to send
@@ -437,8 +437,8 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			);
 	
 	// Y Positive Direction
-	send_idx = recv_idx + (long) elements * (long) I.n_egroups;
-	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
+	send_idx = recv_idx + dim;
+	recv_idx = send_idx + dim;
 	MPI_Sendrecv(
 			&flux_array[send_idx], // send buffer
 			elements,              // Number of elements to send
@@ -455,8 +455,8 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			);
 	
 	// Y Negative Direction
-	send_idx = recv_idx + (long) elements * (long) I.n_egroups;
-	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
+	send_idx = recv_idx + dim;
+	recv_idx = send_idx + dim;
 	MPI_Sendrecv(
 			&flux_array[send_idx], // send buffer
 			elements,              // Number of elements to send
@@ -473,8 +473,8 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			);
 	
 	// Z Positive Direction
-	send_idx = recv_idx + (long) elements * (long) I.n_egroups;
-	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
+	send_idx = recv_idx + dim;
+	recv_idx = send_idx + dim;
 	MPI_Sendrecv(
 			&flux_array[send_idx], // send buffer
 			elements,              // Number of elements to send
@@ -491,8 +491,8 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			);
 	
 	// Z Negative Direction
-	send_idx = recv_idx + (long) elements * (long) I.n_egroups;
-	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
+	send_idx = recv_idx + dim;
+	recv_idx = send_idx + dim;
 	MPI_Sendrecv(
 			&flux_array[send_idx], // send buffer
 			elements,              // Number of elements to send
