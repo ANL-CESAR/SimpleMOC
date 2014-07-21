@@ -135,6 +135,8 @@ double * generate_polar_angles( Input I );
 double urand(void);
 double nrand(double mean, double sigma);
 double pairwise_sum(double * vector, long size);
+double * buildExponentialTable( double precision, double maxVal );
+double interpolateTable( double * table, double x, double maxVal, double dx);
 
 // source.c
 Source * initialize_sources( Input I, size_t * nbytes );

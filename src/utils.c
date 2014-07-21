@@ -46,3 +46,42 @@ double pairwise_sum( double * vector, long size ){
 	return sum;
 }
 
+// Builds a table of exponential values for linear interpolation
+double * buildExponentialTable( double precision, double maxVal )
+{
+	// compute number of arry values
+	int N = (int) ( maxVal * sqrt(1.0 / ( 8.0 * precision * 0.01 ) ) ); 
+
+	// compute spacing
+	double dx = maxVal / (double) N;
+
+	// allocate an array to store information
+	double * table = malloc( 2 * N * sizeof(double) );
+
+	// store linear segment information (slope and y-intercept)
+	for( int n = 0; n < N; n++ )
+	{
+		// compute slope and y-intercept for ( 1 - exp(-x) )
+		double exponential = exp( - n * dx );
+		table[ 2*n ] = - exponential;
+		table[ 2*n + 1 ] = 1 + ( n * dx - 1 ) * exponential;
+	}
+}
+
+// Interpolates a formed exponential table to compute ( 1- exp(-x) )
+// at the desired x value
+double interpolateTable( double * table, double x, double maxVal, double dx)
+{
+	// check to ensure value is in domain
+	if( x > maxVal )
+		return 0.0;
+	else
+	{
+		int interval = (int) ( x / dx + 0.5 * dx );
+		double slope = table[ 2 * interval ];
+		double intercept = table[ 2 * interval + 1 ];
+		double val = slope * x + intercept;
+		return val;
+	}
+}
+
