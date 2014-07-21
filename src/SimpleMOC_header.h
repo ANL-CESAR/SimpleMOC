@@ -151,6 +151,7 @@ void gen_norm_pts(double mean, double sigma, int n_pts);
 
 // comms.c
 #ifdef MPI
+void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid);
 void transfer_boundary_fluxes( Params params, Input I, CommGrid grid);
 #endif
 
