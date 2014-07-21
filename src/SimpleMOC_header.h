@@ -144,6 +144,7 @@ void transport_sweep( Params params, Input I );
 void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double mu ); 
 void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
+double compute_keff( Params params, Input I);
 
 // test.c
 void gen_norm_pts(double mean, double sigma, int n_pts);

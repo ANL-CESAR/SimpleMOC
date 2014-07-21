@@ -40,7 +40,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	/*
 	 * Create data scrtucture for storing XS data (and chi) as follows:
 	 * An array is created which stores in contigious memory as
-	 * [ ..., Total_XS, nu*SigmaF, Chi, ...]
+	 * [ ..., Total_XS, nu*SigmaF, SigmaA, Chi, ...]
 	 */
 	
 	if(I.mype==0) printf("Beginning XS Allocation...\n");
@@ -54,8 +54,8 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	*nbytes += n_xs_regions * I.n_egroups * sizeof(double *);
 
 	// Allocate space for total XS data
-	double * XS_data = (double *) malloc( n_xs_regions * I.n_egroups * 3 * sizeof(double) );
-	*nbytes += n_xs_regions * I.n_egroups * 3 * sizeof(double);
+	double * XS_data = (double *) malloc( n_xs_regions * I.n_egroups * 4 * sizeof(double) );
+	*nbytes += n_xs_regions * I.n_egroups * 4 * sizeof(double);
 
 	// stitch allocation ptrs together for XS data
 	for( long i = 0; i < n_xs_regions; i++)
@@ -63,12 +63,12 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 	for( long i = 0; i < n_xs_regions; i++)
 		for(long j = 0; j < I.n_egroups; j++)
-			XS[i][j] = &XS_data[i * I.n_egroups * 3 + j * 3];
+			XS[i][j] = &XS_data[i * I.n_egroups * 4 + j * 4];
 
 	// Initialize XS data
 	for( long i = 0; i < n_xs_regions; i++)
 		for( int j = 0; j < I.n_egroups; j++)
-			for( int k = 0; k < 3; k++)
+			for( int k = 0; k < 4; k++)
 				XS[i][j][k] = urand();
 
 	/////////////////////////////////////////////////////////////////////////////////

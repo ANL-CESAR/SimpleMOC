@@ -422,7 +422,7 @@ double update_sources( Params params, Input I, double keff )
 				scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
 
 				// compuate new total source
-				double chi = src.XS[g][2];
+				double chi = src.XS[g][3];
 
 				// calculate new fine source
 				double newSrc = (fission_source * chi + scatter_source) / (4.0 * M_PI);
@@ -455,4 +455,91 @@ double update_sources( Params params, Input I, double keff )
 
 	return residual;
 }
+
+double compute_keff(Params params, Input I)
+{
+	// allocate temporary memory
+	double * sigma = malloc( I.n_egroups * sizeof(double) );
+	double * group_rates = malloc( I.n_egroups * sizeof(double) );
+	double * fine_rates = malloc( I.fai * sizeof(double) );
+	double * QSR_rates = malloc( I.n_source_regions_per_node * sizeof(double) );
+
+	///////////////////////////////////////////////////////////////////////////
+
+	// compute total absorption rate, looping over source regions
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+	{
+		// load absorption XS data
+		Source src = params.sources[i];
+		for( int g = 0; g < I.n_egroups; g++)	
+			sigma[g] = src.XS[g][2];
+
+		for( int j = 0; j < I.fai; j++ )
+		{
+			// calculate absorption rates
+			double * fine_flux = src.fine_flux[j];
+			for( int g = 0; g < I.n_egroups; g++)
+				group_rates[g] = sigma[g] * fine_flux[g];
+
+			// sum absorption over all energy groups
+			fine_rates[j] = pairwise_sum( group_rates, (long) I.n_egroups );
+		}
+		// sum absorption over all fine axial intervals
+		QSR_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
+	}
+	// sum absorption over all source regions in a node
+	double node_abs = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
+
+	// TODO: add node absorption to tally for all nodes
+	double tot_abs = node_abs;
+
+	///////////////////////////////////////////////////////////////////////////
+
+	// compute total absorption rate, looping over source regions
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+	{
+		// load nuSigmaF XS data
+		Source src = params.sources[i];
+		for( int g = 0; g < I.n_egroups; g++)	
+			sigma[g] = src.XS[g][1];
+
+		for( int j = 0; j < I.fai; j++ )
+		{
+			// calculate absorption rates
+			double * fine_flux = src.fine_flux[j];
+			for( int g = 0; g < I.n_egroups; g++)
+				group_rates[g] = sigma[g] * fine_flux[g];
+
+			// sum fission over all energy groups
+			fine_rates[j] = pairwise_sum( group_rates, (long) I.n_egroups );
+		}
+		// sum fission over all fine axial intervals
+		QSR_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
+	}
+	// sum fission over all source regions in a node
+	double node_fission = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
+
+	// TODO: add node fission to tally for all nodes
+	double tot_fission = node_fission;
+
+	///////////////////////////////////////////////////////////////////////////
+
+	// TODO: calculate leakage
+	double leakage = 1.0;
+
+	
+	///////////////////////////////////////////////////////////////////////////
+	
+	// free memory
+	free(sigma);
+	free(group_rates);
+	free(fine_rates);
+	free(QSR_rates);
+
+	// calculate keff
+	double keff = tot_fission / (tot_abs + leakage);
+
+	return keff;
+}
+
 
