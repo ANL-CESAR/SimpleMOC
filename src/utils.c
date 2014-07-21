@@ -74,7 +74,7 @@ double interpolateTable( double * table, double x, double maxVal, double dx)
 {
 	// check to ensure value is in domain
 	if( x > maxVal )
-		return 0.0;
+		return 1.0;
 	else
 	{
 		int interval = (int) ( x / dx + 0.5 * dx );
