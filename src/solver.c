@@ -524,8 +524,8 @@ double compute_keff(Params params, Input I)
 
 	///////////////////////////////////////////////////////////////////////////
 
-	// TODO: calculate leakage
-	double leakage = 1.0;
+	// TODO: calculate leakage by collecting leakage values from all nodes
+	double leakage = params.leakage;
 
 	
 	///////////////////////////////////////////////////////////////////////////
