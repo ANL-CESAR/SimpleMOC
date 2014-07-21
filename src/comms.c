@@ -17,16 +17,25 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Status stat;
 	MPI_Request *request = (MPI_Request *) malloc( 2 * I.ntracks * sizeof(MPI_Request));
 
+	// FIXME: I think this may be incorrect
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
 	long msg_id = 0;
 
 	/////////////////// Launch All Sends ////////////////////////
 
-	// Launch X positive Sends
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_dest == NULL )
 	{
-		MPI_Isend(
+		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
+		send_idx += elements * I.n_egroups;
+	}
+	else
+	{
+		// Launch X positive Sends
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -34,14 +43,23 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		send_idx += (long) I.n_egroups;
-		msg_id++;
+			send_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 
-	// Launch X negative Sends
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_dest == NULL )
 	{
-		MPI_Isend(
+		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
+		send_idx += elements * I.n_egroups;
+	}
+	else
+	{
+		// Launch X negative Sends
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -49,14 +67,23 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		send_idx += (long) I.n_egroups;
-		msg_id++;
+			send_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
-	
-	// Launch Y positive Sends
-	for( long i = 0; i < elements; i++ )
+
+	// check if border assembly
+	if( grid.x_pos_dest == NULL )
 	{
-		MPI_Isend(
+		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
+		send_idx += elements * I.n_egroups;
+	}
+	else
+	{	
+		// Launch Y positive Sends
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -64,14 +91,22 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		send_idx += (long) I.n_egroups;
-		msg_id++;
+			send_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
-
-	// Launch Y negative Sends
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_dest == NULL )
 	{
-		MPI_Isend(
+		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
+		send_idx += elements * I.n_egroups;
+	}
+	else
+	{	
+		// Launch Y negative Sends
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -79,10 +114,19 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		send_idx += (long) I.n_egroups;
-		msg_id++;
+			send_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 	
+	// check if border assembly
+	if( grid.x_pos_dest == NULL )
+	{
+		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
+		send_idx += elements * I.n_egroups;
+	}
+	else
+	{	
 	// Launch Z positive Sends
 	for( long i = 0; i < elements; i++ )
 	{
@@ -98,10 +142,18 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		msg_id++;
 	}
 
-	// Launch Z negative Sends
-	for( long i = 0; i < elements; i++ )
+	// check if border assembly
+	if( grid.x_pos_dest == NULL )
 	{
-		MPI_Isend(
+		params.leakage += pairwise_sum( flux_array[send_idx], elements * I.n_egroups );
+		send_idx += elements * I.n_egroups;
+	}
+	else
+	{	
+	// Launch Z negative Sends
+		for( long i = 0; i < elements; i++ )
+		{
+			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
 				1,                       // Number of Elements
 				grid.Flux_Array,         // Type of element (all energy group array)
@@ -109,8 +161,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				msg_id,                  // Message ID
 				grid.cart_comm_3d,       // MPI Communicator
 				&request[msg_id] );      // MPI Request (to monitor when call finishes)
-		send_idx += (long) I.n_egroups;
-		msg_id++;
+			send_idx += (long) I.n_egroups;
+			msg_id++;
+		}
 	}
 
 	/////////////////// Launch All Receives ////////////////////////
