@@ -266,6 +266,7 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long recv_idx;
 	MPI_Status stat;
 
+	// FIXME: I don't think this is correct
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
 	// X Positive Direction
@@ -274,15 +275,16 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	// TODO: DO THIS FOR ALL TRANSFERS
 	// FIXME: determine vacant neighbors using NULL or something else 
-	if( send_idx == NULL)
+	if( grid.x_pos_dest == NULL)
 	{
 		leakage += flux_array[send_idx];
 		// FIXME: Do simple receive
 	}
-	else if( recv_idx == NULL )
+	else if( grid.x_pos_src == NULL )
 	{
 		// FIXME: Do simple send
-		flux_array[recv_idx] = 0;
+		for( long i = 0; i < elements * I.n_egroups; i++)
+			flux_array[recv_idx + i] = 0;
 	}
 	else{
 		MPI_Sendrecv(
