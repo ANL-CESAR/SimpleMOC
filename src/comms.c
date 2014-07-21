@@ -51,7 +51,21 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// X Positive Direction
 	send_idx = 0;
 	recv_idx = send_idx + (long) elements * (long) I.n_egroups;
-	MPI_Sendrecv(
+
+	// TODO: DO THIS FOR ALL TRANSFERS
+	// FIXME: determine vacant neighbors using NULL or something else 
+	if( send_idx == NULL)
+	{
+		leakage += flux_array[send_idx];
+		// FIXME: Do simple receive
+	}
+	else if( recv_idx == NULL )
+	{
+		// FIXME: Do simple send
+		flux_array[recv_idx] = 0;
+	}
+	else{
+		MPI_Sendrecv(
 			&flux_array[send_idx], // send buffer
 			elements,              // Number of elements to send
 			grid.Flux_Array,       // Type of element
@@ -65,6 +79,7 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			grid.cart_comm_3d,     // Communicator (3d cart comm)
 			&stat                  // Status variable (non-blocking)
 			);
+	}
 
 	// X Negative Direction
 	send_idx = recv_idx + (long) elements * (long) I.n_egroups;

@@ -80,6 +80,7 @@ Params build_tracks( Input I )
 		printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 		border_print();
 	}
+	params.leakage = 0;
 	return params;
 }
 

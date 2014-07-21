@@ -84,7 +84,8 @@ typedef struct{
 	Track2D * tracks_2D;
 	Track *** tracks;
 	Source * sources;
-   	double * polar_angles;	
+   	double * polar_angles;
+	double leakage;	
 } Params;
 
 #ifdef MPI
