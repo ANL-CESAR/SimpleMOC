@@ -47,8 +47,11 @@ double pairwise_sum( double * vector, long size ){
 }
 
 // Builds a table of exponential values for linear interpolation
-double * buildExponentialTable( double precision, double maxVal )
+Table buildExponentialTable( double precision, double maxVal )
 {
+	// define table
+	Table table;
+
 	// compute number of arry values
 	int N = (int) ( maxVal * sqrt(1.0 / ( 8.0 * precision * 0.01 ) ) ); 
 
@@ -56,30 +59,37 @@ double * buildExponentialTable( double precision, double maxVal )
 	double dx = maxVal / (double) N;
 
 	// allocate an array to store information
-	double * table = malloc( 2 * N * sizeof(double) );
+	double * tableVals = malloc( 2 * N * sizeof(double) );
 
 	// store linear segment information (slope and y-intercept)
 	for( int n = 0; n < N; n++ )
 	{
 		// compute slope and y-intercept for ( 1 - exp(-x) )
 		double exponential = exp( - n * dx );
-		table[ 2*n ] = - exponential;
-		table[ 2*n + 1 ] = 1 + ( n * dx - 1 ) * exponential;
+		tableVals[ 2*n ] = - exponential;
+		tableVals[ 2*n + 1 ] = 1 + ( n * dx - 1 ) * exponential;
 	}
+
+	// assign data to table
+	table.dx = dx;
+	table.values = tableVals;
+	table.maxVal = maxVal;
+
+	return table;
 }
 
 // Interpolates a formed exponential table to compute ( 1- exp(-x) )
 // at the desired x value
-double interpolateTable( double * table, double x, double maxVal, double dx)
+double interpolateTable( Table table, double x)
 {
 	// check to ensure value is in domain
-	if( x > maxVal )
+	if( x > table.maxVal )
 		return 1.0;
 	else
 	{
-		int interval = (int) ( x / dx + 0.5 * dx );
-		double slope = table[ 2 * interval ];
-		double intercept = table[ 2 * interval + 1 ];
+		int interval = (int) ( x / table.dx + 0.5 * table.dx );
+		double slope = table.values[ 2 * interval ];
+		double intercept = table.values[ 2 * interval + 1 ];
 		double val = slope * x + intercept;
 		return val;
 	}

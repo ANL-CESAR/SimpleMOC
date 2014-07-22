@@ -112,7 +112,8 @@ void transport_sweep( Params params, Input I )
 						long QSR_id = rand() % I.n_source_regions_per_node;
 						
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track, &params.sources[QSR_id], I, ds, mu );
+						attenuate_fluxes( track, &params.sources[QSR_id], I,
+							   params, ds, mu );
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1  || reset)
@@ -200,7 +201,8 @@ void transport_sweep( Params params, Input I )
 						long QSR_id = rand() % I.n_source_regions_per_node;
 
 						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track , &params.sources[QSR_id], I, ds, mu );
+						attenuate_fluxes( track , &params.sources[QSR_id], I, params,
+								ds, mu );
 					
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 || reset)
@@ -216,7 +218,7 @@ void transport_sweep( Params params, Input I )
 	return;
 }
 
-void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double mu ) 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, Params params, double ds, double mu ) 
 {
 	// compute fine axial interval spacing
 	double dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -294,13 +296,14 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double m
 			q2 = c2;
 		}
 
-		// calculate exponential
-		// TODO: Compute (1 - exp) {OpenMOC} using table lookup
-		double expVal = 1.0 - exp( - sigT * ds );
-
-		// add contribution to new source flux
+		// calculate common values for efficiency
 		double tau = sigT * ds;
 		double sigT2 = sigT * sigT;
+		
+		// compute exponential ( 1 - exp(-x) ) using table lookup
+		double expVal = interpolateTable( params.expTable, tau );  
+
+		// add contribution to new source flux
 		double flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
 			/ sigT2
 			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)

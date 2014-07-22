@@ -79,13 +79,21 @@ typedef struct{
 	double ** scattering_matrix;
 } Source;
 
+// Table structure for computing exponential
+typedef struct{
+	double * values;
+	double dx;
+	double maxVal;
+} Table;
+
 // Params Structure for easier data pointer passing
 typedef struct{
 	Track2D * tracks_2D;
 	Track *** tracks;
 	Source * sources;
    	double * polar_angles;
-	double leakage;	
+	double leakage;
+	Table expTable;
 } Params;
 
 #ifdef MPI
@@ -135,8 +143,8 @@ double * generate_polar_angles( Input I );
 double urand(void);
 double nrand(double mean, double sigma);
 double pairwise_sum(double * vector, long size);
-double * buildExponentialTable( double precision, double maxVal );
-double interpolateTable( double * table, double x, double maxVal, double dx);
+Table buildExponentialTable( double precision, double maxVal );
+double interpolateTable( Table table, double x);
 
 // source.c
 Source * initialize_sources( Input I, size_t * nbytes );
@@ -144,7 +152,7 @@ void free_sources( Input I, Source * sources );
 
 // solver.c
 void transport_sweep( Params params, Input I );
-void attenuate_fluxes( Track * track, Source * QSR, Input I, double ds, double mu ); 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, Params params, double ds, double mu ); 
 void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 double compute_keff( Params params, Input I);
