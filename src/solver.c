@@ -459,7 +459,7 @@ double update_sources( Params params, Input I, double keff )
 	return residual;
 }
 
-double compute_keff(Params params, Input I)
+double compute_keff(Params params, Input I, CommGrid grid)
 {
 	// allocate temporary memory
 	double * sigma = malloc( I.n_egroups * sizeof(double) );
@@ -530,6 +530,43 @@ double compute_keff(Params params, Input I)
 	// TODO: calculate leakage by collecting leakage values from all nodes
 	double leakage = params.leakage;
 
+	// MPi Reduction
+	double master_tot_abs = 0;
+	double master_tot_fission = 0;
+	double master_leakage = 0;
+
+	#ifdef MPI
+	
+	// Total Absorption Reduction
+	MPI_Reduce( &tot_abs,         // Send Buffer
+			&master_tot_abs,      // Receive Buffer
+			1,                    // Element Count
+			MPI_DOUBLE,           // Element Type
+			MPI_SUM,              // Reduciton Operation Type
+			0,                    // Master Rank
+			grid.cart_comm_3d );  // MPI Communicator
+	
+	// Total Fission Reduction
+	MPI_Reduce( &tot_fission,     // Send Buffer
+			&master_tot_fission,  // Receive Buffer
+			1,                    // Element Count
+			MPI_DOUBLE,           // Element Type
+			MPI_SUM,              // Reduciton Operation Type
+			0,                    // Master Rank
+			grid.cart_comm_3d );  // MPI Communicator
+	
+	// Total Leakage Reduction
+	MPI_Reduce( &leakage,         // Send Buffer
+			&master_leakage,      // Receive Buffer
+			1,                    // Element Count
+			MPI_DOUBLE,           // Element Type
+			MPI_SUM,              // Reduciton Operation Type
+			0,                    // Master Rank
+			grid.cart_comm_3d );  // MPI Communicator
+
+	MPI_Barrier(grid.cart_comm_3d);
+
+	#endif
 	
 	///////////////////////////////////////////////////////////////////////////
 	
@@ -542,7 +579,15 @@ double compute_keff(Params params, Input I)
 	// calculate keff
 	double keff = tot_fission / (tot_abs + leakage);
 
+	#ifdef MPI
+	double master_keff = master_tot_fission / (master_tot_abs + master_tot_leakage);
+	#endif
+
+	#ifdef MPI
+	return master_keff;
+	#else
 	return keff;
+	#endif
 }
 
 
