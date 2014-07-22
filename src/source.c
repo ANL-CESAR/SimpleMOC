@@ -159,10 +159,11 @@ Source * initialize_sources( Input I, size_t * nbytes )
 		sources[i].vol = urand();
 	}
 
-	// TODO: Free more memory
 	// free memory of temporary variables
 	free( s_matrices );
 	free( XS );
+	free( fineFlux );
+	free( fineSource);
 
 	return sources;
 }
@@ -170,6 +171,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 void free_sources( Input I, Source * sources )
 {
 	// Free XS's
+	free( sources[0].XS[0] );
 	free( sources[0].XS );
 	// Free Flux's
 	free( sources[0].fine_flux[0] );
