@@ -1,11 +1,6 @@
 #include"SimpleMOC_header.h"
 
 // run one full transport sweep, return k
-
-// TODO: crank more efficiency and accuracy out of code 
-// (i.e. less divisions, pairwise additions, precompute
-// values used in many iterations, etc) see OpenMOC
-
 void transport_sweep( Params params, Input I )
 {
 	if(I.mype==0) printf("Starting transport sweep ...\n");
@@ -493,9 +488,6 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	// sum absorption over all source regions in a node
 	double node_abs = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
 
-	// TODO: add node absorption to tally for all nodes
-	double tot_abs = node_abs;
-
 	///////////////////////////////////////////////////////////////////////////
 
 	// compute total absorption rate, looping over source regions
@@ -522,24 +514,21 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	// sum fission over all source regions in a node
 	double node_fission = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
 
-	// TODO: add node fission to tally for all nodes
-	double tot_fission = node_fission;
-
 	///////////////////////////////////////////////////////////////////////////
 
 	// TODO: calculate leakage by collecting leakage values from all nodes
 	double leakage = params.leakage;
 
 	// MPi Reduction
-	double master_tot_abs = 0;
-	double master_tot_fission = 0;
-	double master_leakage = 0;
+	double tot_abs = 0;
+	double tot_fission = 0;
+	double leakage = 0;
 
 	#ifdef MPI
 	
 	// Total Absorption Reduction
-	MPI_Reduce( &tot_abs,         // Send Buffer
-			&master_tot_abs,      // Receive Buffer
+	MPI_Reduce( &node_abs,         // Send Buffer
+			&tot_abs,      // Receive Buffer
 			1,                    // Element Count
 			MPI_DOUBLE,           // Element Type
 			MPI_SUM,              // Reduciton Operation Type
@@ -547,8 +536,8 @@ double compute_keff(Params params, Input I, CommGrid grid)
 			grid.cart_comm_3d );  // MPI Communicator
 	
 	// Total Fission Reduction
-	MPI_Reduce( &tot_fission,     // Send Buffer
-			&master_tot_fission,  // Receive Buffer
+	MPI_Reduce( &node_fission,     // Send Buffer
+			&tot_fission,  // Receive Buffer
 			1,                    // Element Count
 			MPI_DOUBLE,           // Element Type
 			MPI_SUM,              // Reduciton Operation Type
@@ -556,8 +545,8 @@ double compute_keff(Params params, Input I, CommGrid grid)
 			grid.cart_comm_3d );  // MPI Communicator
 	
 	// Total Leakage Reduction
-	MPI_Reduce( &leakage,         // Send Buffer
-			&master_leakage,      // Receive Buffer
+	MPI_Reduce( &params.leakage,  // Send Buffer
+			&leakage,      // Receive Buffer
 			1,                    // Element Count
 			MPI_DOUBLE,           // Element Type
 			MPI_SUM,              // Reduciton Operation Type
@@ -566,6 +555,10 @@ double compute_keff(Params params, Input I, CommGrid grid)
 
 	MPI_Barrier(grid.cart_comm_3d);
 
+	// calculate keff
+	double keff = tot_fission/ (tot_abs + leakage);
+	#else
+	double keff = node_fission / (node_abs + params.leakage);
 	#endif
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -576,18 +569,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	free(fine_rates);
 	free(QSR_rates);
 
-	// calculate keff
-	double keff = tot_fission / (tot_abs + leakage);
-
-	#ifdef MPI
-	double master_keff = master_tot_fission / (master_tot_abs + master_leakage);
-	#endif
-
-	#ifdef MPI
-	return master_keff;
-	#else
 	return keff;
-	#endif
 }
 
 
