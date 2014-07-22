@@ -2,7 +2,6 @@
 
 #ifdef MPI
 // Faster Transfer information between nodes (angular fluxes)
-// TODO: Need to handle border cases!
 void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 {
 	if(I.mype==0) printf("Beginning Inter-Node Border Flux Transfer...\n");
@@ -11,13 +10,16 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// namely, that the total number of tracks is divisible by 6
 	int elements = I.ntracks / 6;
 
-	//TODO: Proper checking of this -- right now we aren't actually send all data
-	//assert( I.ntracks % 6 == 0 );
+	double h = I.domain_height;
+	double x = I.assembly_width;
+
+	long ntracks_per_axial_direction  = I.ntracks * x / (2*x + 4*h);
+	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
+
 	long send_idx = 0;
 	MPI_Status stat;
 	MPI_Request *request = (MPI_Request *) malloc( 2 * I.ntracks * sizeof(MPI_Request));
 
-	// FIXME: I think this may be incorrect
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
 	long dim = (long) elements * (long) I.n_egroups;
@@ -34,7 +36,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X positive Sends
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
@@ -58,7 +60,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X negative Sends
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
@@ -82,7 +84,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 		// Launch Y positive Sends
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
@@ -105,7 +107,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 		// Launch Y negative Sends
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
@@ -129,7 +131,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 	// Launch Z positive Sends
-	for( long i = 0; i < elements; i++ )
+	for( long i = 0; i < ntracks_per_axial_direction; i++ )
 	{
 		MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
@@ -152,7 +154,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 	// Launch Z negative Sends
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction; i++ )
 		{
 			MPI_Isend(
 				&flux_array[send_idx],   // Send Buffer
@@ -182,7 +184,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X positive Receives
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
@@ -207,7 +209,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X negative Receives
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
@@ -232,7 +234,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Y positive Receives
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
@@ -257,7 +259,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Y negative Receives
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction; i++ )
 		{
 			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
@@ -282,7 +284,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Z positive Receives
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction; i++ )
 		{
 			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer
@@ -307,7 +309,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Z negative Receives
-		for( long i = 0; i < elements; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction; i++ )
 		{
 			MPI_Irecv(
 				&flux_array[recv_idx],   // Recv Buffer

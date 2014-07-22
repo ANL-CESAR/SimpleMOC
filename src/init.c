@@ -34,6 +34,7 @@ Input get_input( void )
 	I.ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
 	I.ntracks = I.ntracks_2D * I.n_polar_angles * I.z_stacked;  
+	I.domain_height = I.height / I.decomp_assemblies_ax;
 
 	// TODO: Add file/CLI user input
 
