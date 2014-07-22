@@ -4,6 +4,7 @@
 
 COMPILER    = gnu
 MPI         = no
+OPENMP      = yes
 OPTIMIZE    = no
 DEBUG       = yes
 PROFILE     = no
@@ -49,7 +50,7 @@ ifeq ($(MACHINE),bluegene)
 endif
 
 # Standard Flags
-CFLAGS := -fopenmp -std=gnu99
+CFLAGS := -std=gnu99
 
 # Linker Flags
 LDFLAGS = -lm
@@ -83,6 +84,11 @@ endif
 ifeq ($(MPI),yes)
   CC = mpicc
   CFLAGS += -DMPI
+endif
+
+# OpenMP
+ifeq ($(OPENMP),yes)
+	CFLAGS += -fopenmp
 endif
 
 

@@ -145,6 +145,7 @@ double nrand(double mean, double sigma);
 double pairwise_sum(double * vector, long size);
 Table buildExponentialTable( double precision, double maxVal );
 double interpolateTable( Table table, double x);
+double get_time(void);
 
 // source.c
 Source * initialize_sources( Input I, size_t * nbytes );

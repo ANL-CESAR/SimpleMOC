@@ -95,3 +95,19 @@ double interpolateTable( Table table, double x)
 	}
 }
 
+// Timer function. Depends on if compiled with MPI, openmp, or vanilla
+double get_time(void)
+{
+	#ifdef MPI
+	return MPI_Wtime();
+	#endif
+
+	#ifdef OPENMP
+	return omp_get_wtime();
+	#endif
+
+	time_t time;
+	time = clock();
+
+	return (double) time / (double) CLOCKS_PER_SEC;
+}

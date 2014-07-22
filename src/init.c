@@ -53,7 +53,7 @@ Params build_tracks( Input I )
 
 	if(I.mype == 0)
 	{
-		center_print("INITIALIATION", 79);
+		center_print("INITIALIZATION", 79);
 		border_print();
 		printf("Initializing 2D tracks...\n");
 	}
