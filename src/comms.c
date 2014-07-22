@@ -4,6 +4,7 @@
 // Faster Transfer information between nodes (angular fluxes)
 void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 {
+	MPI_Barrier(grid.cart_comm_3d);
 	if(I.mype==0) printf("Beginning Inter-Node Border Flux Transfer...\n");
 
 	// Note we are introducing a new input restriction for convenience,
@@ -202,7 +203,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_src == -1)
+	if( grid.x_neg_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -227,7 +228,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_src == -1)
+	if( grid.y_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -252,7 +253,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_src == -1)
+	if( grid.y_neg_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -277,7 +278,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_src == -1)
+	if( grid.z_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -302,7 +303,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_src == -1)
+	if( grid.z_neg_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
