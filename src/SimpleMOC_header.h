@@ -154,7 +154,8 @@ void free_sources( Input I, Source * sources );
 
 // solver.c
 void transport_sweep( Params params, Input I );
-void attenuate_fluxes( Track * track, Source * QSR, Input I, Params params, double ds, double mu ); 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, 
+		Params params, double ds, double mu, double az_weight ); 
 void renormalize_flux( Params params, Input I );
 double update_sources( Params params, Input I, double keff );
 

@@ -113,7 +113,7 @@ void transport_sweep( Params params, Input I )
 						
 						// update sources and fluxes from attenuation over FSR
 						attenuate_fluxes( track, &params.sources[QSR_id], I,
-							   params, ds, mu );
+							   params, ds, mu, params.tracks_2D[i].az_weight );
 
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1  || reset)
@@ -202,7 +202,7 @@ void transport_sweep( Params params, Input I )
 
 						// update sources and fluxes from attenuation over FSR
 						attenuate_fluxes( track , &params.sources[QSR_id], I, params,
-								ds, mu );
+								ds, mu, params.tracks_2D[i].az_weight );
 					
 						// update with new z height or reset if finished
 						if( n == params.tracks_2D[i].n_segments - 1 || reset)
@@ -218,7 +218,8 @@ void transport_sweep( Params params, Input I )
 	return;
 }
 
-void attenuate_fluxes( Track * track, Source * QSR, Input I, Params params, double ds, double mu ) 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, 
+		Params params, double ds, double mu, double az_weight ) 
 {
 	// compute fine axial interval spacing
 	double dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -230,9 +231,8 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I, Params params, doub
 	double zin = track->z_height - dz * ( (int) ( track->z_height / dz ) + 0.5 );
 
 	// compute weight (azimuthal * polar)
-	// TODO: add track weight (area), also add azimuthal 
-	// (tracks_2D[i].az_weight)
-	double weight = track->p_weight;
+	// NOTE: real app would also have volume weight component
+	double weight = track->p_weight * az_weight;
 	double mu2 = mu * mu;
 
 	// load fine source region flux vector
