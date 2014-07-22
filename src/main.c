@@ -37,7 +37,7 @@ int main( int argc, char * argv[] )
 	{
 		transport_sweep(params, input);                // Local
 		#ifdef MPI
-		transfer_boundary_fluxes(params, input, grid); // MPI Caretesian Shift Comms
+		fast_transfer_boundary_fluxes(params, input, grid); // MPI Caretesian Shift Comms
 		#endif
 		renormalize_flux(params,input);                // MPI Global Accumulate
 		res = update_sources(params, input, keff);     // Local
