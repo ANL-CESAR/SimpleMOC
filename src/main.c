@@ -21,9 +21,7 @@ int main( int argc, char * argv[] )
 
 	Input input = get_input();
 	
-	#ifdef MPI
 	CommGrid grid = init_mpi_grid( input );
-	#endif
 
 	if( mype == 0 )
 		print_input_summary(input);

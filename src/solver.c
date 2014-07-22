@@ -567,7 +567,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	// calculate keff
 	double keff = tot_fission/ (tot_abs + leakage);
 	#else
-	double keff = node_fission / (node_abs + params.leakage);
+	double keff = node_fission / (node_abs + *params.leakage);
 	#endif
 	
 	///////////////////////////////////////////////////////////////////////////

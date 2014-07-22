@@ -121,9 +121,7 @@ typedef struct{
 // init.c
 Input get_input( void );
 Params build_tracks( Input I );
-#ifdef MPI
 CommGrid init_mpi_grid( Input I );
-#endif
 
 // io.c
 void logo(int version);

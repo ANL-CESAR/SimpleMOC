@@ -93,10 +93,12 @@ Params build_tracks( Input I )
 	return params;
 }
 
-#ifdef MPI
 // Initializes 3D Cartesian Communication Grid + Shift Ranks
 CommGrid init_mpi_grid( Input I )
 {
+	CommGrid grid;
+
+	#ifdef MPI
 	MPI_Comm cart_comm_3d;
 	int ndims = 3;
 	int dims[3] = {2,2,2};
@@ -132,7 +134,6 @@ CommGrid init_mpi_grid( Input I )
 	MPI_Cart_shift( cart_comm_3d, 2,  1, &z_pos_src, &z_pos_dest );
 	MPI_Cart_shift( cart_comm_3d, 2, -1, &z_neg_src, &z_neg_dest );
 
-	CommGrid grid;
 	grid.cart_comm_3d = cart_comm_3d;
 	grid.x_pos_src    = x_pos_src;
 	grid.x_pos_dest   = x_pos_dest;
@@ -155,6 +156,7 @@ CommGrid init_mpi_grid( Input I )
 
 	grid.Flux_Array = flux_array;
 
+	#endif
+
 	return grid;
 }
-#endif
