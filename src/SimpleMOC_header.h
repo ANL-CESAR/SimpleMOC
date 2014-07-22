@@ -98,11 +98,12 @@ typedef struct{
 	Table expTable;
 } Params;
 
-#ifdef MPI
 // MPI 3D Grid info
 typedef struct{
+	#ifdef MPI
 	MPI_Comm cart_comm_3d;
 	MPI_Datatype Flux_Array;
+	#endif
 	int x_pos_src;
 	int x_pos_dest;
 	int x_neg_src;
@@ -116,7 +117,6 @@ typedef struct{
 	int z_neg_src;
 	int z_neg_dest;
 } CommGrid;
-#endif
 
 // init.c
 Input get_input( void );
@@ -156,12 +156,9 @@ void free_sources( Input I, Source * sources );
 void transport_sweep( Params params, Input I );
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
 		Params params, double ds, double mu, double az_weight ); 
-void renormalize_flux( Params params, Input I );
+void renormalize_flux( Params params, Input I, CommGrid grid );
 double update_sources( Params params, Input I, double keff );
-
-#ifdef MPI
 double compute_keff( Params params, Input I, CommGrid grid);
-#endif
 
 // test.c
 void gen_norm_pts(double mean, double sigma, int n_pts);

@@ -330,7 +330,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	/////////////////////////////////////////////////////////////////////////
 
 	// Wait for all Communication to Complete
-	for( long i = 0; i < I.ntracks * 2; i++ )
+	for( long i = 0; i < I.ntracks * 2 / 100; i++ )
 		MPI_Wait( &request[i], &stat );
 
 	MPI_Barrier( grid.cart_comm_3d );

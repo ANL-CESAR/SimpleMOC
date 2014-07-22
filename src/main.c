@@ -40,7 +40,7 @@ int main( int argc, char * argv[] )
 		#ifdef MPI
 		fast_transfer_boundary_fluxes(params, input, grid); // MPI Caretesian Shift Comms
 		#endif
-		renormalize_flux(params,input);                // MPI Global Accumulate
+		renormalize_flux(params,input, grid);                // MPI Global Accumulate
 		res = update_sources(params, input, keff);     // Local
 		#ifdef MPI
 		keff = compute_keff(params, input, grid);            // MPI Global Accumulate

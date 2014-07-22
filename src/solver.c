@@ -15,7 +15,6 @@ void transport_sweep( Params params, Input I )
 	double fine_delta_z = node_delta_z / (I.cai * I.fai);
 
 	// initialize fluxes in transport sweep
-	// TODO: insert a barrier
 	for( int i = 0; i < ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
@@ -24,10 +23,6 @@ void transport_sweep( Params params, Input I )
 				for( int g = 0; g < I.n_egroups; g++)
 					track->psi[g] = track->start_flux[g];
 			}
-
-	#ifdef MPI
-	MPI_Barrier(grid.cart_comm_3d);
-	#endif
 
 	// Start transport sweep
 
@@ -320,7 +315,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 
 
 // renormalize flux for next transport sweep iteration
-void renormalize_flux( Params params, Input I )
+void renormalize_flux( Params params, Input I, CommGrid grid )
 {
 	// tally total fission rate (pair-wise sum)
 	double * fission_rates = malloc( I.n_source_regions_per_node * sizeof(double) );
