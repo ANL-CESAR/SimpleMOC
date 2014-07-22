@@ -33,6 +33,7 @@ typedef struct{
 	double height;             // Height of the reactor - 400 cm
 	double domain_height;      // Z Height of a domain
 	long n_2D_source_regions_per_assembly; // 3M source regions per assembly (estimate)
+	double precision;		   // precision for source convergence
 	long n_source_regions_per_node; // Number of source regions in a given node
 	long mype;                 // MPI Rank
 	long ntracks_2D;           // Number of 2D tracks (derived)

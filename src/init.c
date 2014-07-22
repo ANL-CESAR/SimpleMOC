@@ -22,6 +22,7 @@ Input get_input( void )
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
 	I.n_2D_source_regions_per_assembly = 3000; // Change to 3M source regions per assembly (estimate)
+	I.precision = 0.01;			// precision for source convergence
 	I.mype = 0;                 // MPI Rank
 
 	#ifdef MPI
@@ -81,7 +82,12 @@ Params build_tracks( Input I )
 		printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 		border_print();
 	}
+	// TODO: Fix params leakage attribute to referenced
 	params.leakage = 0;
+
+	// build exponential table for interpolation
+	params.expTable = buildExponentialTable( I.precision, 10.0); 
+
 	return params;
 }
 

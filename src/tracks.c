@@ -106,7 +106,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	*nbytes += flux_bytes_needed;
 	size_t flux_idx = 0;
 
-	long offset = ntracks2D * I.n_polar_angles * z_stacked * I.n_egroups;
+	long offset = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups;
 
 	for( long i = 0; i < ntracks_2D; i++ )
 	{
