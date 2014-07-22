@@ -41,7 +41,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.x_pos_dest == -1 )
 	{
-		params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
 		send_idx += dim;
 	}
 	else
@@ -66,7 +66,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.x_neg_dest == -1 )
 	{
-		params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
 		send_idx += dim;
 	}
 	else
@@ -91,7 +91,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.y_pos_dest == -1 )
 	{
-		params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
 		send_idx += dim;
 	}
 	else
@@ -115,7 +115,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.y_neg_dest == -1 )
 	{
-		params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
 		send_idx += dim;
 	}
 	else
@@ -140,7 +140,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.z_pos_dest == -1 )
 	{
-		params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
 		send_idx += dim;
 	}
 	else
@@ -165,7 +165,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// check if border assembly
 	if( grid.z_neg_dest == -1 )
 	{
-		params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
 		send_idx += dim;
 	}
 	else
