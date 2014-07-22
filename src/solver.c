@@ -25,6 +25,10 @@ void transport_sweep( Params params, Input I )
 					track->psi[g] = track->start_flux[g];
 			}
 
+	#ifdef MPI
+	MPI_Barrier(grid.cart_comm_3d);
+	#endif
+
 	// Start transport sweep
 
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
