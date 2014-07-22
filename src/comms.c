@@ -18,18 +18,18 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
 
 	// Calculate all requests needed
-	long n_requests = ntracks_per_radial_direction / 100;
-	n_requests *= 4;
-	n_requests += 2 * (ntracks_per_axial_direction / 100 );
+	long max_requests = ntracks_per_radial_direction / 100;
+	max_requests *= 4;
+	max_requests += 2 * (ntracks_per_axial_direction / 100 );
 
 	// One for send , one for received
-	n_requests *= 2;
+	max_requests *= 2;
 
 	long send_idx = 0;
 	MPI_Status stat;
-	MPI_Request *request = (MPI_Request *) malloc( n_requests * sizeof(MPI_Request));
+	MPI_Request *request = (MPI_Request *) malloc( max_requests * sizeof(MPI_Request));
 
-	n_requests = 0;
+	long n_requests = 0;
 
 	// Use knowledge of underlying flux structure for efficiency
 	double * flux_array = params.tracks[0][0][0].start_flux;
@@ -373,6 +373,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Barrier( grid.cart_comm_3d );
 
 	if(I.mype==0) printf("Finished Inter-Node Border Flux Transfer.\n");
+
+	free(request);
 }
 #endif
 

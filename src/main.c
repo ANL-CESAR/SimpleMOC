@@ -36,7 +36,7 @@ int main( int argc, char * argv[] )
 
 	for( int i = 0; i < num_iters; i++)
 	{
-		//transport_sweep(params, input);                // Local
+		transport_sweep(params, input);                // Local
 		#ifdef MPI
 		fast_transfer_boundary_fluxes(params, input, grid); // MPI Caretesian Shift Comms
 		#endif
