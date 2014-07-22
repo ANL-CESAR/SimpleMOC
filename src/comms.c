@@ -38,11 +38,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X positive Sends
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction / 100; i++ )
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.x_pos_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
@@ -62,11 +62,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X negative Sends
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction / 100; i++ )
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.x_neg_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
@@ -86,11 +86,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 		// Launch Y positive Sends
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.y_pos_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
@@ -109,11 +109,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 		// Launch Y negative Sends
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.y_neg_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
@@ -133,11 +133,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 		// Launch Z positive Sends
-		for( long i = 0; i < ntracks_per_axial_direction; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.z_pos_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
@@ -157,11 +157,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{	
 		// Launch Z negative Sends
-		for( long i = 0; i < ntracks_per_axial_direction; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.z_neg_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
@@ -187,11 +187,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X positive Receives
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.x_pos_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
@@ -212,11 +212,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch X negative Receives
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.x_neg_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
@@ -237,11 +237,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Y positive Receives
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.y_pos_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
@@ -262,11 +262,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Y negative Receives
-		for( long i = 0; i < ntracks_per_radial_direction; i++ )
+		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.y_neg_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
@@ -287,11 +287,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Z positive Receives
-		for( long i = 0; i < ntracks_per_axial_direction; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.z_pos_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
@@ -312,11 +312,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	else
 	{
 		// Launch Z negative Receives
-		for( long i = 0; i < ntracks_per_axial_direction; i++ )
+		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					1,                       // Number of Elements
+					100,                       // Number of Elements
 					grid.Flux_Array,         // Type of element (all energy group array)
 					grid.z_neg_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
