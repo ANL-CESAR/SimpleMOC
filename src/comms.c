@@ -17,7 +17,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Status stat;
 	MPI_Request *request = (MPI_Request *) malloc( 2 * I.ntracks * sizeof(MPI_Request));
 
-	// FIXME: I think this may be incorrect
+	// Use knowledge of underlying flux structure for efficiency
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
 	long dim = (long) elements * (long) I.n_egroups;
@@ -380,7 +380,7 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long recv_idx;
 	MPI_Status stat;
 
-	// FIXME: I don't think this is correct
+	// Use knowledge of underlying flux structure for efficiency
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
 	// X Positive Direction
