@@ -323,8 +323,7 @@ void renormalize_flux( Params params, Input I )
 	double * fine_fission_rates = malloc( I.fai * sizeof(double) );
 	double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
 
-	// TODO: Add communication between ranks to accumulate total fission rate
-	// (another for loop will be required over ranks)
+	// accumulate total fission rate on node domain
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source src = params.sources[i];
@@ -336,9 +335,23 @@ void renormalize_flux( Params params, Input I )
 		}
 		fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
 	}
-	double total_fission_rate = pairwise_sum(fission_rates, 
+	double node_fission_rate = pairwise_sum(fission_rates, 
 			I.n_source_regions_per_node);
-
+	
+	#ifdef MPI	
+	// accumulate total fission rate by MPI reduction
+	double total_fission_rate = 0;
+	MPI_Reduce( &node_fission_rate, // Send Buffer
+			&total_fission_rate,    // Receive Buffer
+			1,                    	// Element Count
+			MPI_DOUBLE,           	// Element Type
+			MPI_SUM,              	// Reduciton Operation Type
+			0,                    	// Master Rank
+			grid.cart_comm_3d );  	// MPI Communicator
+	#else
+	double total_fission_rate = node_fission_rate;
+	#endif
+	
 	// free allocated memory
 	free(fission_rates);
 	free(fine_fission_rates);
@@ -515,9 +528,6 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	double node_fission = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
 
 	///////////////////////////////////////////////////////////////////////////
-
-	// TODO: calculate leakage by collecting leakage values from all nodes
-	double leakage = params.leakage;
 
 	// MPi Reduction
 	double tot_abs = 0;
