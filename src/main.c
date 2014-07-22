@@ -41,9 +41,11 @@ int main( int argc, char * argv[] )
 		#endif
 		renormalize_flux(params,input);                // MPI Global Accumulate
 		res = update_sources(params, input, keff);     // Local
+		#ifdef MPI
 		keff = compute_keff(params, input, grid);            // MPI Global Accumulate
 		if( mype == 0 )
 			printf("keff = %lf\n", keff);
+		#endif
 	}
 
 	free_2D_tracks( params.tracks_2D );

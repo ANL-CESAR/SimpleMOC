@@ -580,7 +580,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	double keff = tot_fission / (tot_abs + leakage);
 
 	#ifdef MPI
-	double master_keff = master_tot_fission / (master_tot_abs + master_tot_leakage);
+	double master_keff = master_tot_fission / (master_tot_abs + master_leakage);
 	#endif
 
 	#ifdef MPI
