@@ -29,6 +29,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Status stat;
 	MPI_Request *request = (MPI_Request *) malloc( n_requests * sizeof(MPI_Request));
 
+	n_requests = 0;
+
 	// Use knowledge of underlying flux structure for efficiency
 	double * flux_array = params.tracks[0][0][0].start_flux;
 
@@ -57,9 +59,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			send_idx += (long) I.n_egroups;
+			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -82,9 +85,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			send_idx += (long) I.n_egroups;
+			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -107,9 +111,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			send_idx += (long) I.n_egroups;
+			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 	// check if border assembly
@@ -131,9 +136,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			send_idx += (long) I.n_egroups;
+			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -156,9 +162,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			send_idx += (long) I.n_egroups;
+			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -181,9 +188,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			send_idx += (long) I.n_egroups;
+			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -212,9 +220,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			recv_idx += (long) I.n_egroups;
+			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -238,9 +247,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			recv_idx += (long) I.n_egroups;
+			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -264,9 +274,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			recv_idx += (long) I.n_egroups;
+			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -290,9 +301,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			recv_idx += (long) I.n_egroups;
+			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -316,9 +328,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			recv_idx += (long) I.n_egroups;
+			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -342,9 +355,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      // MPI Request (to monitor when call finishes)
-			recv_idx += (long) I.n_egroups;
+			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
+			n_requests++;
 		}
 	}
 
@@ -354,7 +368,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	for( long i = 0; i < n_requests; i++ )
 	{
 		MPI_Wait( &request[i], &stat );
-		printf("doing Wait #%d...\n", i);
 	}
 
 	MPI_Barrier( grid.cart_comm_3d );
