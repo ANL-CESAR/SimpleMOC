@@ -146,6 +146,9 @@ CommGrid init_mpi_grid( Input I )
 
 	grid.Flux_Array = flux_array;
 
+	printf("Rank: %d Left: %d Right: %d Forward: %d Back: %d Up: %d Down %d\n",
+			I.mype, x_pos_src, x_pos_dest, y_pos_src, y_pos_dest, z_pos_src, z_pos_dest);
+
 	return grid;
 }
 #endif

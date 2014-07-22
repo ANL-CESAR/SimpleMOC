@@ -26,7 +26,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	/////////////////// Launch All Sends ////////////////////////
 
 	// check if border assembly
-	if( grid.x_pos_dest == NULL )
+	if( grid.x_pos_dest == -1 )
 	{
 		params.leakage += pairwise_sum( flux_array[send_idx], dim );
 		send_idx += dim;
@@ -50,7 +50,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_neg_dest == NULL )
+	if( grid.x_neg_dest == -1 )
 	{
 		params.leakage += pairwise_sum( flux_array[send_idx], dim );
 		send_idx += dim;
@@ -74,7 +74,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.y_pos_dest == NULL )
+	if( grid.y_pos_dest == -1 )
 	{
 		params.leakage += pairwise_sum( flux_array[send_idx], dim );
 		send_idx += dim;
@@ -97,7 +97,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		}
 	}
 	// check if border assembly
-	if( grid.y_neg_dest == NULL )
+	if( grid.y_neg_dest == -1 )
 	{
 		params.leakage += pairwise_sum( flux_array[send_idx], dim );
 		send_idx += dim;
@@ -121,7 +121,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 	
 	// check if border assembly
-	if( grid.z_pos_dest == NULL )
+	if( grid.z_pos_dest == -1 )
 	{
 		params.leakage += pairwise_sum( flux_array[send_idx], dim );
 		send_idx += dim;
@@ -144,7 +144,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.z_neg_dest == NULL )
+	if( grid.z_neg_dest == -1 )
 	{
 		params.leakage += pairwise_sum( flux_array[send_idx], dim );
 		send_idx += dim;
@@ -173,7 +173,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long recv_idx = send_idx;
 
 	// check if border assembly
-	if( grid.x_pos_src == NULL)
+	if( grid.x_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -198,7 +198,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 	
 	// check if border assembly
-	if( grid.x_pos_src == NULL)
+	if( grid.x_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -223,7 +223,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 	
 	// check if border assembly
-	if( grid.x_pos_src == NULL)
+	if( grid.x_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -248,7 +248,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 	
 	// check if border assembly
-	if( grid.x_pos_src == NULL)
+	if( grid.x_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -273,7 +273,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	// check if border assembly
-	if( grid.x_pos_src == NULL)
+	if( grid.x_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -298,7 +298,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 	
 	// check if border assembly
-	if( grid.x_pos_src == NULL)
+	if( grid.x_pos_src == -1)
 	{
 		for( long i =0; i < dim; i++)
 			flux_array[recv_idx + i] = 0;
@@ -389,13 +389,13 @@ void transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	recv_idx = send_idx + dim;
 
 	// TODO: DO THIS FOR ALL TRANSFERS
-	// FIXME: determine vacant neighbors using NULL or something else 
-	if( grid.x_pos_dest == NULL)
+	// FIXME: determine vacant neighbors using -1 or something else 
+	if( grid.x_pos_dest == -1)
 	{
 		leakage += pairwise_sum(flux_array[send_idx], dim);
 		// FIXME: Do simple receive
 	}
-	else if( grid.x_pos_src == NULL )
+	else if( grid.x_pos_src == -1 )
 	{
 		// FIXME: Do simple send
 		for( long i = 0; i < dim; i++)

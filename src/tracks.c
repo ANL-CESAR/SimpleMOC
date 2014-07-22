@@ -106,6 +106,8 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	*nbytes += flux_bytes_needed;
 	size_t flux_idx = 0;
 
+	long offset = ntracks2D * I.n_polar_angles * z_stacked * I.n_egroups;
+
 	for( long i = 0; i < ntracks_2D; i++ )
 	{
 		for( int j = 0; j < I.n_polar_angles; j++ )
@@ -124,13 +126,9 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 
 				// Allocate start and end flux arrays
 				// (Moved allocations out of loop so they are contiguous)
-				// TODO: Rearrange so that first half of contiguous buffer is outgoing, 
-				// second half incoming
 				tracks[i][j][k].start_flux = &flux_space[flux_idx];
-				flux_idx += I.n_egroups;
-				tracks[i][j][k].end_flux = &flux_space[flux_idx];
-				flux_idx += I.n_egroups;
-				tracks[i][j][k].psi = &flux_space[flux_idx];
+				tracks[i][j][k].end_flux = &flux_space[offset + flux_idx];
+				tracks[i][j][k].psi = &flux_space[offset*2 + flux_idx];
 				flux_idx += I.n_egroups;
 
 				// set incoming flux to 0, perhaps needs to be changed for inner assemblies
