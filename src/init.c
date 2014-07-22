@@ -82,8 +82,10 @@ Params build_tracks( Input I )
 		printf("Memory allocated thus far (MB): %zu\n", nbytes / 1024 / 1014 );
 		border_print();
 	}
-	// TODO: Fix params leakage attribute to referenced
-	params.leakage = 0;
+
+	// initialize to zero leakage
+	double * leakage = calloc( 1, sizeof(double) );
+	params.leakage = leakage;
 
 	// build exponential table for interpolation
 	params.expTable = buildExponentialTable( I.precision, 10.0); 

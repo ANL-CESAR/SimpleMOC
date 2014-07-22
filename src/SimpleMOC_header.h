@@ -94,7 +94,7 @@ typedef struct{
 	Track *** tracks;
 	Source * sources;
    	double * polar_angles;
-	double leakage;
+	double * leakage;
 	Table expTable;
 } Params;
 

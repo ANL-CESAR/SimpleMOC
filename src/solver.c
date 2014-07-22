@@ -554,7 +554,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 			grid.cart_comm_3d );  // MPI Communicator
 	
 	// Total Leakage Reduction
-	MPI_Reduce( &params.leakage,  // Send Buffer
+	MPI_Reduce( params.leakage,  // Send Buffer
 			&leakage,      // Receive Buffer
 			1,                    // Element Count
 			MPI_DOUBLE,           // Element Type
