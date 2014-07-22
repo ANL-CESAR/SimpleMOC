@@ -5,6 +5,7 @@ int main( int argc, char * argv[] )
 	int version = 0;
 	int mype = 0;
 	int nranks;
+	//test
 
 	#ifdef MPI
 	MPI_Status stat;
