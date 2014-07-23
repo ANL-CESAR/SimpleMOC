@@ -28,8 +28,8 @@ int main( int argc, char * argv[] )
 
 	Params params = build_tracks( input );
 
-	double res;
-	double keff = 1.0;
+	float res;
+	float keff = 1.0;
 	int num_iters = 1;
 
 	double time_transport = 0;

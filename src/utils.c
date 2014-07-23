@@ -1,22 +1,22 @@
 #include"SimpleMOC_header.h"
 
 // generates a random number between 0 and 1
-double urand(void)
+float urand(void)
 {
-	return (double)rand() / (double)RAND_MAX;
+	return (float)rand() / (float)RAND_MAX;
 }
 
 // generates a random number from a normal distribution
 // of given mean and standard deviation (Box-Muller)
-double nrand(double mean, double sigma)
+float nrand(float mean, float sigma)
 {
 	// generate two random numbers
-	double rand1 = urand();
-	double rand2 = urand();
+	float rand1 = urand();
+	float rand2 = urand();
 
 	// use first for "exponential part" and second for
 	// "azimuthal part" to create a standard normal random number
-	double x = sqrt( -2 * log(rand1) ) * cos( 2 * M_PI * rand2);
+	float x = sqrt( -2 * log(rand1) ) * cos( 2 * M_PI * rand2);
 
 	// NOTE: We can generate a second random number if
 	// neeeded
@@ -28,8 +28,8 @@ double nrand(double mean, double sigma)
 
 // pairwise summation for long arrays
 // Note: should be templated, but this is C
-double pairwise_sum( double * vector, long size ){
-	double sum = 0;
+float pairwise_sum( float * vector, long size ){
+	float sum = 0;
 
 	// Base case: perform summation if size <= 16
 	if( size <= 16)
@@ -47,7 +47,7 @@ double pairwise_sum( double * vector, long size ){
 }
 
 // Builds a table of exponential values for linear interpolation
-Table buildExponentialTable( double precision, double maxVal )
+Table buildExponentialTable( float precision, float maxVal )
 {
 	// define table
 	Table table;
@@ -56,16 +56,16 @@ Table buildExponentialTable( double precision, double maxVal )
 	int N = (int) ( maxVal * sqrt(1.0 / ( 8.0 * precision * 0.01 ) ) ); 
 
 	// compute spacing
-	double dx = maxVal / (double) N;
+	float dx = maxVal / (float) N;
 
 	// allocate an array to store information
-	double * tableVals = malloc( 2 * N * sizeof(double) );
+	float * tableVals = malloc( 2 * N * sizeof(float) );
 
 	// store linear segment information (slope and y-intercept)
 	for( int n = 0; n < N; n++ )
 	{
 		// compute slope and y-intercept for ( 1 - exp(-x) )
-		double exponential = exp( - n * dx );
+		float exponential = exp( - n * dx );
 		tableVals[ 2*n ] = - exponential;
 		tableVals[ 2*n + 1 ] = 1 + ( n * dx - 1 ) * exponential;
 	}
@@ -80,7 +80,7 @@ Table buildExponentialTable( double precision, double maxVal )
 
 // Interpolates a formed exponential table to compute ( 1- exp(-x) )
 // at the desired x value
-double interpolateTable( Table table, double x)
+float interpolateTable( Table table, float x)
 {
 	// check to ensure value is in domain
 	if( x > table.maxVal )
@@ -88,9 +88,9 @@ double interpolateTable( Table table, double x)
 	else
 	{
 		int interval = (int) ( x / table.dx + 0.5 * table.dx );
-		double slope = table.values[ 2 * interval ];
-		double intercept = table.values[ 2 * interval + 1 ];
-		double val = slope * x + intercept;
+		float slope = table.values[ 2 * interval ];
+		float intercept = table.values[ 2 * interval + 1 ];
+		float val = slope * x + intercept;
 		return val;
 	}
 }

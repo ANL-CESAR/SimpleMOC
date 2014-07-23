@@ -100,9 +100,9 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	}
 
 	// Allocate space for Flux Arrays
-	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups * 3 * sizeof(double);
+	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups * 3 * sizeof(float);
 	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", flux_bytes_needed / 1024 / 1024);
-	double * flux_space = (double *) malloc( flux_bytes_needed );
+	float * flux_space = (float *) malloc( flux_bytes_needed );
 	*nbytes += flux_bytes_needed;
 	size_t flux_idx = 0;
 
@@ -147,9 +147,9 @@ void free_tracks( Track *** tracks )
 }
 
 // assign polar angles
-double * generate_polar_angles( Input I )
+float * generate_polar_angles( Input I )
 {
-	double * polar_angles = (double *) malloc( I.n_polar_angles * sizeof(double) );
+	float * polar_angles = (float *) malloc( I.n_polar_angles * sizeof(float) );
 	for( int i = 0; i < I.n_polar_angles; i++)
 		polar_angles[i] = M_PI * (i + 0.5) / I.n_polar_angles;
 	return polar_angles;

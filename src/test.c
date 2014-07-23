@@ -1,6 +1,6 @@
 #include"SimpleMOC_header.h"
 
-void gen_norm_pts(double mean, double sigma, int n_pts)
+void gen_norm_pts(float mean, float sigma, int n_pts)
 {
 	// generate output file
 	FILE * out;
@@ -13,7 +13,7 @@ void gen_norm_pts(double mean, double sigma, int n_pts)
 	// generate gaussian random points
 	for(int i = 0; i < n_pts; i++)
 	{
-		double random = nrand(mean,sigma);	
+		float random = nrand(mean,sigma);	
 		fprintf(out, "%f\n", random);
 	}
 

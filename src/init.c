@@ -88,7 +88,7 @@ Params build_tracks( Input I )
 	}
 
 	// initialize to zero leakage
-	double * leakage = calloc( 1, sizeof(double) );
+	float * leakage = calloc( 1, sizeof(float) );
 	params.leakage = leakage;
 
 	// build exponential table for interpolation
@@ -155,7 +155,7 @@ CommGrid init_mpi_grid( Input I )
 
 	// Init flux buffer MPI type
 	MPI_Datatype flux_array;
-	MPI_Type_contiguous(I.n_egroups, MPI_DOUBLE, &flux_array);
+	MPI_Type_contiguous(I.n_egroups, MPI_FLOAT, &flux_array);
 	MPI_Type_commit(&flux_array);
 
 	grid.Flux_Array = flux_array;

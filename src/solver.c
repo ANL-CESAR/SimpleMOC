@@ -60,18 +60,18 @@ void transport_sweep( Params params, Input I )
 			// treat positive-z traveling rays first
 			for( int j = 0; j < I.n_polar_angles / 2; j++)
 			{
-				double p_angle = params.polar_angles[j];
-				double mu = cos(p_angle);
+				float p_angle = params.polar_angles[j];
+				float mu = cos(p_angle);
 
 				// start with all z stacked rays
 				int end_stacked = z_stacked;
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
-					double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
+					float s = params.tracks_2D[i].segments[n].length / sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
-					double ds;
+					float ds;
 
 					// loop over remaining z-stacked rays
 					for( int k = 0; k < end_stacked; k++)
@@ -88,11 +88,11 @@ void transport_sweep( Params params, Input I )
 							bool reset = false;
 
 							// calculate new height based on s (distance traveled in FSR)
-							double z = track->z_height + s * cos(p_angle);
+							float z = track->z_height + s * cos(p_angle);
 
 							// check if still in same FSR (fine axial interval)
-							if( (int) ( track->z_height / fine_delta_z ) == 
-									(int) ( z / fine_delta_z ) )
+							if( track->z_height / fine_delta_z  - 
+									 z / fine_delta_z  < 0.00001)
 							{
 								seg_complete = true;
 								ds = s;
@@ -103,7 +103,7 @@ void transport_sweep( Params params, Input I )
 							{
 								// correct z
 								int interval = (int) (track->z_height / fine_delta_z);
-								z = fine_delta_z * (double) (interval + 1);
+								z = fine_delta_z * (float) (interval + 1);
 
 								// calculate distance travelled in FSR (ds)
 								ds = (z - track->z_height) / cos(p_angle);
@@ -150,17 +150,17 @@ void transport_sweep( Params params, Input I )
 			// treat negative-z traveling rays next
 			for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
 			{
-				double p_angle = params.polar_angles[j];
-				double mu = cos(p_angle);
+				float p_angle = params.polar_angles[j];
+				float mu = cos(p_angle);
 				int begin_stacked = 0;
 
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
-					double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
+					float s = params.tracks_2D[i].segments[n].length / sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
-					double ds;
+					float ds;
 
 					// loop over all z stacked rays to begin
 					for( int k = begin_stacked; k < z_stacked; k++)
@@ -177,14 +177,13 @@ void transport_sweep( Params params, Input I )
 							bool reset = false;
 
 							// calculate new height based on s (distance traveled in FSR)
-							double z = track->z_height + s * cos(p_angle);
+							float z = track->z_height + s * cos(p_angle);
 
 							// check if still in same FSR (fine axial interval)
 							// NOTE: a bit of trickery this time using the fact that 
 							// 2147483647 is the largest integer value
-							int val1 = INT_MAX - (int) (INT_MAX - track->z_height
-									/ fine_delta_z);
-							int val2 = INT_MAX - (int) (INT_MAX - z / fine_delta_z);
+							int val1 = INT_MAX - (int) (INT_MAX - (int) (track->z_height / fine_delta_z));
+							int val2 = INT_MAX - (int) (INT_MAX - (int) (z / fine_delta_z));
 							if( val1 == val2  )
 							{
 								seg_complete = true;
@@ -196,7 +195,7 @@ void transport_sweep( Params params, Input I )
 							{
 								// correct z
 								int interval = val1 - 1;
-								z = fine_delta_z * (double) interval;
+								z = fine_delta_z * (float) interval;
 
 								// calculate distance travelled in FSR (ds)
 								ds = ( z - track->z_height ) / cos(p_angle);
@@ -205,7 +204,7 @@ void transport_sweep( Params params, Input I )
 								s -= ds;
 
 								// check if out of bounds or track complete
-								if( z <= 0 )
+								if( z <= 0 || s <= 0 )
 								{
 									// mark segment as completed
 									seg_complete = true;
@@ -248,44 +247,44 @@ void transport_sweep( Params params, Input I )
 }
 
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, double ds, double mu, double az_weight ) 
+		Params params, float ds, float mu, float az_weight ) 
 {
 	// compute fine axial interval spacing
-	double dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
 
 	// compute fine axial region ID
 	int fine_id = (int) ( I.height / dz ) % I.cai;
 
 	// compute z height in cell
-	double zin = track->z_height - dz * ( (int) ( track->z_height / dz ) + 0.5 );
+	float zin = track->z_height - dz * ( (int) ( track->z_height / dz ) + 0.5 );
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
-	double weight = track->p_weight * az_weight;
-	double mu2 = mu * mu;
+	float weight = track->p_weight * az_weight;
+	float mu2 = mu * mu;
 
 	// load fine source region flux vector
-	double * FSR_flux = QSR -> fine_flux[fine_id];
+	float * FSR_flux = QSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
-		double sigT = QSR->XS[g][0];
+		float sigT = QSR->XS[g][0];
 
 		// define source parameters
-		double q0, q1, q2;
+		float q0, q1, q2;
 
 		// calculate source components
 		if( fine_id == 0)
 		{
 			// load neighboring sources
-			double y2 = QSR->fine_source[fine_id][g];
-			double y3 = QSR->fine_source[fine_id+1][g];
+			float y2 = QSR->fine_source[fine_id][g];
+			float y3 = QSR->fine_source[fine_id+1][g];
 
 			// do linear "fitting"
-			double c0 = y2;
-			double c1 = (y3 - y2) / dz;
+			float c0 = y2;
+			float c1 = (y3 - y2) / dz;
 
 			// calculate q0, q1, q2
 			q0 = c0 + c1*zin;
@@ -295,12 +294,12 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		else if( fine_id == I.fai - 1 )
 		{
 			// load neighboring sources
-			double y1 = QSR->fine_source[fine_id-1][g];
-			double y2 = QSR->fine_source[fine_id][g];
+			float y1 = QSR->fine_source[fine_id-1][g];
+			float y2 = QSR->fine_source[fine_id][g];
 
 			// do linear "fitting"
-			double c0 = y2;
-			double c1 = (y2 - y1) / dz;
+			float c0 = y2;
+			float c1 = (y2 - y1) / dz;
 
 			// calculate q0, q1, q2
 			q0 = c0 + c1*zin;
@@ -310,14 +309,14 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		else
 		{
 			// load neighboring sources
-			double y1 = QSR->fine_source[fine_id-1][g];
-			double y2 = QSR->fine_source[fine_id][g];
-			double y3 = QSR->fine_source[fine_id+1][g];
+			float y1 = QSR->fine_source[fine_id-1][g];
+			float y2 = QSR->fine_source[fine_id][g];
+			float y3 = QSR->fine_source[fine_id+1][g];
 
 			// do quadratic "fitting"
-			double c0 = y2;
-			double c1 = (y1 - y3) / (2*dz);
-			double c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
+			float c0 = y2;
+			float c1 = (y1 - y3) / (2*dz);
+			float c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
 
 			// calculate q0, q1, q2
 			q0 = c0 + c1*zin + c2*zin*zin;
@@ -326,14 +325,14 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		}
 
 		// calculate common values for efficiency
-		double tau = sigT * ds;
-		double sigT2 = sigT * sigT;
+		float tau = sigT * ds;
+		float sigT2 = sigT * sigT;
 
 		// compute exponential ( 1 - exp(-x) ) using table lookup
-		double expVal = interpolateTable( params.expTable, tau );  
+		float expVal = interpolateTable( params.expTable, tau );  
 
 		// add contribution to new source flux
-		double flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
+		float flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
 			/ sigT2
 			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
 			/ (sigT * sigT2)
@@ -355,9 +354,9 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
 	// tally total fission rate (pair-wise sum)
-	double * fission_rates = malloc( I.n_source_regions_per_node * sizeof(double) );
-	double * fine_fission_rates = malloc( I.fai * sizeof(double) );
-	double * g_fission_rates = malloc( I.n_egroups * sizeof(double) );
+	float * fission_rates = malloc( I.n_source_regions_per_node * sizeof(float) );
+	float * fine_fission_rates = malloc( I.fai * sizeof(float) );
+	float * g_fission_rates = malloc( I.n_egroups * sizeof(float) );
 
 	// accumulate total fission rate on node domain
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
@@ -371,21 +370,21 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 		}
 		fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
 	}
-	double node_fission_rate = pairwise_sum(fission_rates, 
+	float node_fission_rate = pairwise_sum(fission_rates, 
 			I.n_source_regions_per_node);
 
 	#ifdef MPI	
 	// accumulate total fission rate by MPI reduction
-	double total_fission_rate = 0;
+	float total_fission_rate = 0;
 	MPI_Reduce( &node_fission_rate, // Send Buffer
 			&total_fission_rate,    // Receive Buffer
 			1,                    	// Element Count
-			MPI_DOUBLE,           	// Element Type
+			MPI_FLOAT,           	// Element Type
 			MPI_SUM,              	// Reduciton Operation Type
 			0,                    	// Master Rank
 			grid.cart_comm_3d );  	// MPI Communicator
 	#else
-	double total_fission_rate = node_fission_rate;
+	float total_fission_rate = node_fission_rate;
 	#endif
 
 	// free allocated memory
@@ -394,11 +393,11 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	free(g_fission_rates);
 
 	// normalize fluxes by fission reaction rate
-	double norm_factor = 1.0 / total_fission_rate;
+	float norm_factor = 1.0 / total_fission_rate;
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source * src = &params.sources[i];
-		double adjust = norm_factor * 4 * M_PI * I.fai / src->vol;
+		float adjust = norm_factor * 4 * M_PI * I.fai / src->vol;
 		for( int k = 0; k < I.fai; k++)
 			for( int g = 0; g < I.n_egroups; g++)
 				src->fine_flux[k][g] *= adjust;
@@ -419,23 +418,23 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 }
 
 // Updates sources for next iteration
-double update_sources( Params params, Input I, double keff )
+float update_sources( Params params, Input I, float keff )
 {
 	// source residual
-	double residual;
+	float residual;
 
 	// calculate inverse multiplication facotr for efficiency
-	double inverse_k = 1.0 / keff;
+	float inverse_k = 1.0 / keff;
 
 	// allocate residual arrays
-	double * group_res = (double *) malloc(I.n_egroups * sizeof(double));
-	double * fine_res = (double *) malloc(I.n_egroups * sizeof(double));
-	double * residuals = (double *) malloc(I.n_source_regions_per_node 
-			* sizeof(double));
+	float * group_res = (float *) malloc(I.n_egroups * sizeof(float));
+	float * fine_res = (float *) malloc(I.n_egroups * sizeof(float));
+	float * residuals = (float *) malloc(I.n_source_regions_per_node 
+			* sizeof(float));
 
 	// allocate arrays for summation
-	double * fission_rates = malloc(I.n_egroups * sizeof(double));
-	double * scatter_rates = malloc(I.n_egroups * sizeof(double));
+	float * fission_rates = malloc(I.n_egroups * sizeof(float));
+	float * scatter_rates = malloc(I.n_egroups * sizeof(float));
 
 	// cycle through all coarse axial intervals to update source
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
@@ -446,8 +445,8 @@ double update_sources( Params params, Input I, double keff )
 		for( int j = 0; j < I.fai; j++)
 		{
 			// calculate total fission source and scattering source
-			double fission_source;
-			double scatter_source;
+			float fission_source;
+			float scatter_source;
 
 			// compute total fission source
 			for( int g = 0; g < I.n_egroups; g++ )
@@ -469,13 +468,13 @@ double update_sources( Params params, Input I, double keff )
 				scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
 
 				// compuate new total source
-				double chi = src.XS[g][3];
+				float chi = src.XS[g][3];
 
 				// calculate new fine source
-				double newSrc = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+				float newSrc = (fission_source * chi + scatter_source) / (4.0 * M_PI);
 
 				// calculate residual
-				double oldSrc = src.fine_source[j][g];
+				float oldSrc = src.fine_source[j][g];
 				group_res[g] = (newSrc - oldSrc) * (newSrc - oldSrc)
 					/ (oldSrc * oldSrc);
 
@@ -503,13 +502,13 @@ double update_sources( Params params, Input I, double keff )
 	return residual;
 }
 
-double compute_keff(Params params, Input I, CommGrid grid)
+float compute_keff(Params params, Input I, CommGrid grid)
 {
 	// allocate temporary memory
-	double * sigma = malloc( I.n_egroups * sizeof(double) );
-	double * group_rates = malloc( I.n_egroups * sizeof(double) );
-	double * fine_rates = malloc( I.fai * sizeof(double) );
-	double * QSR_rates = malloc( I.n_source_regions_per_node * sizeof(double) );
+	float * sigma = malloc( I.n_egroups * sizeof(float) );
+	float * group_rates = malloc( I.n_egroups * sizeof(float) );
+	float * fine_rates = malloc( I.fai * sizeof(float) );
+	float * QSR_rates = malloc( I.n_source_regions_per_node * sizeof(float) );
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -524,7 +523,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 		for( int j = 0; j < I.fai; j++ )
 		{
 			// calculate absorption rates
-			double * fine_flux = src.fine_flux[j];
+			float * fine_flux = src.fine_flux[j];
 			for( int g = 0; g < I.n_egroups; g++)
 				group_rates[g] = sigma[g] * fine_flux[g];
 
@@ -535,7 +534,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 		QSR_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
 	}
 	// sum absorption over all source regions in a node
-	double node_abs = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
+	float node_abs = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -550,7 +549,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 		for( int j = 0; j < I.fai; j++ )
 		{
 			// calculate absorption rates
-			double * fine_flux = src.fine_flux[j];
+			float * fine_flux = src.fine_flux[j];
 			for( int g = 0; g < I.n_egroups; g++)
 				group_rates[g] = sigma[g] * fine_flux[g];
 
@@ -561,14 +560,14 @@ double compute_keff(Params params, Input I, CommGrid grid)
 		QSR_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
 	}
 	// sum fission over all source regions in a node
-	double node_fission = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
+	float node_fission = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
 
 	///////////////////////////////////////////////////////////////////////////
 
 	// MPi Reduction
-	double tot_abs = 0;
-	double tot_fission = 0;
-	double leakage = 0;
+	float tot_abs = 0;
+	float tot_fission = 0;
+	float leakage = 0;
 
 	#ifdef MPI
 
@@ -576,7 +575,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	MPI_Reduce( &node_abs,         // Send Buffer
 			&tot_abs,      // Receive Buffer
 			1,                    // Element Count
-			MPI_DOUBLE,           // Element Type
+			MPI_FLOAT,           // Element Type
 			MPI_SUM,              // Reduciton Operation Type
 			0,                    // Master Rank
 			grid.cart_comm_3d );  // MPI Communicator
@@ -585,7 +584,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	MPI_Reduce( &node_fission,     // Send Buffer
 			&tot_fission,  // Receive Buffer
 			1,                    // Element Count
-			MPI_DOUBLE,           // Element Type
+			MPI_FLOAT,           // Element Type
 			MPI_SUM,              // Reduciton Operation Type
 			0,                    // Master Rank
 			grid.cart_comm_3d );  // MPI Communicator
@@ -594,7 +593,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	MPI_Reduce( params.leakage,  // Send Buffer
 			&leakage,      // Receive Buffer
 			1,                    // Element Count
-			MPI_DOUBLE,           // Element Type
+			MPI_FLOAT,           // Element Type
 			MPI_SUM,              // Reduciton Operation Type
 			0,                    // Master Rank
 			grid.cart_comm_3d );  // MPI Communicator
@@ -602,9 +601,9 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	MPI_Barrier(grid.cart_comm_3d);
 
 	// calculate keff
-	double keff = tot_fission/ (tot_abs + leakage);
+	float keff = tot_fission/ (tot_abs + leakage);
 	#else
-	double keff = node_fission / (node_abs + *params.leakage);
+	float keff = node_fission / (node_abs + *params.leakage);
 	#endif
 
 	///////////////////////////////////////////////////////////////////////////

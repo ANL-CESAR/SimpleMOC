@@ -11,8 +11,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// namely, that the total number of tracks is divisible by 6
 	int elements = I.ntracks / 6;
 
-	double h = I.domain_height;
-	double x = I.assembly_width;
+	float h = I.domain_height;
+	float x = I.assembly_width;
 
 	long ntracks_per_axial_direction  = I.ntracks * x / (2*x + 4*h);
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
@@ -32,7 +32,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long n_requests = 0;
 
 	// Use knowledge of underlying flux structure for efficiency
-	double * flux_array = params.tracks[0][0][0].start_flux;
+	float * flux_array = params.tracks[0][0][0].start_flux;
 
 	long dim = (long) elements * (long) I.n_egroups;
 	long msg_id = 0;
@@ -425,7 +425,7 @@ long recv_idx;
 MPI_Status stat;
 
 // Use knowledge of underlying flux structure for efficiency
-double * flux_array = params.tracks[0][0][0].start_flux;
+float * flux_array = params.tracks[0][0][0].start_flux;
 
 // X Positive Direction
 send_idx = 0;

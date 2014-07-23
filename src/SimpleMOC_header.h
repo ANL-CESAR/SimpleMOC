@@ -25,19 +25,19 @@ typedef struct{
 	int cai;                   // This is the number of course axial intervals
 	int fai;                   // This is the number of fine axial intervals per course axial interval
 	int axial_exp;             // Axial source expansion order
-	double radial_ray_sep;     // Radial ray separation
-	double axial_z_sep;        // Axial stacked z-ray separation
+	float radial_ray_sep;     // Radial ray separation
+	float axial_z_sep;        // Axial stacked z-ray separation
 	int n_azimuthal;           // Number of azimuthal angles
 	int n_polar_angles;        // Number of polar angles
 	int n_egroups;             // Number of energy groups
 	bool decompose;            // Turn decomposition on/off
 	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
 	long segments_per_track;   // Average number of segments per track
-	double assembly_width;     // Width of an assembly - 1.26 x 17 cm
-	double height;             // Height of the reactor - 400 cm
-	double domain_height;      // Z Height of a domain
+	float assembly_width;     // Width of an assembly - 1.26 x 17 cm
+	float height;             // Height of the reactor - 400 cm
+	float domain_height;      // Z Height of a domain
 	long n_2D_source_regions_per_assembly; // 3M source regions per assembly (estimate)
-	double precision;		   // precision for source convergence
+	float precision;		   // precision for source convergence
 	long n_source_regions_per_node; // Number of source regions in a given node
 	long mype;                 // MPI Rank
 	long ntracks_2D;           // Number of 2D tracks (derived)
@@ -55,42 +55,42 @@ typedef struct{
 
 // Segment Structure
 typedef struct{
-	double length;
+	float length;
 	long source_id;
 } Segment;
 
 // Track2D Structure
 typedef struct{
-	double az_weight;          // Azimuthal Quadrature Weight (rand)
+	float az_weight;          // Azimuthal Quadrature Weight (rand)
 	long n_segments;           // Number of Segments (gaussian)
 	Segment * segments;        // Array of Segments
 } Track2D;
 
 // Track Structure
 typedef struct{
-	double p_weight;           // Polar Quadrature Weight     (rand)
-	double z_height;           // Z-height
-	double * start_flux;       // Starting (input) flux array received from inputting neighbor
+	float p_weight;           // Polar Quadrature Weight     (rand)
+	float z_height;           // Z-height
+	float * start_flux;       // Starting (input) flux array received from inputting neighbor
 	long rank_in;              // MPI rank to receive from
-	double * end_flux;         // Attenuated (output) flux array to send to output neighbor
+	float * end_flux;         // Attenuated (output) flux array to send to output neighbor
 	long rank_out;             // MPI rank to send to
-	double * psi;			   // current angular flux along track
+	float * psi;			   // current angular flux along track
 } Track;
 
 // Source Region Structure
 typedef struct{
-	double ** fine_flux;
-	double ** fine_source;
-	double vol;
-	double ** XS;
-	double ** scattering_matrix;
+	float ** fine_flux;
+	float ** fine_source;
+	float vol;
+	float ** XS;
+	float ** scattering_matrix;
 } Source;
 
 // Table structure for computing exponential
 typedef struct{
-	double * values;
-	double dx;
-	double maxVal;
+	float * values;
+	float dx;
+	float maxVal;
 } Table;
 
 // Params Structure for easier data pointer passing
@@ -98,8 +98,8 @@ typedef struct{
 	Track2D * tracks_2D;
 	Track *** tracks;
 	Source * sources;
-   	double * polar_angles;
-	double * leakage;
+   	float * polar_angles;
+	float * leakage;
 	Table expTable;
 } Params;
 
@@ -142,14 +142,14 @@ void free_2D_tracks( Track2D * tracks );
 Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );
-double * generate_polar_angles( Input I );
+float * generate_polar_angles( Input I );
 
 // utils.c
-double urand(void);
-double nrand(double mean, double sigma);
-double pairwise_sum(double * vector, long size);
-Table buildExponentialTable( double precision, double maxVal );
-double interpolateTable( Table table, double x);
+float urand(void);
+float nrand(float mean, float sigma);
+float pairwise_sum(float * vector, long size);
+Table buildExponentialTable( float precision, float maxVal );
+float interpolateTable( Table table, float x);
 double get_time(void);
 
 // source.c
@@ -159,13 +159,13 @@ void free_sources( Input I, Source * sources );
 // solver.c
 void transport_sweep( Params params, Input I );
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, double ds, double mu, double az_weight ); 
+		Params params, float ds, float mu, float az_weight ); 
 void renormalize_flux( Params params, Input I, CommGrid grid );
-double update_sources( Params params, Input I, double keff );
-double compute_keff( Params params, Input I, CommGrid grid);
+float update_sources( Params params, Input I, float keff );
+float compute_keff( Params params, Input I, CommGrid grid);
 
 // test.c
-void gen_norm_pts(double mean, double sigma, int n_pts);
+void gen_norm_pts(float mean, float sigma, int n_pts);
 
 // comms.c
 #ifdef MPI

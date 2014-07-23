@@ -10,18 +10,18 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	long n_xs_regions = I.n_source_regions_per_node / 8;
 	
 	// Allocate scattering matrix matrix ptrs
-	double *** s_matrices = (double ***) malloc( n_xs_regions * sizeof(double**) );
-	*nbytes += n_xs_regions * sizeof(double **);
+	float *** s_matrices = (float ***) malloc( n_xs_regions * sizeof(float**) );
+	*nbytes += n_xs_regions * sizeof(float **);
 
 	// Allocate space for ALL scattering matrix ptrs
-	double ** s_matrix_ptrs = (double **) malloc( n_xs_regions * I.n_egroups * sizeof(double *));
-	*nbytes += n_xs_regions * sizeof(double **);
+	float ** s_matrix_ptrs = (float **) malloc( n_xs_regions * I.n_egroups * sizeof(float *));
+	*nbytes += n_xs_regions * sizeof(float **);
 
 	// Allocate space for ALL scattering data
-	if(I.mype==0) printf("Scattering data requires %zu MB of data...\n", n_xs_regions * I.n_egroups * I.n_egroups * sizeof(double) / 1024 / 1024);
-	double * s_matrix_data = (double *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * 
-			sizeof(double));
-	*nbytes += n_xs_regions * I.n_egroups * I.n_egroups * sizeof(double);
+	if(I.mype==0) printf("Scattering data requires %zu MB of data...\n", n_xs_regions * I.n_egroups * I.n_egroups * sizeof(float) / 1024 / 1024);
+	float * s_matrix_data = (float *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * 
+			sizeof(float));
+	*nbytes += n_xs_regions * I.n_egroups * I.n_egroups * sizeof(float);
 
 	// Stitch allocation ptrs together
 	for( long i = 0; i < n_xs_regions; i++ )
@@ -46,16 +46,16 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	if(I.mype==0) printf("Beginning XS Allocation...\n");
 
 	// Allocate space for XS ptrs (by region)
-	double *** XS = (double ***) malloc( n_xs_regions * sizeof(double **) );
-	*nbytes += n_xs_regions * sizeof(double **);
+	float *** XS = (float ***) malloc( n_xs_regions * sizeof(float **) );
+	*nbytes += n_xs_regions * sizeof(float **);
 
 	// Allocate space for each XS type of interest (total, nu*SigmaF, and chi)
-	double ** XS_arrays = (double **) malloc (n_xs_regions * I.n_egroups * sizeof(double *) );
-	*nbytes += n_xs_regions * I.n_egroups * sizeof(double *);
+	float ** XS_arrays = (float **) malloc (n_xs_regions * I.n_egroups * sizeof(float *) );
+	*nbytes += n_xs_regions * I.n_egroups * sizeof(float *);
 
 	// Allocate space for total XS data
-	double * XS_data = (double *) malloc( n_xs_regions * I.n_egroups * 4 * sizeof(double) );
-	*nbytes += n_xs_regions * I.n_egroups * 4 * sizeof(double);
+	float * XS_data = (float *) malloc( n_xs_regions * I.n_egroups * 4 * sizeof(float) );
+	*nbytes += n_xs_regions * I.n_egroups * 4 * sizeof(float);
 
 	// stitch allocation ptrs together for XS data
 	for( long i = 0; i < n_xs_regions; i++)
@@ -76,19 +76,19 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	if(I.mype==0) printf("Beginning Source Parameter Allocation...\n");
 
 	// Allocate space for source parameters (quadratic axially)
-	double *** fineSource = (double ***) malloc( I.n_source_regions_per_node
-		   	* sizeof(double **) );
-	*nbytes += I.n_source_regions_per_node * sizeof(double **);
+	float *** fineSource = (float ***) malloc( I.n_source_regions_per_node
+		   	* sizeof(float **) );
+	*nbytes += I.n_source_regions_per_node * sizeof(float **);
 
 	// Allocate space for array pointers to parameters
-	double ** fineSourcePtrs = (double **) malloc ( I.n_source_regions_per_node
-		   	* I.fai * sizeof(double *) );
-	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(double *);
+	float ** fineSourcePtrs = (float **) malloc ( I.n_source_regions_per_node
+		   	* I.fai * sizeof(float *) );
+	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(float *);
 
 	// Allocate space for parameter data
-	double * fineSourceData = (double *) malloc( I.n_source_regions_per_node
-		   	* I.fai * I.n_egroups * sizeof(double) );
-	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(double);
+	float * fineSourceData = (float *) malloc( I.n_source_regions_per_node
+		   	* I.fai * I.n_egroups * sizeof(float) );
+	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(float);
 
 	// stitch allocation ptrs together for source parameter data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
@@ -110,19 +110,19 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	if(I.mype==0) printf("Beginning Fine Flux Allocation...\n");
 
 	// Allocate space for source parameters (quadratic axially)
-	double *** fineFlux = (double ***) malloc( I.n_source_regions_per_node
-		   	* sizeof(double **) );
-	*nbytes += I.n_source_regions_per_node * sizeof(double **);
+	float *** fineFlux = (float ***) malloc( I.n_source_regions_per_node
+		   	* sizeof(float **) );
+	*nbytes += I.n_source_regions_per_node * sizeof(float **);
 
 	// Allocate space for array pointers to parameters
-	double ** fineFluxPtrs = (double **) malloc ( I.n_source_regions_per_node
-		   	* I.fai * sizeof(double *) );
-	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(double *);
+	float ** fineFluxPtrs = (float **) malloc ( I.n_source_regions_per_node
+		   	* I.fai * sizeof(float *) );
+	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(float *);
 
 	// Allocate space for parameter data
-	double * fineFluxData = (double *) malloc( I.n_source_regions_per_node
-		   	* I.fai * I.n_egroups * sizeof(double) );
-	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(double);
+	float * fineFluxData = (float *) malloc( I.n_source_regions_per_node
+		   	* I.fai * I.n_egroups * sizeof(float) );
+	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(float);
 
 	// stitch allocation ptrs together for source parameter data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
