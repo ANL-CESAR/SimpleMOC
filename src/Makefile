@@ -5,7 +5,7 @@
 COMPILER    = gnu
 MPI         = no
 OPENMP      = no
-OPTIMIZE    = no
+OPTIMIZE    = yes
 DEBUG       = no
 PROFILE     = no
 PAPI        = no
@@ -88,7 +88,7 @@ endif
 
 # OpenMP
 ifeq ($(OPENMP),yes)
-	CFLAGS += -fopenmp
+	CFLAGS += -fopenmp -DOPENMP
 endif
 
 

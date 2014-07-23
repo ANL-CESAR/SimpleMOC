@@ -24,185 +24,212 @@ void transport_sweep( Params params, Input I )
 					track->psi[g] = track->start_flux[g];
 			}
 
-	// Start transport sweep
-
 	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
 	// polar angles, and z stacked rays)
-	for (long i = 0; i < ntracks_2D; i++)
+	#pragma omp parallel default(none) \
+	shared( I, params, ntracks_2D, z_stacked, ntracks, node_delta_z, fine_delta_z )
 	{
-		// print progress
-		if( i % 50 == 0)
-			if(I.mype==0) printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", ntracks_2D);
+		#ifdef OPENMP
+		int thread = omp_get_thread_num();
+		unsigned int seed = time(NULL) * (thread+1);
+		long progress = 0;
+		#endif
 
-		// treat positive-z traveling rays first
-		for( int j = 0; j < I.n_polar_angles / 2; j++)
+		#pragma omp for schedule( dynamic ) 
+		for (long i = 0; i < ntracks_2D; i++)
 		{
-			double p_angle = params.polar_angles[j];
-			double mu = cos(p_angle);
-
-			// start with all z stacked rays
-			int end_stacked = z_stacked;
-			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
+			// print progress
+			#ifdef OPENMP
+			if(I.mype==0 && thread == 0)
 			{
-				// calculate distance traveled in cell if segment completed
-				double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
+				printf("%s%ld%s%ld\n","2D Tracks Completed = ", progress * omp_get_num_threads()," / ", ntracks_2D);
+				progress += 1;
+			}
+			#else
+			if( i % 50 == 0)
+				if(I.mype==0)
+					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", ntracks_2D );
+			#endif
 
-				// allocate varaible for distance traveled in an FSR
-				double ds;
 
-				// loop over remaining z-stacked rays
-				for( int k = 0; k < end_stacked; k++)
+			// treat positive-z traveling rays first
+			for( int j = 0; j < I.n_polar_angles / 2; j++)
+			{
+				double p_angle = params.polar_angles[j];
+				double mu = cos(p_angle);
+
+				// start with all z stacked rays
+				int end_stacked = z_stacked;
+				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
-					// select current track
-					Track * track = &params.tracks[i][j][k];
+					// calculate distance traveled in cell if segment completed
+					double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
 
-					// set flag for completeion of segment
-					bool seg_complete = false;
+					// allocate varaible for distance traveled in an FSR
+					double ds;
 
-					while( !seg_complete )
+					// loop over remaining z-stacked rays
+					for( int k = 0; k < end_stacked; k++)
 					{
-						// flag to reset z position
-						bool reset = false;
-						
-						// calculate new height based on s (distance traveled in FSR)
-						double z = track->z_height + s * cos(p_angle);
+						// select current track
+						Track * track = &params.tracks[i][j][k];
 
-						// check if still in same FSR (fine axial interval)
-						if( (int) ( track->z_height / fine_delta_z ) == 
-								(int) ( z / fine_delta_z ) )
+						// set flag for completeion of segment
+						bool seg_complete = false;
+
+						while( !seg_complete )
 						{
-							seg_complete = true;
-							ds = s;
-						}
+							// flag to reset z position
+							bool reset = false;
 
-						// otherwise, we need to recalculate distances
-						else
-						{
-							// correct z
-							int interval = (int) (track->z_height / fine_delta_z);
-							z = fine_delta_z * (double) (interval + 1);
+							// calculate new height based on s (distance traveled in FSR)
+							double z = track->z_height + s * cos(p_angle);
 
-							// calculate distance travelled in FSR (ds)
-							ds = (z - track->z_height) / cos(p_angle);
-
-							// update track length remaining
-							s -= ds;
-
-							// check if out of bounds or track complete
-							if( s <= 0 || z >= node_delta_z )
+							// check if still in same FSR (fine axial interval)
+							if( (int) ( track->z_height / fine_delta_z ) == 
+									(int) ( z / fine_delta_z ) )
 							{
-								// mark segment as completed
 								seg_complete = true;
-
-								// remember to no longer treat this track
-								end_stacked--;
-
-								// reset z height
-								reset = true;
+								ds = s;
 							}
+
+							// otherwise, we need to recalculate distances
+							else
+							{
+								// correct z
+								int interval = (int) (track->z_height / fine_delta_z);
+								z = fine_delta_z * (double) (interval + 1);
+
+								// calculate distance travelled in FSR (ds)
+								ds = (z - track->z_height) / cos(p_angle);
+
+								// update track length remaining
+								s -= ds;
+
+								// check if out of bounds or track complete
+								if( s <= 0 || z >= node_delta_z )
+								{
+									// mark segment as completed
+									seg_complete = true;
+
+									// remember to no longer treat this track
+									end_stacked--;
+
+									// reset z height
+									reset = true;
+								}
+							}
+
+							// pick a random FSR (cache miss expected)
+							#ifdef OPENMP
+							long QSR_id = rand_r(&seed) % I.n_source_regions_per_node;
+							#else
+							long QSR_id = rand() % I.n_source_regions_per_node;
+							#endif
+
+							// update sources and fluxes from attenuation over FSR
+							attenuate_fluxes( track, &params.sources[QSR_id], I,
+									params, ds, mu, params.tracks_2D[i].az_weight );
+
+							// update with new z height or reset if finished
+							if( n == params.tracks_2D[i].n_segments - 1  || reset)
+								track->z_height = I.axial_z_sep * k;
+							else
+								track->z_height = z;
+
 						}
-
-						// pick a random FSR (cache miss expected)
-						long QSR_id = rand() % I.n_source_regions_per_node;
-						
-						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track, &params.sources[QSR_id], I,
-							   params, ds, mu, params.tracks_2D[i].az_weight );
-
-						// update with new z height or reset if finished
-						if( n == params.tracks_2D[i].n_segments - 1  || reset)
-							track->z_height = I.axial_z_sep * k;
-						else
-							track->z_height = z;
-
 					}
 				}
 			}
-		}
 
-		// treat negative-z traveling rays next
-		for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
-		{
-			double p_angle = params.polar_angles[j];
-			double mu = cos(p_angle);
-			int begin_stacked = 0;
-
-			for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
+			// treat negative-z traveling rays next
+			for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
 			{
-				// calculate distance traveled in cell if segment completed
-				double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
+				double p_angle = params.polar_angles[j];
+				double mu = cos(p_angle);
+				int begin_stacked = 0;
 
-				// allocate varaible for distance traveled in an FSR
-				double ds;
-
-				// loop over all z stacked rays to begin
-				for( int k = begin_stacked; k < z_stacked; k++)
+				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
-					// select current track
-					Track * track = &params.tracks[i][j][k];
+					// calculate distance traveled in cell if segment completed
+					double s = params.tracks_2D[i].segments[n].length / sin(p_angle);
 
-					// set flag for completeion of segment
-					bool seg_complete = false;
+					// allocate varaible for distance traveled in an FSR
+					double ds;
 
-					while( !seg_complete )
+					// loop over all z stacked rays to begin
+					for( int k = begin_stacked; k < z_stacked; k++)
 					{
-						// flag to reset z position
-						bool reset = false;
+						// select current track
+						Track * track = &params.tracks[i][j][k];
 
-						// calculate new height based on s (distance traveled in FSR)
-						double z = track->z_height + s * cos(p_angle);
+						// set flag for completeion of segment
+						bool seg_complete = false;
 
-						// check if still in same FSR (fine axial interval)
-						// NOTE: a bit of trickery this time using the fact that 
-						// 2147483647 is the largest integer value
-						int val1 = INT_MAX - (int) (INT_MAX - track->z_height
-								/ fine_delta_z);
-						int val2 = INT_MAX - (int) (INT_MAX - z / fine_delta_z);
-						if( val1 == val2  )
+						while( !seg_complete )
 						{
-							seg_complete = true;
-							ds = s;
-						}
+							// flag to reset z position
+							bool reset = false;
 
-						// otherwise, we need to recalculate distances
-						else
-						{
-							// correct z
-							int interval = val1 - 1;
-							z = fine_delta_z * (double) interval;
+							// calculate new height based on s (distance traveled in FSR)
+							double z = track->z_height + s * cos(p_angle);
 
-							// calculate distance travelled in FSR (ds)
-							ds = ( z - track->z_height ) / cos(p_angle);
-
-							// update track length remaining
-							s -= ds;
-
-							// check if out of bounds or track complete
-							if( z <= 0 )
+							// check if still in same FSR (fine axial interval)
+							// NOTE: a bit of trickery this time using the fact that 
+							// 2147483647 is the largest integer value
+							int val1 = INT_MAX - (int) (INT_MAX - track->z_height
+									/ fine_delta_z);
+							int val2 = INT_MAX - (int) (INT_MAX - z / fine_delta_z);
+							if( val1 == val2  )
 							{
-								// mark segment as completed
 								seg_complete = true;
-
-								// remember to no longer treat this track
-								begin_stacked++;
-
-								// reset z height 
-								reset = true;
+								ds = s;
 							}
+
+							// otherwise, we need to recalculate distances
+							else
+							{
+								// correct z
+								int interval = val1 - 1;
+								z = fine_delta_z * (double) interval;
+
+								// calculate distance travelled in FSR (ds)
+								ds = ( z - track->z_height ) / cos(p_angle);
+
+								// update track length remaining
+								s -= ds;
+
+								// check if out of bounds or track complete
+								if( z <= 0 )
+								{
+									// mark segment as completed
+									seg_complete = true;
+
+									// remember to no longer treat this track
+									begin_stacked++;
+
+									// reset z height 
+									reset = true;
+								}
+							}
+
+							// pick a random FSR (cache miss expected)
+							#ifdef OPENMP
+							long QSR_id = rand_r(&seed) % I.n_source_regions_per_node;
+							#else
+							long QSR_id = rand() % I.n_source_regions_per_node;
+							#endif
+
+							// update sources and fluxes from attenuation over FSR
+							attenuate_fluxes( track , &params.sources[QSR_id], I, params,
+									ds, mu, params.tracks_2D[i].az_weight );
+
+							// update with new z height or reset if finished
+							if( n == params.tracks_2D[i].n_segments - 1 || reset)
+								track->z_height = I.axial_z_sep * (k+1); 
+							else
+								track->z_height = z;
 						}
-
-						// pick a random FSR (cache miss expected)
-						long QSR_id = rand() % I.n_source_regions_per_node;
-
-						// update sources and fluxes from attenuation over FSR
-						attenuate_fluxes( track , &params.sources[QSR_id], I, params,
-								ds, mu, params.tracks_2D[i].az_weight );
-					
-						// update with new z height or reset if finished
-						if( n == params.tracks_2D[i].n_segments - 1 || reset)
-							track->z_height = I.axial_z_sep * (k+1); 
-						else
-							track->z_height = z;
 					}
 				}
 			}
@@ -217,7 +244,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 {
 	// compute fine axial interval spacing
 	double dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
-	
+
 	// compute fine axial region ID
 	int fine_id = (int) ( I.height / dz ) % I.cai;
 
@@ -293,7 +320,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		// calculate common values for efficiency
 		double tau = sigT * ds;
 		double sigT2 = sigT * sigT;
-		
+
 		// compute exponential ( 1 - exp(-x) ) using table lookup
 		double expVal = interpolateTable( params.expTable, tau );  
 
@@ -336,7 +363,7 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	}
 	double node_fission_rate = pairwise_sum(fission_rates, 
 			I.n_source_regions_per_node);
-	
+
 	#ifdef MPI	
 	// accumulate total fission rate by MPI reduction
 	double total_fission_rate = 0;
@@ -350,7 +377,7 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	#else
 	double total_fission_rate = node_fission_rate;
 	#endif
-	
+
 	// free allocated memory
 	free(fission_rates);
 	free(fine_fission_rates);
@@ -370,14 +397,14 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	// calculate track dimensions
 	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
-	
+
 	// normalize boundary fluxes by same factor
 	for( int i = 0; i < ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < z_stacked; k++)
 				for( int g = 0; g < I.n_egroups; g++)
 					params.tracks[i][j][k].start_flux[g] *= norm_factor;
-	
+
 	return;
 }
 
@@ -395,7 +422,7 @@ double update_sources( Params params, Input I, double keff )
 	double * fine_res = (double *) malloc(I.n_egroups * sizeof(double));
 	double * residuals = (double *) malloc(I.n_source_regions_per_node 
 			* sizeof(double));
-		
+
 	// allocate arrays for summation
 	double * fission_rates = malloc(I.n_egroups * sizeof(double));
 	double * scatter_rates = malloc(I.n_egroups * sizeof(double));
@@ -452,7 +479,7 @@ double update_sources( Params params, Input I, double keff )
 
 	// calculate source residual
 	residual = pairwise_sum(residuals, I.n_source_regions_per_node);
-	
+
 	// free memory
 	free(fission_rates);
 	free(scatter_rates);
@@ -534,7 +561,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	double leakage = 0;
 
 	#ifdef MPI
-	
+
 	// Total Absorption Reduction
 	MPI_Reduce( &node_abs,         // Send Buffer
 			&tot_abs,      // Receive Buffer
@@ -543,7 +570,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 			MPI_SUM,              // Reduciton Operation Type
 			0,                    // Master Rank
 			grid.cart_comm_3d );  // MPI Communicator
-	
+
 	// Total Fission Reduction
 	MPI_Reduce( &node_fission,     // Send Buffer
 			&tot_fission,  // Receive Buffer
@@ -552,7 +579,7 @@ double compute_keff(Params params, Input I, CommGrid grid)
 			MPI_SUM,              // Reduciton Operation Type
 			0,                    // Master Rank
 			grid.cart_comm_3d );  // MPI Communicator
-	
+
 	// Total Leakage Reduction
 	MPI_Reduce( params.leakage,  // Send Buffer
 			&leakage,      // Receive Buffer
@@ -569,9 +596,9 @@ double compute_keff(Params params, Input I, CommGrid grid)
 	#else
 	double keff = node_fission / (node_abs + *params.leakage);
 	#endif
-	
+
 	///////////////////////////////////////////////////////////////////////////
-	
+
 	// free memory
 	free(sigma);
 	free(group_rates);

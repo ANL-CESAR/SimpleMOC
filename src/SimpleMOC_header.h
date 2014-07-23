@@ -14,6 +14,10 @@
 #include<mpi.h>
 #endif
 
+#ifdef OPENMP
+#include<omp.h>
+#endif
+
 // User inputs
 typedef struct{
 	int x_assemblies;          // Number of assemblies in the x-axis of the reactor
