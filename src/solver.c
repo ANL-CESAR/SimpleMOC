@@ -331,6 +331,8 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 			/ (sigT * sigT2)
 			+ q2 * mu2 * (tau * (tau * (tau - 3) + 6) - 6 * expVal)
 			/ (3 * sigT2 * sigT2);
+
+		#pragma omp atomic
 		FSR_flux[g] += weight * flux_integral;
 
 		// update angular flux
