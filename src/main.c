@@ -91,11 +91,12 @@ int main( int argc, char * argv[] )
 			time_renormalize_flux + time_update_sources+
 			time_compute_keff;
 
-		printf("Transport Sweep Time:      %6.2lf sec   (%4.1lf\%)\n", time_transport, 100*time_transport/time_total);
-		printf("Domain Flux Exchange Time: %6.2lf sec   (%4.1lf\%)\n", time_flux_exchange, 100*time_flux_exchange/time_total);
-		printf("Flux Renormalization Time: %6.2lf sec   (%4.1lf\%)\n", time_renormalize_flux, 100*time_renormalize_flux/time_total);
-		printf("Update Source Time:        %6.2lf sec   (%4.1lf\%)\n", time_update_sources, 100*time_update_sources/time_total);
-		printf("K-Effective Calc Time:     %6.2lf sec   (%4.1lf\%)\n", time_compute_keff, 100*time_compute_keff/time_total);
+		printf("Transport Sweep Time:      %6.2lf sec   (%4.1lf%%)\n", time_transport, 100*time_transport/time_total);
+		printf("Domain Flux Exchange Time: %6.2lf sec   (%4.1lf%%)\n", time_flux_exchange, 100*time_flux_exchange/time_total);
+		printf("Flux Renormalization Time: %6.2lf sec   (%4.1lf%%)\n", time_renormalize_flux, 100*time_renormalize_flux/time_total);
+		printf("Update Source Time:        %6.2lf sec   (%4.1lf%%)\n", time_update_sources, 100*time_update_sources/time_total);
+		printf("K-Effective Calc Time:     %6.2lf sec   (%4.1lf%%)\n", time_compute_keff, 100*time_compute_keff/time_total);
+		printf("\nTotal Time:              %6.2lf sec\n", time_total);
 
 		border_print();
 	}
