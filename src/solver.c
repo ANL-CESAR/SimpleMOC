@@ -31,6 +31,7 @@ void transport_sweep( Params params, Input I )
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
+		int nthreads = omp_get_num_threads();
 		unsigned int seed = time(NULL) * (thread+1);
 		long progress = 0;
 		#endif
@@ -42,8 +43,12 @@ void transport_sweep( Params params, Input I )
 			#ifdef OPENMP
 			if(I.mype==0 && thread == 0)
 			{
-				printf("%s%ld%s%ld\n","2D Tracks Completed = ", progress * omp_get_num_threads()," / ", ntracks_2D);
+				//printf("%s%ld%s%ld\n","2D Tracks Completed = ", progress * omp_get_num_threads()," / ", ntracks_2D);
+	            printf("\rAttenuating Tracks's... (%.0lf%% completed)",
+					(i / ( (double)I.ntracks_2D / (double) nthreads ))
+					/ (double) nthreads * 100.0);
 				progress += 1;
+
 			}
 			#else
 			if( i % 50 == 0)
@@ -234,6 +239,9 @@ void transport_sweep( Params params, Input I )
 				}
 			}
 		}
+		#ifdef OPENMP
+		if(thread == 0) printf("\n");
+		#endif
 	}
 
 	return;

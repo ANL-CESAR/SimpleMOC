@@ -43,6 +43,7 @@ typedef struct{
 	long ntracks_2D;           // Number of 2D tracks (derived)
 	int z_stacked;             // Number of z rays (derived)
 	long ntracks;              // Total number of 3D tracks per assembly (derived)
+	int nthreads;              // Number of OpenMP Threads
 } Input;
 
 // Localized geometrical region ID

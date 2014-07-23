@@ -80,6 +80,9 @@ void print_input_summary(Input I)
 	MPI_Comm_size(MPI_COMM_WORLD, &nranks);
 	printf("%-35s%d\n", "MPI Ranks:", nranks); 
 	#endif
+	#ifdef OPENMP
+	printf("%-35s%ld\n", "Number of Threads:", I.nthreads);
+	#endif
 	printf("%-35s%d\n", "x-axis assemblies:", I.x_assemblies);
 	printf("%-35s%d\n", "y-axis assemblies:", I.y_assemblies);
 	printf("%-35s%d\n", "coarse axial intervals:", I.cai);

@@ -31,6 +31,10 @@ Input get_input( void )
 	I.mype = mype;
 	#endif
 
+	#ifdef OPENMP
+	I.nthreads = omp_get_max_threads();
+	#endif
+
 	// Some derived calculations
 	I.ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
