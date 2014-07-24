@@ -190,24 +190,31 @@ void counter_init( int *eventset, int *num_papi_events )
 
 	*num_papi_events = sizeof(events) / sizeof(int);
 
-	if ((stat = PAPI_thread_init((long unsigned int (*)(void)) omp_get_thread_num)) != PAPI_OK){
+	if ( (stat = PAPI_thread_init( 
+				(long unsigned int (*)(void)) omp_get_thread_num )
+				)!= PAPI_OK)
+	{
 		PAPI_perror("PAPI_thread_init");
 		exit(1);
 	}
 
-	if ( (stat= PAPI_create_eventset(eventset)) != PAPI_OK){
+	if ( (stat= PAPI_create_eventset(eventset)) != PAPI_OK)
+	{
 		PAPI_perror("PAPI_create_eventset");
 		exit(1);
 	}
 
-	for( int i = 0; i < *num_papi_events; i++ ){
-		if ((stat=PAPI_add_event(*eventset,events[i])) != PAPI_OK){
+	for( int i = 0; i < *num_papi_events; i++ )
+	{
+		if ((stat=PAPI_add_event(*eventset,events[i])) != PAPI_OK)
+		{
 			PAPI_perror("PAPI_add_event");
 			exit(1);
 		}
 	}
 
-	if ((stat=PAPI_start(*eventset)) != PAPI_OK){
+	if ((stat=PAPI_start(*eventset)) != PAPI_OK)
+	{
 		PAPI_perror("PAPI_start");
 		exit(1);
 	}
@@ -298,7 +305,8 @@ void counter_stop( int * eventset, int num_papi_events )
 		center_print("PERFORMANCE SUMMARY", 79);
 		border_print();
 		long cycles = (long) (total_cycles / (double) nthreads);
-		double bw = LLC_cache_miss * 64. / cycles * 2.8e9 / 1024. / 1024. / 1024.;
+		double bw = LLC_cache_miss * 64. / cycles * 
+			2.8e9 / 1024. / 1024. / 1024.;
 		if( FLOPS > 0 )
 			printf("GLOPs: %.3lf\n", FLOPS / (double) cycles * 2.8  );
 		if( LLC_cache_miss > 0 )

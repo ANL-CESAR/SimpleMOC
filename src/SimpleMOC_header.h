@@ -24,13 +24,13 @@
 
 // User inputs
 typedef struct{
-	int x_assemblies;          	// Number of assemblies in the x-axis of the
-   								// reactor
-	int y_assemblies;           // Number of assemblies in the y-axis of the 
-								// reactor
+	int x_assemblies;          	/* Number of assemblies in the x-axis of the 
+								   reactor */
+	int y_assemblies;           /* Number of assemblies in the y-axis of the 
+								   reactor */
 	int cai;                    // Number of course axial intervals
-	int fai;                    // Number of fine axial intervals 
-								// per course axial interval
+	int fai;                    /* Number of fine axial intervals per coarse 
+								   axial interval */
 	int axial_exp;             	// Axial source expansion order
 	float radial_ray_sep;     	// Radial ray separation
 	float axial_z_sep;        	// Axial stacked z-ray separation
@@ -47,8 +47,8 @@ typedef struct{
 	long mype;                 	// MPI Rank
 	long ntracks_2D;           	// Number of 2D tracks (derived)
 	int z_stacked;             	// Number of z rays (derived)
-	long ntracks;              	// Total number of 3D tracks per assembly 
-								// (derived)
+	long ntracks;              	/* Total number of 3D tracks per assembly
+								   (derived) */
 	int nthreads;              	// Number of OpenMP Threads
 	
 	// Source regions per assembly (3M estimate)
@@ -82,11 +82,11 @@ typedef struct{
 typedef struct{
 	float p_weight;				// Polar Quadrature Weight     (rand)
 	float z_height;           	// Z-height
-	float * start_flux;       	// Starting (input) flux array received 
-								// from neighbor
+	float * start_flux;       	/* Starting (input) flux array received 
+								   from neighbor */
 	long rank_in;              	// MPI rank to receive from
-	float * end_flux;         	// Attenuated (output) flux array to send to
-   								// output neighbor
+	float * end_flux;         	/* Attenuated (output) flux array to send to 
+								   output neighbor */
 	long rank_out;             	// MPI rank to send to
 	float * psi;			   	// current angular flux along track
 } Track;
