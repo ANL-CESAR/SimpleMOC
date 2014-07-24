@@ -11,10 +11,49 @@ void papi_serial_init(void)
 	}
 }
 
-void counter_init( int *eventset, int *num_papi_events )
+void counter_init( int *eventset, int *num_papi_events, Input I )
 {
 	char error_str[PAPI_MAX_STR_LEN];
 	int stat;
+
+	int * events;
+
+	// FLOPS
+	if( I.papi_event_set == 0 )
+	{
+		*num_papi_events = 2;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		events[0] = PAPI_DP_OPS;
+		events[1] = PAPI_TOT_CYC;
+	}
+	// Bandwidth
+	if( I.papi_event_set == 1 )
+	{
+		*num_papi_events = 2;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		events[0] = PAPI_L3_TCM;
+		events[1] = PAPI_TOT_CYC;
+	}
+	// CPU Stall Reason
+	if( I.papi_event_set == 2 )
+	{
+		*num_papi_events = 4;
+		int EventCode;
+		char * event1 = "RESOURCE_STALLS:ANY";
+		char * event2 = "RESOURCE_STALLS:SB";
+		char * event3 = "RESOURCE_STALLS:RS";
+		char * event4 = "RESOURCE_STALLS2:OOO_RSRC";
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		PAPI_event_name_to_code( event1, &EventCode );
+		events[0] = EventCode;	
+		PAPI_event_name_to_code( event2, &EventCode );
+		events[1] = EventCode;	
+		PAPI_event_name_to_code( event3, &EventCode );
+		events[2] = EventCode;	
+		PAPI_event_name_to_code( event4, &EventCode );
+		events[3] = EventCode;	
+	}
+	
 
 	/////////////////////////////////////////////////////////////////////////
 	//                        PAPI EVENT SELECTION
@@ -26,7 +65,7 @@ void counter_init( int *eventset, int *num_papi_events )
 
 	// Bandwidth Used
 	// ((PAPI_Lx_TCM * Lx_linesize) / PAPI_TOT_CYC) * Clock(MHz)
-	int events[] = {PAPI_L3_TCM, PAPI_TOT_CYC};
+	//int events[] = {PAPI_L3_TCM, PAPI_TOT_CYC};
 
 	// L3 Total Cache Miss Ratio
 	// PAPI_L3_TCM / PAPI_L3_TCA
@@ -144,11 +183,14 @@ void counter_init( int *eventset, int *num_papi_events )
 	// CPU Stall Reason Breakdown (Using native counters)
 	int events[4];
 	int EventCode;
+
+	// Set 1
 	char * event1 = "RESOURCE_STALLS:ANY";
 	char * event2 = "RESOURCE_STALLS:LB";
 	char * event3 = "RESOURCE_STALLS:RS";
 	char * event4 = "RESOURCE_STALLS:SB";
 	// Set 1
+
 	// Set 2
 	char * event1 = "RESOURCE_STALLS:ANY";
 	char * event2 = "RESOURCE_STALLS:ROB";
@@ -161,6 +203,10 @@ void counter_init( int *eventset, int *num_papi_events )
 	char * event3 = "RESOURCE_STALLS2:ANY_PRF_CONTROL"; // duplicate
 	char * event4 = "RESOURCE_STALLS2:OOO_RSRC";
 	// Set 3
+	char * event1 = "RESOURCE_STALLS:ANY";
+	char * event2 = "RESOURCE_STALLS:SB";
+	char * event3 = "RESOURCE_STALLS:RS"; // duplicate
+	char * event4 = "RESOURCE_STALLS2:OOO_RSRC";
 
 
 	// Events that don't need to be counted
@@ -169,7 +215,6 @@ void counter_init( int *eventset, int *num_papi_events )
 	//char * event1 = "RESOURCE_STALLS:MXCSR"; // Always 0, don't measure
 	//char * event3 = "RESOURCE_STALLS2:BOB_FULL"; // Always trivial
 	//char * event3 = "RESOURCE_STALLS2:ANY_PRF_CONTROL"; // duplicate
-
 
 	PAPI_event_name_to_code( event1, &EventCode );
 	events[0] = EventCode;	
@@ -187,8 +232,6 @@ void counter_init( int *eventset, int *num_papi_events )
 	// Users should not need to alter anything within this section
 
 	int thread = omp_get_thread_num();
-
-	*num_papi_events = sizeof(events) / sizeof(int);
 
 	if ((stat = PAPI_thread_init((long unsigned int (*)(void)) omp_get_thread_num)) != PAPI_OK){
 		PAPI_perror("PAPI_thread_init");
@@ -256,7 +299,7 @@ printf("Initializing PAPI counters...\n");
  */
 
 // Stops the papi counters and prints results
-void counter_stop( int * eventset, int num_papi_events )
+void counter_stop( int * eventset, int num_papi_events, Input I )
 {
 	int * events = malloc(num_papi_events * sizeof(int));
 	int n = num_papi_events;
@@ -271,6 +314,10 @@ void counter_stop( int * eventset, int num_papi_events )
 	static long LLC_cache_miss = 0;
 	static long total_cycles = 0;
 	static long FLOPS = 0;
+	static long stall_any = 0;
+	static long stall_SB = 0;
+	static long stall_RS = 0;
+	static long stall_OO = 0;
 
 	#pragma omp critical (papi)
 	{
@@ -285,6 +332,14 @@ void counter_stop( int * eventset, int num_papi_events )
 				total_cycles += values[i];
 			if( strcmp(info.symbol, "PAPI_DP_OPS") == 0 )
 				FLOPS += values[i];
+			if( strcmp(info.symbol, "RESOURCE_STALLS:ANY") == 0 )
+				stall_any += values[i];
+			if( strcmp(info.symbol, "RESOURCE_STALLS:SB") == 0 )
+				stall_SB += values[i];
+			if( strcmp(info.symbol, "RESOURCE_STALLS:RS") == 0 )
+				stall_RS += values[i];
+			if( strcmp(info.symbol, "RESOURCE_STALLS2:OOO_RSRC") == 0 )
+				stall_OO += values[i];
 		}
 		free(events);
 		free(values);	
@@ -299,10 +354,16 @@ void counter_stop( int * eventset, int num_papi_events )
 		border_print();
 		long cycles = (long) (total_cycles / (double) nthreads);
 		double bw = LLC_cache_miss * 64. / cycles * 2.8e9 / 1024. / 1024. / 1024.;
-		if( FLOPS > 0 )
-			printf("GLOPs: %.3lf\n", FLOPS / (double) cycles * 2.8  );
-		if( LLC_cache_miss > 0 )
+		if( I.papi_event_set == 0 )
+			printf("GFLOPs: %.3lf\n", FLOPS / (double) cycles * 2.8  );
+		if( I.papi_event_set == 1 )
 			printf("Bandwidth: %.3lf (GB/s)\n", bw);
+		if( I.papi_event_set == 2 )
+		{
+			printf("%-30s %.2lf%%\n", "Store Buffer Full:", stall_SB / (double) stall_any * 100.);
+			printf("%-30s %.2lf%%\n", "Reservation Station Full:", stall_RS / (double) stall_any * 100.);
+			printf("%-30s %.2lf%%\n", "OO Pipeline Full:", stall_OO / (double) stall_any * 100.);
+		}
 		border_print();
 	}
 }

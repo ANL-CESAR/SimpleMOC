@@ -50,6 +50,8 @@ typedef struct{
 	long ntracks;              	// Total number of 3D tracks per assembly 
 								// (derived)
 	int nthreads;              	// Number of OpenMP Threads
+	int papi_event_set;         // PAPI event set
+	// 0 - FLOPS   1 - Bandwidth   2 - CPU Stall reason
 	
 	// Source regions per assembly (3M estimate)
 	long n_2D_source_regions_per_assembly;
@@ -186,8 +188,8 @@ void gen_norm_pts(float mean, float sigma, int n_pts);
 
 // papi.c
 void papi_serial_init(void);
-void counter_init( int *eventset, int *num_papi_events );
-void counter_stop( int * eventset, int num_papi_events );
+void counter_init( int *eventset, int *num_papi_events, Input I );
+void counter_stop( int * eventset, int num_papi_events, Input I );
 
 // comms.c
 #ifdef MPI

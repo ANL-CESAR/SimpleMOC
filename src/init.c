@@ -31,6 +31,10 @@ Input get_input( void )
 	// Change to 3M source regions per assembly (estimate)
 	I.n_2D_source_regions_per_assembly = 3000; 
 
+	#ifdef PAPI
+	I.papi_event_set = 2;
+	#endif
+
 	#ifdef MPI
 	int mype;
 	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
