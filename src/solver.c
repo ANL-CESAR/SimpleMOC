@@ -58,13 +58,18 @@ void transport_sweep( Params params, Input I )
 
 
 			// treat positive-z traveling rays first
-			for( int j = 0; j < I.n_polar_angles / 2; j++)
+			bool pos_z_dir = true;
+			for( int j = 0; j < I.n_polar_angles; j++)
 			{
+				if( j == I.n_polar_angles / 2 )
+					pos_z_dir = false;
 				float p_angle = params.polar_angles[j];
 				float mu = cos(p_angle);
 
 				// start with all z stacked rays
+				int begin_stacked = 0;
 				int end_stacked = z_stacked;
+
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
@@ -74,13 +79,22 @@ void transport_sweep( Params params, Input I )
 					float ds;
 
 					// loop over remaining z-stacked rays
-					for( int k = 0; k < end_stacked; k++)
+					for( int k = begin_stacked; k < end_stacked; k++)
 					{
 						// select current track
 						Track * track = &params.tracks[i][j][k];
 
 						// set flag for completeion of segment
 						bool seg_complete = false;
+
+						// calculate interval
+						int curr_interval;
+						if( pos_z_dir)
+							curr_interval = get_pos_interval(track->z_height, 
+								fine_delta_z);
+						else
+							curr_interval = get_neg_interval(track->z_height, 
+								fine_delta_z);
 
 						while( !seg_complete )
 						{
@@ -91,8 +105,8 @@ void transport_sweep( Params params, Input I )
 							float z = track->z_height + s * cos(p_angle);
 
 							// check if still in same FSR (fine axial interval)
-							if( track->z_height / fine_delta_z  - 
-									 z / fine_delta_z  < 0.00001)
+							int new_interval = get_neg_interval(z, fine_delta_z);
+							if( new_interval == curr_interval )
 							{
 								seg_complete = true;
 								ds = s;
@@ -102,8 +116,15 @@ void transport_sweep( Params params, Input I )
 							else
 							{
 								// correct z
-								int interval = (int) (track->z_height / fine_delta_z);
-								z = fine_delta_z * (float) (interval + 1);
+								if( pos_z_dir )
+								{
+									z = fine_delta_z * (float) curr_interval;
+									curr_interval++;
+								}
+								else{
+									curr_interval--;
+									z = fine_delta_z * (float) curr_interval;
+								}
 
 								// calculate distance travelled in FSR (ds)
 								ds = (z - track->z_height) / cos(p_angle);
@@ -112,13 +133,16 @@ void transport_sweep( Params params, Input I )
 								s -= ds;
 
 								// check if out of bounds or track complete
-								if( s <= 0 || z >= node_delta_z )
+								if( z <= 0 || z >= node_delta_z )
 								{
 									// mark segment as completed
 									seg_complete = true;
 
 									// remember to no longer treat this track
-									end_stacked--;
+									if ( pos_z_dir )
+										end_stacked--;
+									else
+										begin_stacked++;
 
 									// reset z height
 									reset = true;
@@ -138,101 +162,13 @@ void transport_sweep( Params params, Input I )
 
 							// update with new z height or reset if finished
 							if( n == params.tracks_2D[i].n_segments - 1  || reset)
-								track->z_height = I.axial_z_sep * k;
+								if( pos_z_dir)
+									track->z_height = I.axial_z_sep * k;
+								else
+									track->z_height = I.axial_z_sep * (k+1);
 							else
 								track->z_height = z;
 
-						}
-					}
-				}
-			}
-
-			for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
-			{
-				float p_angle = params.polar_angles[j];
-				float mu = cos(p_angle);
-				int begin_stacked = 0;
-
-				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
-				{
-					// calculate distance traveled in cell if segment completed
-					float s = params.tracks_2D[i].segments[n].length / sin(p_angle);
-
-					// allocate varaible for distance traveled in an FSR
-					float ds;
-
-					// loop over all z stacked rays to begin
-					for( int k = begin_stacked; k < z_stacked; k++)
-					{
-						// select current track
-						Track * track = &params.tracks[i][j][k];
-
-						// set flag for completeion of segment
-						bool seg_complete = false;
-
-						// calculate interval
-						int curr_interval = get_neg_interval(track->z_height, 
-								fine_delta_z);
-
-						while( !seg_complete )
-						{
-							// flag to reset z position
-							bool reset = false;
-
-							// calculate new height based on s (distance traveled in FSR)
-							float z = track->z_height + s * cos(p_angle);
-
-							// check if still in same FSR (fine axial interval)
-							int new_interval = get_neg_interval(z, fine_delta_z);
-							if( new_interval == curr_interval  )
-							{
-								seg_complete = true;
-								ds = s;
-							}
-
-							// otherwise, we need to recalculate distances
-							else
-							{
-								// correct z
-								curr_interval--;
-								z = fine_delta_z * (float) curr_interval;
-
-								// calculate distance travelled in FSR (ds)
-								ds = ( z - track->z_height ) / cos(p_angle);
-
-								// update track length remaining
-								s -= ds;
-
-								// check if out of bounds or track complete
-								if( z <= 0 )
-								{
-									// mark segment as completed
-									seg_complete = true;
-
-									// remember to no longer treat this track
-									begin_stacked++;
-
-									// reset z height 
-									reset = true;
-								}
-							}
-
-							// pick a random FSR (cache miss expected)
-							#ifdef OPENMP
-							long QSR_id = rand_r(&seed) % I.n_source_regions_per_node;
-							#else
-							long QSR_id = rand() % I.n_source_regions_per_node;
-							#endif
-
-							// update sources and fluxes from attenuation over FSR
-							attenuate_fluxes( track , &params.sources[QSR_id], I, params,
-									ds, mu, params.tracks_2D[i].az_weight );
-
-							// update with new z height or reset if finished
-							if( n == params.tracks_2D[i].n_segments - 1 || reset)
-								track->z_height = I.axial_z_sep * (k+1); 
-							else
-								track->z_height = z;
 						}
 					}
 				}
@@ -244,6 +180,14 @@ void transport_sweep( Params params, Input I )
 	}
 
 	return;
+}
+
+// returns integer number for axial interval for tracks traveling in the
+// positive direction
+int get_pos_interval( float z, float dz)
+{
+	int interval = (int) (z/dz);
+	return interval;
 }
 
 // returns integer number for axial interval for tracks traveling in the
