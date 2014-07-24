@@ -62,12 +62,12 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// make an array of number of messages
 	long num_messages[6] =
 	{
-		ntracks_per_radial_direction/100,
-		ntracks_per_radial_direction/100,
-		ntracks_per_radial_direction/100,
-		ntracks_per_radial_direction/100,
-		ntracks_per_axial_direction/100,
-		ntracks_per_axial_direction/100
+		ntracks_per_radial_direction / 100,
+		ntracks_per_radial_direction / 100,
+		ntracks_per_radial_direction / 100,
+		ntracks_per_radial_direction / 100,
+		ntracks_per_axial_direction / 100,
+		ntracks_per_axial_direction / 100
 	};
 
 

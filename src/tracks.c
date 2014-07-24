@@ -29,7 +29,7 @@ void generate_2D_segments(
 		size_t * nbytes )
 {
 	/* Randomize Number of segments per track, and accumulate total 2D 
-	   segments in assembly */
+	 * segments in assembly */
 	long total_segments = 0;
 	for( long i = 0; i < ntracks; i++ )
 	{
@@ -133,8 +133,8 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 			for( int k = 0; k < z_stacked; k++ )
 			{
 				/* bottom z heights should only have upward directed polar
-				   angles and  similarly top should only have downward directed
-				   polar angles */
+				 * angles and  similarly top should only have downward directed
+				 * polar angles */
 				if( j < I.n_polar_angles/2 )
 					tracks[i][j][k].z_height = I.axial_z_sep * k;
 				else
@@ -144,7 +144,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 				tracks[i][j][k].p_weight = urand();
 
 				/* Allocate start and end flux arrays (moved allocations out of
-				   loop so they are contiguous) */
+				 * loop so they are contiguous) */
 				tracks[i][j][k].start_flux = &flux_space[flux_idx];
 				tracks[i][j][k].end_flux = &flux_space[offset + flux_idx];
 				tracks[i][j][k].psi = &flux_space[offset*2 + flux_idx];

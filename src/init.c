@@ -106,7 +106,7 @@ Params build_tracks( Input I )
 	params.leakage = leakage;
 
 	// build exponential table for interpolation
-	params.expTable = buildExponentialTable( I.precision, 10.0); 
+	params.expTable = buildExponentialTable( I.precision, 10.0 ); 
 
 	return params;
 }
@@ -148,7 +148,6 @@ CommGrid init_mpi_grid( Input I )
 	int z_pos_src;
 	int z_pos_dest;
 	int z_neg_src;
-	// X negative
 	int z_neg_dest;
 	MPI_Cart_shift( cart_comm_3d, 2,  1, &z_pos_src, &z_pos_dest );
 	MPI_Cart_shift( cart_comm_3d, 2, -1, &z_neg_src, &z_neg_dest );

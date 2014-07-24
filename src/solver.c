@@ -277,7 +277,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		float q0, q1, q2;
 
 		// calculate source components
-		if( fine_id == 0)
+		if( fine_id == 0 )
 		{
 			// load neighboring sources
 			float y2 = QSR->fine_source[fine_id][g];

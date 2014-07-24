@@ -6,20 +6,19 @@ float urand(void)
 	return (float)rand() / (float)RAND_MAX;
 }
 
-// generates a random number from a normal distribution
-// of given mean and standard deviation (Box-Muller)
+/* generates a random number from a normal distribution of a 
+ * given mean and standard deviation (Box-Muller) */
 float nrand(float mean, float sigma)
 {
 	// generate two random numbers
 	float rand1 = urand();
 	float rand2 = urand();
 
-	// use first for "exponential part" and second for
-	// "azimuthal part" to create a standard normal random number
+	/* use first for "exponential part" and second for
+	 *  "azimuthal part" to create a standard normal random number */
 	float x = sqrt( -2 * log(rand1) ) * cos( 2 * M_PI * rand2);
 
-	// NOTE: We can generate a second random number if
-	// neeeded
+	// NOTE: We can generate a second random number if neeeded
 	// y = sqrt(-2*log(rand1)) * sin( 2 * M_PI * rand2);
 	
 	// shift random number to appropriate normal distribution and return
@@ -27,7 +26,6 @@ float nrand(float mean, float sigma)
 }
 
 // pairwise summation for long arrays
-// Note: should be templated, but this is C
 float pairwise_sum( float * vector, long size ){
 	float sum = 0;
 
@@ -78,8 +76,8 @@ Table buildExponentialTable( float precision, float maxVal )
 	return table;
 }
 
-// Interpolates a formed exponential table to compute ( 1- exp(-x) )
-// at the desired x value
+/* Interpolates a formed exponential table to compute ( 1- exp(-x) )
+ *  at the desired x value */
 float interpolateTable( Table table, float x)
 {
 	// check to ensure value is in domain

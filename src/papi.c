@@ -238,19 +238,23 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		exit(1);
 	}
 
-	if ( (stat= PAPI_create_eventset(eventset)) != PAPI_OK){
+	if ( (stat= PAPI_create_eventset(eventset)) != PAPI_OK)
+	{
 		PAPI_perror("PAPI_create_eventset");
 		exit(1);
 	}
 
-	for( int i = 0; i < *num_papi_events; i++ ){
-		if ((stat=PAPI_add_event(*eventset,events[i])) != PAPI_OK){
+	for( int i = 0; i < *num_papi_events; i++ )
+	{
+		if ((stat=PAPI_add_event(*eventset,events[i])) != PAPI_OK)
+		{
 			PAPI_perror("PAPI_add_event");
 			exit(1);
 		}
 	}
 
-	if ((stat=PAPI_start(*eventset)) != PAPI_OK){
+	if ((stat=PAPI_start(*eventset)) != PAPI_OK)
+	{
 		PAPI_perror("PAPI_start");
 		exit(1);
 	}
@@ -353,16 +357,19 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 		center_print("PERFORMANCE SUMMARY", 79);
 		border_print();
 		long cycles = (long) (total_cycles / (double) nthreads);
-		double bw = LLC_cache_miss * 64. / cycles * 2.8e9 / 1024. / 1024. / 1024.;
+		double bw = LLC_cache_miss*64./cycles*2.8e9/1024./1024./1024.;
 		if( I.papi_event_set == 0 )
 			printf("GFLOPs: %.3lf\n", FLOPS / (double) cycles * 2.8  );
 		if( I.papi_event_set == 1 )
 			printf("Bandwidth: %.3lf (GB/s)\n", bw);
 		if( I.papi_event_set == 2 )
 		{
-			printf("%-30s %.2lf%%\n", "Store Buffer Full:", stall_SB / (double) stall_any * 100.);
-			printf("%-30s %.2lf%%\n", "Reservation Station Full:", stall_RS / (double) stall_any * 100.);
-			printf("%-30s %.2lf%%\n", "OO Pipeline Full:", stall_OO / (double) stall_any * 100.);
+			printf("%-30s %.2lf%%\n", "Store Buffer Full:",
+					stall_SB / (double) stall_any * 100.);
+			printf("%-30s %.2lf%%\n", "Reservation Station Full:",
+					stall_RS / (double) stall_any * 100.);
+			printf("%-30s %.2lf%%\n", "OO Pipeline Full:",
+					stall_OO / (double) stall_any * 100.);
 		}
 		border_print();
 	}
