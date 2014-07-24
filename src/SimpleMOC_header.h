@@ -158,6 +158,7 @@ void free_sources( Input I, Source * sources );
 
 // solver.c
 void transport_sweep( Params params, Input I );
+int get_neg_interval( float z, float dz);
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
 		Params params, float ds, float mu, float az_weight ); 
 void renormalize_flux( Params params, Input I, CommGrid grid );

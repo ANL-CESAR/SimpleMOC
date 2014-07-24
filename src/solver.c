@@ -147,12 +147,6 @@ void transport_sweep( Params params, Input I )
 				}
 			}
 
-			// treat negative-z traveling rays next
-			// FIXME
-			float * ztpos = malloc( 1000 * sizeof(float) );
-			float * zpos = malloc( 1000 * sizeof(float) );
-			float * svec = malloc( 1000 * sizeof(float) );
-			// FIXME
 			for( int j = I.n_polar_angles / 2; j < I.n_polar_angles; j++)
 			{
 				float p_angle = params.polar_angles[j];
@@ -176,9 +170,10 @@ void transport_sweep( Params params, Input I )
 						// set flag for completeion of segment
 						bool seg_complete = false;
 
-						//FIXME
-						int ctr = 0;
-						//FIXME
+						// calculate interval
+						int curr_interval = get_neg_interval(track->z_height, 
+								fine_delta_z);
+
 						while( !seg_complete )
 						{
 							// flag to reset z position
@@ -187,39 +182,9 @@ void transport_sweep( Params params, Input I )
 							// calculate new height based on s (distance traveled in FSR)
 							float z = track->z_height + s * cos(p_angle);
 
-							//FIXME
-							if(ctr < 1000)
-							{
-								ztpos[ctr] = track->z_height;
-								zpos[ctr] = z;
-								svec[ctr] = s;
-								ctr++;
-							}
-							else
-							{
-								printf( "BUG FOUND \n" );
-
-								FILE * out;
-								out = fopen("log.txt","w");
-								fprintf(out, "Z interval = %f\n", fine_delta_z);
-								fprintf(out, "Track Z \t Zone \t Z \t Zone \t S\n");
-								for(int ii = 0; ii < 1000; ii++)
-								{
-									int v1 = INT_MAX - (int) (INT_MAX - (int) (ztpos[ii] / fine_delta_z));
-									int v2 = INT_MAX - (int) (INT_MAX - (int) (zpos[ii] / fine_delta_z));
-									fprintf(out, "%f\t%d\t%f\t%d\t%f\n", ztpos[ii], v1, zpos[ii], v2, svec[ii]);
-								}
-								fclose(out);
-								exit(0);
-							}
-							//FIXME
-
 							// check if still in same FSR (fine axial interval)
-							// NOTE: a bit of trickery this time using the fact that 
-							// 2147483647 is the largest integer value
-							int val1 = INT_MAX - (int) (INT_MAX - (int) (track->z_height / fine_delta_z));
-							int val2 = INT_MAX - (int) (INT_MAX - (int) (z / fine_delta_z));
-							if( val1 == val2  )
+							int new_interval = get_neg_interval(z, fine_delta_z);
+							if( new_interval == curr_interval  )
 							{
 								seg_complete = true;
 								ds = s;
@@ -229,8 +194,8 @@ void transport_sweep( Params params, Input I )
 							else
 							{
 								// correct z
-								int interval = val1 - 1;
-								z = fine_delta_z * (float) interval;
+								curr_interval--;
+								z = fine_delta_z * (float) curr_interval;
 
 								// calculate distance travelled in FSR (ds)
 								ds = ( z - track->z_height ) / cos(p_angle);
@@ -239,7 +204,7 @@ void transport_sweep( Params params, Input I )
 								s -= ds;
 
 								// check if out of bounds or track complete
-								if( z <= 0)
+								if( z <= 0 )
 								{
 									// mark segment as completed
 									seg_complete = true;
@@ -279,6 +244,15 @@ void transport_sweep( Params params, Input I )
 	}
 
 	return;
+}
+
+// returns integer number for axial interval for tracks traveling in the
+// negative direction
+int get_neg_interval( float z, float dz)
+{
+	// NOTE: a bit of trickery using floors to obtain ceils 
+	int interval = INT_MAX - (int) ( INT_MAX - ( z / dz ) );
+	return interval;
 }
 
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
