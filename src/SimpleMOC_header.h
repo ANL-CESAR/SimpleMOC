@@ -20,30 +20,38 @@
 
 // User inputs
 typedef struct{
-	int x_assemblies;          // Number of assemblies in the x-axis of the reactor
-	int y_assemblies;          // Number of assemblies in the y-axis of the reactor
-	int cai;                   // This is the number of course axial intervals
-	int fai;                   // This is the number of fine axial intervals per course axial interval
-	int axial_exp;             // Axial source expansion order
-	float radial_ray_sep;     // Radial ray separation
-	float axial_z_sep;        // Axial stacked z-ray separation
-	int n_azimuthal;           // Number of azimuthal angles
-	int n_polar_angles;        // Number of polar angles
-	int n_egroups;             // Number of energy groups
-	bool decompose;            // Turn decomposition on/off
-	int decomp_assemblies_ax;  // Number of assemblies per sub-domain (axially)
-	long segments_per_track;   // Average number of segments per track
-	float assembly_width;     // Width of an assembly - 1.26 x 17 cm
-	float height;             // Height of the reactor - 400 cm
-	float domain_height;      // Z Height of a domain
-	long n_2D_source_regions_per_assembly; // 3M source regions per assembly (estimate)
-	float precision;		   // precision for source convergence
-	long n_source_regions_per_node; // Number of source regions in a given node
-	long mype;                 // MPI Rank
-	long ntracks_2D;           // Number of 2D tracks (derived)
-	int z_stacked;             // Number of z rays (derived)
-	long ntracks;              // Total number of 3D tracks per assembly (derived)
-	int nthreads;              // Number of OpenMP Threads
+	int x_assemblies;          	// Number of assemblies in the x-axis of the
+   								// reactor
+	int y_assemblies;           // Number of assemblies in the y-axis of the 
+								// reactor
+	int cai;                    // Number of course axial intervals
+	int fai;                    // Number of fine axial intervals 
+								// per course axial interval
+	int axial_exp;             	// Axial source expansion order
+	float radial_ray_sep;     	// Radial ray separation
+	float axial_z_sep;        	// Axial stacked z-ray separation
+	int n_azimuthal;           	// Number of azimuthal angles
+	int n_polar_angles;        	// Number of polar angles
+	int n_egroups;             	// Number of energy groups
+	bool decompose;            	// Turn decomposition on/off
+	int decomp_assemblies_ax;  	// Number of assemblies per sub-domain (axially)
+	long segments_per_track;   	// Average number of segments per track
+	float assembly_width;     	// Width of an assembly - 1.26 x 17 cm
+	float height;             	// Height of the reactor - 400 cm
+	float domain_height;      	// Z Height of a domain
+	float precision;		   	// precision for source convergence
+	long mype;                 	// MPI Rank
+	long ntracks_2D;           	// Number of 2D tracks (derived)
+	int z_stacked;             	// Number of z rays (derived)
+	long ntracks;              	// Total number of 3D tracks per assembly 
+								// (derived)
+	int nthreads;              	// Number of OpenMP Threads
+	
+	// Source regions per assembly (3M estimate)
+	long n_2D_source_regions_per_assembly;
+
+	// Source regions per node (derived)	
+	long n_source_regions_per_node; 
 } Input;
 
 // Localized geometrical region ID
@@ -61,20 +69,22 @@ typedef struct{
 
 // Track2D Structure
 typedef struct{
-	float az_weight;          // Azimuthal Quadrature Weight (rand)
-	long n_segments;           // Number of Segments (gaussian)
-	Segment * segments;        // Array of Segments
+	float az_weight;          	// Azimuthal Quadrature Weight (rand)
+	long n_segments;           	// Number of Segments (gaussian)
+	Segment * segments;        	// Array of Segments
 } Track2D;
 
 // Track Structure
 typedef struct{
-	float p_weight;           // Polar Quadrature Weight     (rand)
-	float z_height;           // Z-height
-	float * start_flux;       // Starting (input) flux array received from inputting neighbor
-	long rank_in;              // MPI rank to receive from
-	float * end_flux;         // Attenuated (output) flux array to send to output neighbor
-	long rank_out;             // MPI rank to send to
-	float * psi;			   // current angular flux along track
+	float p_weight;				// Polar Quadrature Weight     (rand)
+	float z_height;           	// Z-height
+	float * start_flux;       	// Starting (input) flux array received 
+								// from neighbor
+	long rank_in;              	// MPI rank to receive from
+	float * end_flux;         	// Attenuated (output) flux array to send to
+   								// output neighbor
+	long rank_out;             	// MPI rank to send to
+	float * psi;			   	// current angular flux along track
 } Track;
 
 // Source Region Structure
@@ -137,7 +147,8 @@ void print_input_summary(Input input);
 
 // tracks.c
 Track2D * generate_2D_tracks( Input input, size_t * nbytes );
-void generate_2D_segments( Input input, Track2D * tracks, long ntracks, size_t * nbytes );
+void generate_2D_segments( Input input, Track2D * tracks, long ntracks,
+	   	size_t * nbytes );
 void free_2D_tracks( Track2D * tracks );
 Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );

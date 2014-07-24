@@ -30,7 +30,7 @@ int main( int argc, char * argv[] )
 
 	float res;
 	float keff = 1.0;
-	int num_iters = 1;
+	int num_iters = 30;
 
 	double time_transport = 0;
 	double time_flux_exchange = 0;
@@ -87,17 +87,22 @@ int main( int argc, char * argv[] )
 		border_print();
 		center_print("Results Summary", 79);
 		border_print();
-		double time_total = time_transport+time_flux_exchange+
-			time_renormalize_flux + time_update_sources+
-			time_compute_keff;
+		double time_total = time_transport + time_flux_exchange 
+			+ time_renormalize_flux + time_update_sources + time_compute_keff;
 
-		printf("Transport Sweep Time:         %6.2lf sec   (%4.1lf%%)\n", time_transport, 100*time_transport/time_total);
-		printf("Domain Flux Exchange Time:    %6.2lf sec   (%4.1lf%%)\n", time_flux_exchange, 100*time_flux_exchange/time_total);
-		printf("Flux Renormalization Time:    %6.2lf sec   (%4.1lf%%)\n", time_renormalize_flux, 100*time_renormalize_flux/time_total);
-		printf("Update Source Time:           %6.2lf sec   (%4.1lf%%)\n", time_update_sources, 100*time_update_sources/time_total);
-		printf("K-Effective Calc Time:        %6.2lf sec   (%4.1lf%%)\n", time_compute_keff, 100*time_compute_keff/time_total);
+		printf("Transport Sweep Time:         %6.2lf sec   (%4.1lf%%)\n", 
+				time_transport, 100*time_transport/time_total);
+		printf("Domain Flux Exchange Time:    %6.2lf sec   (%4.1lf%%)\n", 
+				time_flux_exchange, 100*time_flux_exchange/time_total);
+		printf("Flux Renormalization Time:    %6.2lf sec   (%4.1lf%%)\n", 
+				time_renormalize_flux, 100*time_renormalize_flux/time_total);
+		printf("Update Source Time:           %6.2lf sec   (%4.1lf%%)\n", 
+				time_update_sources, 100*time_update_sources/time_total);
+		printf("K-Effective Calc Time:        %6.2lf sec   (%4.1lf%%)\n", 
+				time_compute_keff, 100*time_compute_keff/time_total);
 		printf("Total Time:                   %6.2lf sec\n", time_total);
-		printf("Tracks per Second per domain: "); fancy_int( input.ntracks / time_transport );
+		printf("Tracks per Second per domain: "); 
+		fancy_int( input.ntracks / time_transport );
 
 		border_print();
 	}
