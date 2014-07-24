@@ -119,8 +119,13 @@ void transport_sweep( Params params, Input I )
 							float z = track->z_height + s * cos(p_angle);
 
 							// check if still in same FSR (fine axial interval)
-							int new_interval = get_neg_interval(z, 
+							int new_interval;
+							if( pos_z_dir )
+								new_interval = get_pos_interval(z, 
 									fine_delta_z);
+							else
+								new_interval = get_neg_interval(z,
+										fine_delta_z);
 
 							if( new_interval == curr_interval )
 							{
@@ -147,6 +152,11 @@ void transport_sweep( Params params, Input I )
 
 								// update track length remaining
 								s -= ds;
+
+								/* check remaining track length to protect
+								 * against potential roundoff errors */
+								if( s <= 0 )
+									seg_complete = true;
 
 								// check if out of bounds or track complete
 								if( z <= 0 || z >= node_delta_z )
