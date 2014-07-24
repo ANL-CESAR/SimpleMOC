@@ -7,18 +7,25 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Barrier(grid.cart_comm_3d);
 	if(I.mype==0) printf("Beginning Inter-Node Border Flux Transfer...\n");
 
-	// Note we are introducing a new input restriction for convenience,
-	// namely, that the total number of tracks is divisible by 6
-	int elements = I.ntracks / 6;
-
 	float h = I.domain_height;
 	float x = I.assembly_width;
 
+	// calculate number of tracks to each surface
 	long ntracks_per_axial_direction  = I.ntracks * x / (2*x + 4*h);
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
 
+	// correct so that all tracks are used and are symmetric
+	long remaining_tracks = I.ntracks - 2 * ntracks_per_axial_direction
+	   - 4 * ntracks_per_radial_direction;
+
+	long add_radial = remaining_tracks * ( 4*h / (2*x + 4*h) );
+	add_radial = 4 * (add_radial / 4);
+	ntracks_per_raidal_direction += add_radial / 4;
+	
+	long add_axial = I.ntracks - add_radial;
+	ntracks_per_axial_direction += add_axial / 2;
+
 	// Calculate all requests needed
-	// TODO: Tidy up number of sends in each direction to account for uneven ntracks
 	long max_requests = ntracks_per_radial_direction / 100;
 	max_requests *= 4;
 	max_requests += 2 * (ntracks_per_axial_direction / 100 );

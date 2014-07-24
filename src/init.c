@@ -41,9 +41,11 @@ Input get_input( void )
 	I.nthreads = omp_get_max_threads();
 	#endif
 
-	// Some derived calculations
+	// calculate number of 2D tracks, enforcing divisible by 2
 	I.ntracks_2D = I.n_azimuthal * 
 		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
+
+	I.ntracks_2D = 2 * ( I.ntracks_2D / 2 );
 
 	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax));
 	I.ntracks = I.ntracks_2D * I.n_polar_angles * I.z_stacked;  
