@@ -43,7 +43,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// Use knowledge of underlying flux structure for efficiency
 	float * flux_array = params.tracks[0][0][0].start_flux;
 
-	long dim = (long) elements * (long) I.n_egroups;
 	long msg_id = 0;
 	long req_id = 0;
 
@@ -78,8 +77,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		// check if border assembly
 		if( send_dest[i] == -1 )
 		{
-			* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-			send_idx += dim;
+			* params.leakage += pairwise_sum( &flux_array[send_idx],
+					num_messages[i] * I.n_egroups * 100 );
+
+			send_idx += num_messages[i] * I.n_egroups * 100;
 		}
 		else
 		{
@@ -126,6 +127,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		// check if border assembly
 		if( rec_sources[i] == -1)
 		{
+			long dim = num_messages[i] * I.n_egroups * 100;
 			for( long j =0; j < dim; j++)
 				flux_array[recv_idx + j] = 0;
 			recv_idx += dim;
