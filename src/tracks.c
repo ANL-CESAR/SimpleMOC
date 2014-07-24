@@ -4,7 +4,8 @@
 Track2D * generate_2D_tracks( Input I, size_t * nbytes )
 {
 	// Determine number of 2D tracks, a conservative estimate
-	long ntracks = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
+	long ntracks = I.n_azimuthal * 
+		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
 	
 	// Allocate space for 2D tracks
 	Track2D * tracks = (Track2D *) malloc( ntracks * sizeof(Track2D));
@@ -21,9 +22,14 @@ Track2D * generate_2D_tracks( Input I, size_t * nbytes )
 }
 
 // Allocates and initializes all segments
-void generate_2D_segments( Input I, Track2D * tracks, long ntracks, size_t * nbytes )
+void generate_2D_segments( 
+		Input I, 
+		Track2D * tracks, 
+		long ntracks, 
+		size_t * nbytes )
 {
-	// Randomize Number of segments per track, and accumulate total 2D segments in assembly
+	/* Randomize Number of segments per track, and accumulate total 2D 
+	   segments in assembly */
 	long total_segments = 0;
 	for( long i = 0; i < ntracks; i++ )
 	{
@@ -32,7 +38,9 @@ void generate_2D_segments( Input I, Track2D * tracks, long ntracks, size_t * nby
 	}
 	
 	// Allocate contiguous space for segments
-	Segment * contiguous_segments = (Segment *) malloc( total_segments * sizeof(Segment));
+	Segment * contiguous_segments = (Segment *) malloc( total_segments 
+			* sizeof(Segment));
+	
 	*nbytes += total_segments * sizeof(Segment);
 
 	// Set segments arrays to correct locations within contiguous allocation
@@ -69,8 +77,12 @@ void free_2D_tracks( Track2D * tracks )
 Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 {
 	// Determine total number of tracks
-	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	long ntracks_2D = I.n_azimuthal * 
+		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
+
+	int z_stacked = (int) ( I.height / (I.axial_z_sep * 
+				I.decomp_assemblies_ax) );
+
 	long ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
 
 	// Allocate space for tracks (3D)
@@ -85,7 +97,8 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	// Allocate complete array of track data
 	Track * track_data = (Track *) malloc( ntracks * sizeof(Track) );
 	*nbytes += ntracks * sizeof(Track);
-	if(I.mype==0) printf("3D track data requires %zu MB of data...\n", ntracks * sizeof(Track) / 1024 / 1024 );
+	if(I.mype==0) printf("3D track data requires %zu MB of data...\n", 
+			ntracks * sizeof(Track) / 1024 / 1024 );
 
 	// stitch pointers together
 	for( long i = 0; i < ntracks_2D; i++ )
@@ -95,13 +108,18 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	{
 		for( int j = 0; j < I.n_polar_angles; j++ )
 		{
-			tracks[i][j] = &track_data[ (i * I.n_polar_angles + j) * z_stacked ];
+			tracks[i][j] = &track_data[ 
+				(i * I.n_polar_angles + j) * z_stacked ];
 		}
 	}
 
 	// Allocate space for Flux Arrays
-	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked * I.n_egroups * 3 * sizeof(float);
-	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", flux_bytes_needed / 1024 / 1024);
+	size_t flux_bytes_needed = ntracks_2D * I.n_polar_angles * z_stacked 
+		* I.n_egroups * 3 * sizeof(float);
+	
+	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", 
+			flux_bytes_needed / 1024 / 1024);
+
 	float * flux_space = (float *) malloc( flux_bytes_needed );
 	*nbytes += flux_bytes_needed;
 	size_t flux_idx = 0;
@@ -114,8 +132,9 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 		{
 			for( int k = 0; k < z_stacked; k++ )
 			{
-				// bottom z heights should only have upward directed polar angles
-				// similarly top should only have downward directed polar angles
+				/* bottom z heights should only have upward directed polar
+				   angles and  similarly top should only have downward directed
+				   polar angles */
 				if( j < I.n_polar_angles/2 )
 					tracks[i][j][k].z_height = I.axial_z_sep * k;
 				else
@@ -124,14 +143,14 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 				// set polar weight, NOTE: this is the same for same polar angle
 				tracks[i][j][k].p_weight = urand();
 
-				// Allocate start and end flux arrays
-				// (Moved allocations out of loop so they are contiguous)
+				/* Allocate start and end flux arrays (moved allocations out of
+				   loop so they are contiguous) */
 				tracks[i][j][k].start_flux = &flux_space[flux_idx];
 				tracks[i][j][k].end_flux = &flux_space[offset + flux_idx];
 				tracks[i][j][k].psi = &flux_space[offset*2 + flux_idx];
 				flux_idx += I.n_egroups;
 
-				// set incoming flux to 0, perhaps needs to be changed for inner assemblies
+				// set incoming flux to 0 (guess 0 for inner assemblies)
 				for( int g = 0; g < I.n_egroups; g++)
 					tracks[i][j][k].start_flux[g] = 0;
 			}
@@ -149,8 +168,11 @@ void free_tracks( Track *** tracks )
 // assign polar angles
 float * generate_polar_angles( Input I )
 {
-	float * polar_angles = (float *) malloc( I.n_polar_angles * sizeof(float) );
+	float * polar_angles = (float *) malloc( I.n_polar_angles * 
+			sizeof(float) );
+
 	for( int i = 0; i < I.n_polar_angles; i++)
 		polar_angles[i] = M_PI * (i + 0.5) / I.n_polar_angles;
+	
 	return polar_angles;
 }

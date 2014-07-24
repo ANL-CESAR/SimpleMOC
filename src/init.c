@@ -5,25 +5,31 @@ Input get_input( void )
 {
 	Input I;
 
-	I.x_assemblies = 15;        // Number of assemblies in the x-axis of the reactor
-	I.y_assemblies = 15;        // Number of assemblies in the y-axis of the reactor
-	I.cai = 5;                 // This is the number of coarse axial intervals
-	I.fai = 3;                  // This is the number of fine axial intervals per coarse
-   								//	axial interval
+	I.x_assemblies = 15;      	/* Number of assemblies in the x-axis 
+								   of the reactor */
+	I.y_assemblies = 15;        /* Number of assemblies in the y-axis 
+								   of the reactor */
+	I.cai = 5;                	// Number of coarse axial intervals
+	I.fai = 3;                  /* Number of fine axial intervals per coarse 
+								   axial interval */
 	I.axial_exp = 2;            // Axial source expansion order
 	I.radial_ray_sep = 0.5;     // Radial ray separation
 	I.axial_z_sep = 0.2;        // Axial stacked z-ray separation
 	I.n_azimuthal = 10;         // Number of azimuthal angles (should be 32)
 	I.n_polar_angles = 10;      // Number of polar angles
-	I.n_egroups = 2;          // Number of energy groups
-	I.decompose = false;            // Turn decomposition on/off (true = on, flase = off)
-	I.decomp_assemblies_ax = 1; // Number of assemblies per sub-domain (axially)
+	I.n_egroups = 2;          	// Number of energy groups
+	I.decompose = false;      	/* Turn decomposition on/off (true = on, 
+								   flase = off) */
+	I.decomp_assemblies_ax = 1; /* Number of assemblies per sub-domain 
+								   (axially) */
 	I.segments_per_track = 20;  // Average number of segments per track (123)
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
-	I.n_2D_source_regions_per_assembly = 3000; // Change to 3M source regions per assembly (estimate)
 	I.precision = 0.01;			// precision for source convergence
 	I.mype = 0;                 // MPI Rank
+
+	// Change to 3M source regions per assembly (estimate)
+	I.n_2D_source_regions_per_assembly = 3000; 
 
 	#ifdef MPI
 	int mype;
@@ -36,8 +42,10 @@ Input get_input( void )
 	#endif
 
 	// Some derived calculations
-	I.ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	I.ntracks_2D = I.n_azimuthal * 
+		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
+
+	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax));
 	I.ntracks = I.ntracks_2D * I.n_polar_angles * I.z_stacked;  
 	I.domain_height = I.height / I.decomp_assemblies_ax;
 
@@ -111,7 +119,8 @@ CommGrid init_mpi_grid( Input I )
 
 	// TODO: Set params based off of user inputs
 
-	MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, period, reorder, &cart_comm_3d);
+	MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, period, reorder, 
+			&cart_comm_3d);
 
 	// X Shifts
 	int x_pos_src;

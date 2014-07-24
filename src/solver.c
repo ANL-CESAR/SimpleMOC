@@ -6,8 +6,12 @@ void transport_sweep( Params params, Input I )
 	if(I.mype==0) printf("Starting transport sweep ...\n");
 
 	// Determine total number of tracks
-	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	long ntracks_2D = I.n_azimuthal * 
+		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
+
+	int z_stacked = (int) ( I.height / (I.axial_z_sep 
+				* I.decomp_assemblies_ax) );
+	
 	long ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
 
 	// calculate the height of a node's domain and of each FSR
@@ -24,10 +28,12 @@ void transport_sweep( Params params, Input I )
 					track->psi[g] = track->start_flux[g];
 			}
 
-	// loop over tracks (implicitly azimuthal angles, tracks in azimuthal angles,
-	// polar angles, and z stacked rays)
+	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
+	 * angles, polar angles, and z stacked rays) */
+
 	#pragma omp parallel default(none) \
-	shared( I, params, ntracks_2D, z_stacked, ntracks, node_delta_z, fine_delta_z )
+	shared( I, params, ntracks_2D, z_stacked, ntracks, node_delta_z, \
+			fine_delta_z )
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
@@ -52,7 +58,6 @@ void transport_sweep( Params params, Input I )
 			#ifdef OPENMP
 			if(I.mype==0 && thread == 0)
 			{
-				//printf("%s%ld%s%ld\n","2D Tracks Completed = ", progress * omp_get_num_threads()," / ", ntracks_2D);
 	            printf("\rAttenuating Tracks's... (%.0lf%% completed)",
 					(i / ( (double)I.ntracks_2D / (double) nthreads ))
 					/ (double) nthreads * 100.0);
@@ -62,7 +67,8 @@ void transport_sweep( Params params, Input I )
 			#else
 			if( i % 50 == 0)
 				if(I.mype==0)
-					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", ntracks_2D );
+					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", 
+							ntracks_2D );
 			#endif
 
 
@@ -82,7 +88,8 @@ void transport_sweep( Params params, Input I )
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
-					float s = params.tracks_2D[i].segments[n].length / sin(p_angle);
+					float s = params.tracks_2D[i].segments[n].length 
+						/ sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
 					float ds;
@@ -110,11 +117,14 @@ void transport_sweep( Params params, Input I )
 							// flag to reset z position
 							bool reset = false;
 
-							// calculate new height based on s (distance traveled in FSR)
+							/* calculate new height based on s 
+							 * (distance traveled in FSR) */
 							float z = track->z_height + s * cos(p_angle);
 
 							// check if still in same FSR (fine axial interval)
-							int new_interval = get_neg_interval(z, fine_delta_z);
+							int new_interval = get_neg_interval(z, 
+									fine_delta_z);
+
 							if( new_interval == curr_interval )
 							{
 								seg_complete = true;
@@ -160,21 +170,28 @@ void transport_sweep( Params params, Input I )
 
 							// pick a random FSR (cache miss expected)
 							#ifdef OPENMP
-							long QSR_id = rand_r(&seed) % I.n_source_regions_per_node;
+							long QSR_id = rand_r(&seed) % 
+								I.n_source_regions_per_node;
 							#else
-							long QSR_id = rand() % I.n_source_regions_per_node;
+							long QSR_id = rand() % 
+								I.n_source_regions_per_node;
 							#endif
 
-							// update sources and fluxes from attenuation over FSR
-							attenuate_fluxes( track, &params.sources[QSR_id], I,
-									params, ds, mu, params.tracks_2D[i].az_weight );
+							/* update sources and fluxes from attenuation 
+							 * over FSR */
+							attenuate_fluxes( track, &params.sources[QSR_id], 
+									I, params, ds, mu, 
+									params.tracks_2D[i].az_weight );
 
 							// update with new z height or reset if finished
-							if( n == params.tracks_2D[i].n_segments - 1  || reset)
+							if( n == params.tracks_2D[i].n_segments - 1  
+									|| reset)
+							{
 								if( pos_z_dir)
 									track->z_height = I.axial_z_sep * k;
 								else
 									track->z_height = I.axial_z_sep * (k+1);
+							}
 							else
 								track->z_height = z;
 
@@ -206,16 +223,16 @@ void transport_sweep( Params params, Input I )
 	return;
 }
 
-// returns integer number for axial interval for tracks traveling in the
-// positive direction
+/* returns integer number for axial interval for tracks traveling in the
+ *  positive direction */
 int get_pos_interval( float z, float dz)
 {
 	int interval = (int) (z/dz);
 	return interval;
 }
 
-// returns integer number for axial interval for tracks traveling in the
-// negative direction
+/* returns integer number for axial interval for tracks traveling in the 
+ * negative direction */
 int get_neg_interval( float z, float dz)
 {
 	// NOTE: a bit of trickery using floors to obtain ceils 
@@ -233,7 +250,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	int fine_id = (int) ( I.height / dz ) % I.cai;
 
 	// compute z height in cell
-	float zin = track->z_height - dz * ( (int) ( track->z_height / dz ) + 0.5 );
+	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
@@ -331,7 +348,9 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
 	// tally total fission rate (pair-wise sum)
-	float * fission_rates = malloc( I.n_source_regions_per_node * sizeof(float) );
+	float * fission_rates = malloc( I.n_source_regions_per_node 
+			* sizeof(float) );
+
 	float * fine_fission_rates = malloc( I.fai * sizeof(float) );
 	float * g_fission_rates = malloc( I.n_egroups * sizeof(float) );
 
@@ -342,8 +361,11 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 		for( int j = 0; j < I.fai; j++)
 		{
 			for( int g = 0; g < I.n_egroups; g++)
-				g_fission_rates[g] = src.fine_flux[j][g] * src.vol * src.XS[g][1];
-			fine_fission_rates[j] = pairwise_sum( g_fission_rates, I.n_egroups );
+				g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
+					* src.XS[g][1];
+			*
+			fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
+					I.n_egroups );
 		}
 		fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
 	}
@@ -381,8 +403,11 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	}
 
 	// calculate track dimensions
-	long ntracks_2D = I.n_azimuthal * (I.assembly_width * sqrt(2) / I.radial_ray_sep);
-	int z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax) );
+	long ntracks_2D = I.n_azimuthal * 
+		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
+
+	int z_stacked = (int) ( I.height / (I.axial_z_sep 
+				* I.decomp_assemblies_ax) );
 
 	// normalize boundary fluxes by same factor
 	for( int i = 0; i < ntracks_2D; i++)
@@ -442,20 +467,23 @@ float update_sources( Params params, Input I, float keff )
 					scatter_rates[g2] = src.scattering_matrix[g][g2] * 
 						src.fine_flux[j][g2];
 				}
-				scatter_source = pairwise_sum(scatter_rates, (long) I.n_egroups);
+				scatter_source = pairwise_sum(scatter_rates, 
+						(long) I.n_egroups);
 
 				// compuate new total source
 				float chi = src.XS[g][3];
 
 				// calculate new fine source
-				float newSrc = (fission_source * chi + scatter_source) / (4.0 * M_PI);
+				float newSrc = (fission_source * chi + scatter_source) 
+					/ (4.0 * M_PI);
 
 				// calculate residual
 				float oldSrc = src.fine_source[j][g];
 				group_res[g] = (newSrc - oldSrc) * (newSrc - oldSrc)
 					/ (oldSrc * oldSrc);
 
-				// calculate new source in fine axial interval assuming isotropic
+				/* calculate new source in fine axial interval assuming 
+				 * isotropic source components */
 				src.fine_source[j][g] = newSrc;
 			}
 			fine_res[j] = pairwise_sum(group_res, (long) I.n_egroups);
@@ -549,31 +577,31 @@ float compute_keff(Params params, Input I, CommGrid grid)
 	#ifdef MPI
 
 	// Total Absorption Reduction
-	MPI_Reduce( &node_abs,         // Send Buffer
-			&tot_abs,      // Receive Buffer
-			1,                    // Element Count
-			MPI_FLOAT,           // Element Type
-			MPI_SUM,              // Reduciton Operation Type
-			0,                    // Master Rank
-			grid.cart_comm_3d );  // MPI Communicator
+	MPI_Reduce( &node_abs,    		// Send Buffer
+			&tot_abs,      			// Receive Buffer
+			1,                  	// Element Count
+			MPI_FLOAT,          	// Element Type
+			MPI_SUM,            	// Reduciton Operation Type
+			0,                  	// Master Rank
+			grid.cart_comm_3d );	// MPI Communicator
 
 	// Total Fission Reduction
-	MPI_Reduce( &node_fission,     // Send Buffer
-			&tot_fission,  // Receive Buffer
-			1,                    // Element Count
-			MPI_FLOAT,           // Element Type
-			MPI_SUM,              // Reduciton Operation Type
-			0,                    // Master Rank
-			grid.cart_comm_3d );  // MPI Communicator
+	MPI_Reduce( &node_fission,     	// Send Buffer
+			&tot_fission,  			// Receive Buffer
+			1,                    	// Element Count
+			MPI_FLOAT,           	// Element Type
+			MPI_SUM,              	// Reduciton Operation Type
+			0,                    	// Master Rank
+			grid.cart_comm_3d );  	// MPI Communicator
 
 	// Total Leakage Reduction
-	MPI_Reduce( params.leakage,  // Send Buffer
-			&leakage,      // Receive Buffer
-			1,                    // Element Count
-			MPI_FLOAT,           // Element Type
-			MPI_SUM,              // Reduciton Operation Type
-			0,                    // Master Rank
-			grid.cart_comm_3d );  // MPI Communicator
+	MPI_Reduce( params.leakage,  	// Send Buffer
+			&leakage,      			// Receive Buffer
+			1,                    	// Element Count
+			MPI_FLOAT,           	// Element Type
+			MPI_SUM,              	// Reduciton Operation Type
+			0,                    	// Master Rank
+			grid.cart_comm_3d );  	// MPI Communicator
 
 	MPI_Barrier(grid.cart_comm_3d);
 

@@ -3,24 +3,30 @@
 Source * initialize_sources( Input I, size_t * nbytes )
 {
 	// Allocate space
-	Source * sources = (Source *) malloc( I.n_source_regions_per_node * sizeof(Source) );
+	Source * sources = (Source *) malloc( I.n_source_regions_per_node 
+			* sizeof(Source) );
 	*nbytes += I.n_source_regions_per_node * sizeof(Source);
 
 	// determine number of cross section and coarse axial regions
 	long n_xs_regions = I.n_source_regions_per_node / 8;
 	
 	// Allocate scattering matrix matrix ptrs
-	float *** s_matrices = (float ***) malloc( n_xs_regions * sizeof(float**) );
+	float *** s_matrices = (float ***) malloc( n_xs_regions 
+			* sizeof(float**) );
 	*nbytes += n_xs_regions * sizeof(float **);
 
 	// Allocate space for ALL scattering matrix ptrs
-	float ** s_matrix_ptrs = (float **) malloc( n_xs_regions * I.n_egroups * sizeof(float *));
+	float ** s_matrix_ptrs = (float **) malloc( n_xs_regions * I.n_egroups 
+			* sizeof(float *));
 	*nbytes += n_xs_regions * sizeof(float **);
 
 	// Allocate space for ALL scattering data
-	if(I.mype==0) printf("Scattering data requires %zu MB of data...\n", n_xs_regions * I.n_egroups * I.n_egroups * sizeof(float) / 1024 / 1024);
-	float * s_matrix_data = (float *) malloc( n_xs_regions * I.n_egroups * I.n_egroups * 
-			sizeof(float));
+	if(I.mype==0) 
+		printf("Scattering data requires %zu MB of data...\n", 
+				n_xs_regions * I.n_egroups * I.n_egroups 
+				* sizeof(float) / 1024 / 1024);
+	float * s_matrix_data = (float *) malloc( n_xs_regions * I.n_egroups
+		   	* I.n_egroups * sizeof(float));
 	*nbytes += n_xs_regions * I.n_egroups * I.n_egroups * sizeof(float);
 
 	// Stitch allocation ptrs together
@@ -29,7 +35,8 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 	for( long i = 0; i < n_xs_regions; i++ )
 		for( long j = 0; j < I.n_egroups; j++ )
-			s_matrices[i][j] = &s_matrix_data[i * I.n_egroups * I.n_egroups + j * I.n_egroups];
+			s_matrices[i][j] = &s_matrix_data[i * I.n_egroups * I.n_egroups 
+				+ j * I.n_egroups];
 
 	// Iniitalize Scattering Matrix Values
 	for( long i = 0; i < n_xs_regions; i++ )
@@ -50,11 +57,13 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	*nbytes += n_xs_regions * sizeof(float **);
 
 	// Allocate space for each XS type of interest (total, nu*SigmaF, and chi)
-	float ** XS_arrays = (float **) malloc (n_xs_regions * I.n_egroups * sizeof(float *) );
+	float ** XS_arrays = (float **) malloc (n_xs_regions * I.n_egroups
+		   	* sizeof(float *) );
 	*nbytes += n_xs_regions * I.n_egroups * sizeof(float *);
 
 	// Allocate space for total XS data
-	float * XS_data = (float *) malloc( n_xs_regions * I.n_egroups * 4 * sizeof(float) );
+	float * XS_data = (float *) malloc( n_xs_regions * I.n_egroups * 4 
+			* sizeof(float) );
 	*nbytes += n_xs_regions * I.n_egroups * 4 * sizeof(float);
 
 	// stitch allocation ptrs together for XS data
@@ -71,7 +80,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 			for( int k = 0; k < 4; k++)
 				XS[i][j][k] = urand();
 
-	/////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////
 
 	if(I.mype==0) printf("Beginning Source Parameter Allocation...\n");
 
@@ -88,7 +97,8 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	// Allocate space for parameter data
 	float * fineSourceData = (float *) malloc( I.n_source_regions_per_node
 		   	* I.fai * I.n_egroups * sizeof(float) );
-	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(float);
+	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups 
+		* sizeof(float);
 
 	// stitch allocation ptrs together for source parameter data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
@@ -105,7 +115,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 			for( int k = 0; k < I.n_egroups; k++)
 				fineSource[i][j][k] = urand();
 
-	////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////
 
 	if(I.mype==0) printf("Beginning Fine Flux Allocation...\n");
 
@@ -122,7 +132,8 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	// Allocate space for parameter data
 	float * fineFluxData = (float *) malloc( I.n_source_regions_per_node
 		   	* I.fai * I.n_egroups * sizeof(float) );
-	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups * sizeof(float);
+	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups 
+		* sizeof(float);
 
 	// stitch allocation ptrs together for source parameter data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
@@ -139,7 +150,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 			for( int k = 0; k < I.n_egroups; k++)
 				fineFlux[i][j][k] = 0;
 
-	////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////
 
 	// Assign to source regions
 	for( long i = 0; i < I.n_source_regions_per_node; i++ )

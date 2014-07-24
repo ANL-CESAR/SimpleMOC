@@ -28,7 +28,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	long send_idx = 0;
 	MPI_Status stat;
-	MPI_Request *request = (MPI_Request *) malloc( max_requests * sizeof(MPI_Request));
+	MPI_Request *request = (MPI_Request *) malloc( max_requests * 
+			sizeof(MPI_Request));
 
 	long n_requests = 0;
 
@@ -54,12 +55,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+											    (all energy group array) */
 					grid.x_pos_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -80,12 +83,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.x_neg_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -106,12 +111,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.y_pos_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -131,12 +138,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.y_neg_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -157,12 +166,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.z_pos_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -183,12 +194,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.z_neg_dest,         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			send_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -215,12 +228,15 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.x_pos_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
+
 			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -242,12 +258,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.x_neg_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -269,12 +287,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.y_pos_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -296,12 +316,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.y_neg_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -323,12 +345,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.z_pos_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
@@ -350,12 +374,14 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                       // Number of Elements
-					grid.Flux_Array,         // Type of element (all energy group array)
+					100,                     // Number of Elements
+					grid.Flux_Array,         /* Type of element 
+												(all energy group array) */
 					grid.z_neg_src,          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      // MPI Request (to monitor when call finishes)
+					&request[req_id] );      /* MPI Request (to monitor 
+												when call finishes) */
 			recv_idx += (long) I.n_egroups*100;
 			msg_id++;
 			req_id++;
