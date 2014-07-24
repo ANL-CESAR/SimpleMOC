@@ -87,7 +87,13 @@ endif
 
 # OpenMP
 ifeq ($(OPENMP),yes)
-	CFLAGS += -fopenmp -DOPENMP
+ifeq ($(COMPILER), gnu)
+	CFLAGS += -fopenmp
+endif
+ifeq ($(COMPILER), intel)
+	CFLAGS += -openmp
+endif
+   	CFLAGS += -DOPENMP
 endif
 
 
