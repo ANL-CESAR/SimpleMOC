@@ -38,12 +38,12 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 	if( I.papi_event_set == 2 )
 	{
 		*num_papi_events = 4;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
 		int EventCode;
 		char * event1 = "RESOURCE_STALLS:ANY";
 		char * event2 = "RESOURCE_STALLS:SB";
 		char * event3 = "RESOURCE_STALLS:RS";
 		char * event4 = "RESOURCE_STALLS2:OOO_RSRC";
-		events = (int *) malloc( *num_papi_events * sizeof(int));
 		PAPI_event_name_to_code( event1, &EventCode );
 		events[0] = EventCode;	
 		PAPI_event_name_to_code( event2, &EventCode );
@@ -53,7 +53,55 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		PAPI_event_name_to_code( event4, &EventCode );
 		events[3] = EventCode;	
 	}
-	
+	// CPU Stall Percentage
+	if( I.papi_event_set == 3 )
+	{
+		*num_papi_events = 2;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		int EventCode;
+		char * event1 = "RESOURCE_STALLS:ANY";
+		char * event2 = "PAPI_TOT_CYC";
+		PAPI_event_name_to_code( event1, &EventCode );
+		events[0] = EventCode;	
+		PAPI_event_name_to_code( event2, &EventCode );
+		events[1] = EventCode;	
+	}
+	// Memory Loads
+	if( I.papi_event_set == 4 )
+	{
+		*num_papi_events = 4;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		int EventCode;
+		char * event1 = "MEM_LOAD_UOPS_RETIRED";
+		char * event2 = "MEM_LOAD_UOPS_RETIRED:L1_HIT";
+		char * event3 = "MEM_LOAD_UOPS_RETIRED:L2_HIT";
+		char * event4 = "MEM_LOAD_UOPS_RETIRED:L3_HIT";
+		PAPI_event_name_to_code( event1, &EventCode );
+		events[0] = EventCode;	
+		PAPI_event_name_to_code( event2, &EventCode );
+		events[1] = EventCode;	
+		PAPI_event_name_to_code( event3, &EventCode );
+		events[2] = EventCode;	
+		PAPI_event_name_to_code( event4, &EventCode );
+		events[3] = EventCode;	
+	}
+	// LLC Miss Rate
+	if( I.papi_event_set == 5 )
+	{
+		*num_papi_events = 2;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		events[0] = PAPI_L3_TCM;
+		events[1] = PAPI_L3_TCA;
+	}
+	// Branch MisPrediction
+	if( I.papi_event_set == 6 )
+	{
+		*num_papi_events = 3;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		events[0] = PAPI_BR_MSP;
+		events[1] = PAPI_BR_CN;
+		events[2] = PAPI_BR_PRC;
+	}
 
 	/////////////////////////////////////////////////////////////////////////
 	//                        PAPI EVENT SELECTION
@@ -371,6 +419,10 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 			printf("%-30s %.2lf%%\n", "OO Pipeline Full:",
 					stall_OO / (double) stall_any * 100.);
 		}
+		if( I.papi_event_set == 3 )
+			printf("CPU Stalled Cycles: %.2lf%%\n",
+					stall_any / (double) total_cycles * 100.);	
+
 		border_print();
 	}
 }

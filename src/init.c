@@ -32,7 +32,7 @@ Input get_input( void )
 	I.n_2D_source_regions_per_assembly = 3000; 
 
 	#ifdef PAPI
-	I.papi_event_set = 2;
+	I.papi_event_set = 6;
 	#endif
 
 	#ifdef MPI
