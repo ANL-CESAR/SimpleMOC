@@ -49,170 +49,58 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	/////////////////// Launch All Sends ////////////////////////
 
-	// check if border assembly
-	if( grid.x_pos_dest == -1 )
+	// make an array of radial receiving sources
+	int send_dest[6] = 
 	{
-		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-		send_idx += dim;
-	}
-	else
+		grid.x_pos_dest,
+		grid.x_neg_dest,
+		grid.y_pos_dest,
+		grid.y_neg_dest,
+		grid.z_pos_dest,
+		grid.z_neg_dest
+	};
+
+	// make an array of number of messages
+	long num_messages[6] =
 	{
-		// Launch X positive Sends
-		for( long i = 0; i < ntracks_per_radial_direction / 100; i++ )
+		ntracks_per_radial_direction/100,
+		ntracks_per_radial_direction/100,
+		ntracks_per_radial_direction/100,
+		ntracks_per_radial_direction/100,
+		ntracks_per_axial_direction/100,
+		ntracks_per_axial_direction/100
+	};
+
+
+	// loop over all rectangular surfaces
+	for( int i = 0; i < 6; i++ )
+	{
+		// check if border assembly
+		if( send_dest[i] == -1 )
 		{
-			MPI_Isend(
+			* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
+			send_idx += dim;
+		}
+		else
+		{
+			// Launch  Sends
+			for( long j = 0; j < num_messages[i]; j++ )
+			{
+				MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
 					100,                     // Number of Elements
 					grid.Flux_Array,         /* Type of element 
 											    (all energy group array) */
-					grid.x_pos_dest,         // Destination MPI rank
+					send_dest[i],	         // Destination MPI rank
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      /* MPI Request (to monitor 
 												when call finishes) */
-			send_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.x_neg_dest == -1 )
-	{
-		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-		send_idx += dim;
-	}
-	else
-	{
-		// Launch X negative Sends
-		for( long i = 0; i < ntracks_per_radial_direction / 100; i++ )
-		{
-			MPI_Isend(
-					&flux_array[send_idx],   // Send Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.x_neg_dest,         // Destination MPI rank
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			send_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.y_pos_dest == -1 )
-	{
-		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-		send_idx += dim;
-	}
-	else
-	{	
-		// Launch Y positive Sends
-		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
-		{
-			MPI_Isend(
-					&flux_array[send_idx],   // Send Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.y_pos_dest,         // Destination MPI rank
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			send_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-	// check if border assembly
-	if( grid.y_neg_dest == -1 )
-	{
-		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-		send_idx += dim;
-	}
-	else
-	{	
-		// Launch Y negative Sends
-		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
-		{
-			MPI_Isend(
-					&flux_array[send_idx],   // Send Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.y_neg_dest,         // Destination MPI rank
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			send_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.z_pos_dest == -1 )
-	{
-		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-		send_idx += dim;
-	}
-	else
-	{	
-		// Launch Z positive Sends
-		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
-		{
-			MPI_Isend(
-					&flux_array[send_idx],   // Send Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.z_pos_dest,         // Destination MPI rank
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			send_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.z_neg_dest == -1 )
-	{
-		* params.leakage += pairwise_sum( &flux_array[send_idx], dim );
-		send_idx += dim;
-	}
-	else
-	{	
-		// Launch Z negative Sends
-		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
-		{
-			MPI_Isend(
-					&flux_array[send_idx],   // Send Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.z_neg_dest,         // Destination MPI rank
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			send_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
+				send_idx += (long) I.n_egroups*100;
+				msg_id++;
+				req_id++;
+				n_requests++;
+			}
 		}
 	}
 
@@ -221,181 +109,52 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	msg_id = 0;
 	long recv_idx = send_idx;
 
-	// check if border assembly
-	if( grid.x_pos_src == -1)
+	// make an array of radial receiving sources
+	int rec_sources[6] = 
 	{
-		for( long i =0; i < dim; i++)
-			flux_array[recv_idx + i] = 0;
-		recv_idx += dim;
-	}
-	else
+		grid.x_pos_src,
+		grid.x_neg_src,
+		grid.y_pos_src,
+		grid.y_neg_src,
+		grid.z_pos_src,
+		grid.z_neg_src
+	};
+
+	// loop over all rectangular surfaces
+	for( int i = 0; i < 6; i++ )
 	{
-		// Launch X positive Receives
-		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
+		// check if border assembly
+		if( rec_sources[i] == -1)
 		{
-			MPI_Irecv(
+			for( long j =0; j < dim; j++)
+				flux_array[recv_idx + j] = 0;
+			recv_idx += dim;
+		}
+		else
+		{
+			// Launch Receives
+			for( long j = 0; j < num_messages[i]; j++ )
+			{
+				MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
 					100,                     // Number of Elements
 					grid.Flux_Array,         /* Type of element 
 												(all energy group array) */
-					grid.x_pos_src,          // MPI rank to Receive From
+					rec_sources[i],          // MPI rank to Receive From
 					msg_id,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      /* MPI Request (to monitor 
 												when call finishes) */
 
-			recv_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
+				recv_idx += (long) I.n_egroups*100;
+				msg_id++;
+				req_id++;
+				n_requests++;
+			}
 		}
 	}
 
-	// check if border assembly
-	if( grid.x_neg_src == -1)
-	{
-		for( long i =0; i < dim; i++)
-			flux_array[recv_idx + i] = 0;
-		recv_idx += dim;
-	}
-	else
-	{
-		// Launch X negative Receives
-		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
-		{
-			MPI_Irecv(
-					&flux_array[recv_idx],   // Recv Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.x_neg_src,          // MPI rank to Receive From
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			recv_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.y_pos_src == -1)
-	{
-		for( long i =0; i < dim; i++)
-			flux_array[recv_idx + i] = 0;
-		recv_idx += dim;
-	}
-	else
-	{
-		// Launch Y positive Receives
-		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
-		{
-			MPI_Irecv(
-					&flux_array[recv_idx],   // Recv Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.y_pos_src,          // MPI rank to Receive From
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			recv_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.y_neg_src == -1)
-	{
-		for( long i =0; i < dim; i++)
-			flux_array[recv_idx + i] = 0;
-		recv_idx += dim;
-	}
-	else
-	{
-		// Launch Y negative Receives
-		for( long i = 0; i < ntracks_per_radial_direction/100; i++ )
-		{
-			MPI_Irecv(
-					&flux_array[recv_idx],   // Recv Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.y_neg_src,          // MPI rank to Receive From
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			recv_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.z_pos_src == -1)
-	{
-		for( long i =0; i < dim; i++)
-			flux_array[recv_idx + i] = 0;
-		recv_idx += dim;
-	}
-	else
-	{
-		// Launch Z positive Receives
-		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
-		{
-			MPI_Irecv(
-					&flux_array[recv_idx],   // Recv Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.z_pos_src,          // MPI rank to Receive From
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			recv_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
-	// check if border assembly
-	if( grid.z_neg_src == -1)
-	{
-		for( long i =0; i < dim; i++)
-			flux_array[recv_idx + i] = 0;
-		recv_idx += dim;
-	}
-	else
-	{
-		// Launch Z negative Receives
-		for( long i = 0; i < ntracks_per_axial_direction/100; i++ )
-		{
-			MPI_Irecv(
-					&flux_array[recv_idx],   // Recv Buffer
-					100,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-												(all energy group array) */
-					grid.z_neg_src,          // MPI rank to Receive From
-					msg_id,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
-												when call finishes) */
-			recv_idx += (long) I.n_egroups*100;
-			msg_id++;
-			req_id++;
-			n_requests++;
-		}
-	}
-
+	
 	/////////////////////////////////////////////////////////////////////////
 
 	// Wait for all Communication to Complete
