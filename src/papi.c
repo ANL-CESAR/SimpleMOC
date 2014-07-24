@@ -281,7 +281,8 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 
 	int thread = omp_get_thread_num();
 
-	if ((stat = PAPI_thread_init((long unsigned int (*)(void)) omp_get_thread_num)) != PAPI_OK){
+	if ((stat = PAPI_thread_init((long unsigned int (*)(void))
+					omp_get_thread_num)) != PAPI_OK){
 		PAPI_perror("PAPI_thread_init");
 		exit(1);
 	}
