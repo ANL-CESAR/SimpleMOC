@@ -34,7 +34,7 @@ int main( int argc, char * argv[] )
 
 	float res;
 	float keff = 1.0;
-	int num_iters = 30;
+	int num_iters = 1;
 
 
 	double time_transport = 0;

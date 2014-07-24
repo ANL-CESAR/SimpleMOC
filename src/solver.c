@@ -39,7 +39,6 @@ void transport_sweep( Params params, Input I )
 		int thread = omp_get_thread_num();
 		int nthreads = omp_get_num_threads();
 		unsigned int seed = time(NULL) * (thread+1);
-		long progress = 0;
 		#endif
 		
 		#ifdef PAPI
@@ -61,8 +60,6 @@ void transport_sweep( Params params, Input I )
 	            printf("\rAttenuating Tracks's... (%.0lf%% completed)",
 					(i / ( (double)I.ntracks_2D / (double) nthreads ))
 					/ (double) nthreads * 100.0);
-				progress += 1;
-
 			}
 			#else
 			if( i % 50 == 0)
@@ -363,7 +360,6 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 			for( int g = 0; g < I.n_egroups; g++)
 				g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
 					* src.XS[g][1];
-			*
 			fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
 					I.n_egroups );
 		}

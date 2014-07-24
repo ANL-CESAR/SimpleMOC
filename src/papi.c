@@ -187,8 +187,6 @@ void counter_init( int *eventset, int *num_papi_events )
 	// Users should not need to alter anything within this section
 
 	int thread = omp_get_thread_num();
-	if( thread == 0 )
-		printf("Initializing PAPI counters...\n");
 
 	*num_papi_events = sizeof(events) / sizeof(int);
 
@@ -295,13 +293,18 @@ void counter_stop( int * eventset, int num_papi_events )
 		#pragma omp barrier
 	}
 	#pragma omp master
-	printf("Total cache misses: %ld\n", LLC_cache_miss);
-	#pragma omp master
-	printf("Average Total Cycles: %ld\n", (long) (total_cycles / (double) nthreads) );
-	#pragma omp master
-	printf("Total FLOPS: %ld\n", FLOPS );
-	#pragma omp master
-	printf("GLOP/s: %.3lf\n", FLOPS / (double) total_cycles * 2.8  );
+	{
+		border_print();
+		center_print("PERFORMANCE SUMMARY", 79);
+		border_print();
+		long cycles = (long) (total_cycles / (double) nthreads);
+		double bw = LLC_cache_miss * 64. / cycles * 2.8e9 / 1024. / 1024. / 1024.;
+		if( FLOPS > 0 )
+			printf("GLOPs: %.3lf\n", FLOPS / (double) cycles * 2.8  );
+		if( LLC_cache_miss > 0 )
+			printf("Bandwidth: %.3lf (GB/s)\n", bw);
+		border_print();
+	}
 }
 
 #endif
