@@ -18,6 +18,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
 
 	// Calculate all requests needed
+	// TODO: Tidy up number of sends in each direction to account for uneven ntracks
 	long max_requests = ntracks_per_radial_direction / 100;
 	max_requests *= 4;
 	max_requests += 2 * (ntracks_per_axial_direction / 100 );

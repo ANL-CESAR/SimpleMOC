@@ -35,6 +35,15 @@ void transport_sweep( Params params, Input I )
 		unsigned int seed = time(NULL) * (thread+1);
 		long progress = 0;
 		#endif
+		
+		#ifdef PAPI
+        int eventset = PAPI_NULL;
+        int num_papi_events;
+        #pragma omp critical
+        {
+            counter_init(&eventset, &num_papi_events);
+        }
+		#endif
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < ntracks_2D; i++)
@@ -177,6 +186,21 @@ void transport_sweep( Params params, Input I )
 		#ifdef OPENMP
 		if(thread == 0) printf("\n");
 		#endif
+		
+		#ifdef PAPI
+        if( thread == 0 )
+        {
+            printf("\n");
+            border_print();
+            center_print("PAPI COUNTER RESULTS", 79);
+            border_print();
+            printf("Count          \tSmybol      \tDescription\n");
+        }
+        {
+        #pragma omp barrier
+        }
+        counter_stop(&eventset, num_papi_events);
+        #endif
 	}
 
 	return;

@@ -6,7 +6,7 @@ COMPILER    = gnu
 MPI         = no
 OPENMP      = no
 OPTIMIZE    = yes
-DEBUG       = yes
+DEBUG       = no
 PROFILE     = no
 PAPI        = no
 BENCHMARK   = no
@@ -26,7 +26,8 @@ init.c \
 io.c \
 tracks.c \
 utils.c \
-solver.c
+solver.c \
+papi.c
 
 obj = $(source:.c=.o)
 
@@ -73,11 +74,9 @@ endif
 # PAPI source (you may need to provide -I and -L pointing
 # to PAPI depending on your installation
 ifeq ($(PAPI),yes)
-  source += papi.c
   CFLAGS += -DPAPI
-  #CFLAGS += -I/soft/apps/packages/papi/papi-5.1.1/include
-  #LDFLAGS += -L/soft/apps/packages/papi/papi-5.1.1/lib -lpapi
   LDFLAGS += -lpapi
+  OPENMP = yes
 endif
 
 # MPI

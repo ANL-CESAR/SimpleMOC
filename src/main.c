@@ -13,6 +13,10 @@ int main( int argc, char * argv[] )
 	MPI_Comm_size(MPI_COMM_WORLD, &nranks);
 	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 	#endif
+	
+	#ifdef PAPI
+	papi_serial_init();
+	#endif
 
 	if( mype == 0 )
 		logo(version);
@@ -31,6 +35,7 @@ int main( int argc, char * argv[] )
 	float res;
 	float keff = 1.0;
 	int num_iters = 1;
+
 
 	double time_transport = 0;
 	double time_flux_exchange = 0;

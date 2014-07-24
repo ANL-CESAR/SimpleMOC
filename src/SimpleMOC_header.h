@@ -18,6 +18,10 @@
 #include<omp.h>
 #endif
 
+#ifdef PAPI
+#include<papi.h>
+#endif
+
 // User inputs
 typedef struct{
 	int x_assemblies;          // Number of assemblies in the x-axis of the reactor
@@ -168,6 +172,11 @@ float compute_keff( Params params, Input I, CommGrid grid);
 
 // test.c
 void gen_norm_pts(float mean, float sigma, int n_pts);
+
+// papi.c
+void papi_serial_init(void);
+void counter_init( int *eventset, int *num_papi_events );
+void counter_stop( int * eventset, int num_papi_events );
 
 // comms.c
 #ifdef MPI
