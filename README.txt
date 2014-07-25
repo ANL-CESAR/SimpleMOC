@@ -9,15 +9,21 @@
                                | |                                
                                |_|                                
     
-===============================================================================
+==============================================================================
+Contact Information
+==============================================================================
+
+Organizations:     Computational Reactor Physics Group
+                   Massachusetts Institute of Technology
+
+                   Center for Exascale Simulation of Advanced Reactors (CESAR)
+                   Argonne National Laboratory
+
+Development Leads: Geoffrey Gunow <geogunow@mit.edu>
+                   John Tramm     <jtramm@mcs.anl.gov>
     
-                                  Developed at
-                   The Massachusetts Institute of Technology
-                                      and
-                          Argonne National Laboratory
-    
 ===============================================================================
-Purpose
+What is SimpleMOC?
 ===============================================================================
 
 The purpose of this mini-app is to demonstrate the performance
