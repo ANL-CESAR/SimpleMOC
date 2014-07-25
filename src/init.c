@@ -58,7 +58,7 @@ Input get_input( void )
 	// TODO: Add file/CLI user input
 
 	I.n_source_regions_per_node = I.n_2D_source_regions_per_assembly *
-		I.cai * I.fai / I.decomp_assemblies_ax;
+		I.cai / I.decomp_assemblies_ax;
 
 	return I;
 }
