@@ -98,6 +98,7 @@ typedef struct{
 	float ** fine_flux;
 	float ** fine_source;
 	float vol;
+	float * sigT;
 	float ** XS;
 	float ** scattering_matrix;
 } Source;

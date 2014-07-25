@@ -271,7 +271,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
-		float sigT = QSR->XS[g][0];
+		float sigT = QSR->sigT[g];
 
 		// define source parameters
 		float q0, q1, q2;
@@ -369,7 +369,7 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 		{
 			for( int g = 0; g < I.n_egroups; g++)
 				g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
-					* src.XS[g][1];
+					* src.XS[g][0];
 			fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
 					I.n_egroups );
 		}
@@ -458,7 +458,7 @@ float update_sources( Params params, Input I, float keff )
 
 			// compute total fission source
 			for( int g = 0; g < I.n_egroups; g++ )
-				fission_rates[g] = src.fine_flux[j][g] * src.XS[g][1];
+				fission_rates[g] = src.fine_flux[j][g] * src.XS[g][0];
 			fission_source = pairwise_sum( fission_rates, (long) I.n_egroups);
 
 			// normalize fission source by multiplication factor
@@ -477,7 +477,7 @@ float update_sources( Params params, Input I, float keff )
 						(long) I.n_egroups);
 
 				// compuate new total source
-				float chi = src.XS[g][3];
+				float chi = src.XS[g][2];
 
 				// calculate new fine source
 				float newSrc = (fission_source * chi + scatter_source) 
@@ -529,7 +529,7 @@ float compute_keff(Params params, Input I, CommGrid grid)
 		// load absorption XS data
 		Source src = params.sources[i];
 		for( int g = 0; g < I.n_egroups; g++)	
-			sigma[g] = src.XS[g][2];
+			sigma[g] = src.XS[g][1];
 
 		for( int j = 0; j < I.fai; j++ )
 		{
@@ -555,7 +555,7 @@ float compute_keff(Params params, Input I, CommGrid grid)
 		// load nuSigmaF XS data
 		Source src = params.sources[i];
 		for( int g = 0; g < I.n_egroups; g++)	
-			sigma[g] = src.XS[g][1];
+			sigma[g] = src.XS[g][0];
 
 		for( int j = 0; j < I.fai; j++ )
 		{
