@@ -150,6 +150,8 @@ void center_print(const char *s, int width);
 void border_print(void);
 void fancy_int( int a );
 void print_input_summary(Input input);
+void read_CLI( int argc, char * argv[], Input * input );
+void print_CLI_error(void);
 
 // tracks.c
 Track2D * generate_2D_tracks( Input input, size_t * nbytes );

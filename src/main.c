@@ -5,7 +5,6 @@ int main( int argc, char * argv[] )
 	int version = 0;
 	int mype = 0;
 	int nranks;
-	//test
 
 	#ifdef MPI
 	MPI_Status stat;
@@ -18,12 +17,17 @@ int main( int argc, char * argv[] )
 	papi_serial_init();
 	#endif
 
-	if( mype == 0 )
-		logo(version);
-
 	srand(time(NULL) * (mype+1));
 
 	Input input = get_input();
+	read_CLI( argc, argv, &input );
+	
+	if( mype == 0 )
+		logo(version);
+	
+	#ifdef OPENMP
+	omp_set_num_threads(input.nthreads); 
+	#endif
 	
 	CommGrid grid = init_mpi_grid( input );
 

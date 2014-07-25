@@ -106,3 +106,47 @@ void print_input_summary(Input I)
 			I.n_2D_source_regions_per_assembly);
 	border_print();
 }
+
+void read_CLI( int argc, char * argv[], Input * input )
+{
+	// defaults to max threads on the system	
+	#ifdef OPENMP
+	input->nthreads = omp_get_num_procs();
+	#else
+	input->nthreads = 1;
+	#endif
+	
+	// Collect Raw Input
+	for( int i = 1; i < argc; i++ )
+	{
+		char * arg = argv[i];
+
+		// nthreads (-t)
+		if( strcmp(arg, "-t") == 0 )
+		{
+			if( ++i < argc )
+				input->nthreads = atoi(argv[i]);
+			else
+				print_CLI_error();
+		}
+		else
+			print_CLI_error();
+	}
+
+	// Validate Input
+
+	// Validate nthreads
+	if( input->nthreads < 1 )
+		print_CLI_error();
+}
+
+void print_CLI_error(void)
+{
+	printf("Usage: ./SimpleMOC <options>\n");
+	printf("Options include:\n");
+	printf("  -t <threads>     Number of OpenMP threads to run\n");
+	printf("See readme for full description of default run values\n");
+	exit(1);
+}
+
+
