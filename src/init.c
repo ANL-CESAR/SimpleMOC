@@ -21,8 +21,6 @@ void calculate_derived_inputs( Input * I )
 	I->ntracks = I->ntracks_2D * I->n_polar_angles * I->z_stacked;  
 	I->domain_height = I->height / I->decomp_assemblies_ax;
 
-	// TODO: Add file/CLI user input
-
 	I->n_source_regions_per_node = I->n_2D_source_regions_per_assembly *
 		I->cai / I->decomp_assemblies_ax;
 
