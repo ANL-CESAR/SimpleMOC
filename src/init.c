@@ -64,7 +64,7 @@ Input set_default_input( void )
 	#endif
 	
 	#ifdef OPENMP
-	I->nthreads = omp_get_max_threads();
+	I.nthreads = omp_get_max_threads();
 	#endif
 
 	return I;

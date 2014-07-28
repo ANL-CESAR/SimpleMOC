@@ -57,7 +57,7 @@ void transport_sweep( Params params, Input I )
 			#ifdef OPENMP
 			if(I.mype==0 && thread == 0)
 			{
-	            printf("\rAttenuating Tracks's... (%.0lf%% completed)",
+	            printf("\rAttenuating Tracks... (%.0lf%% completed)",
 					(i / ( (double)I.ntracks_2D / (double) nthreads ))
 					/ (double) nthreads * 100.0);
 			}

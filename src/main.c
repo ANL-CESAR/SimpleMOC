@@ -22,7 +22,6 @@ int main( int argc, char * argv[] )
 	Input input = set_default_input();
 	read_CLI( argc, argv, &input );
 	calculate_derived_inputs( &input );
-	exit(0);
 	
 	if( mype == 0 )
 		logo(version);
