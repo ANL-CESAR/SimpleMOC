@@ -174,8 +174,6 @@ void read_input_file( Input * I, char * fname)
     err = fscanf(fp, "%d", &I->x_assemblies);
     stat = fgets(c, 255, fp);
 
-	printf("X_assemblies = %d\n", &I->x_assemblies);
-
     err = fscanf(fp, "%d", &I->y_assemblies);
     stat = fgets(c, 255, fp);
     
