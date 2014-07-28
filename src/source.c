@@ -93,16 +93,22 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	if(I.mype==0) printf("Beginning Source and Flux Parameter Allocation...\n");
 
 	// Allocate space for source parameters (quadratic axially)
-	float *** fineSource = (float ***) malloc( I.n_source_regions_per_node
-		   	* sizeof(float **) );
-	*nbytes += I.n_source_regions_per_node * sizeof(float **);
+	float **** sourceParams = (float ****) malloc( I.n_source_regions_per_node
+		   	* sizeof(float ***) );
+	*nbytes += I.n_source_regions_per_node * sizeof(float ***);
+	
+	// Allacate space for source parameter pointers
+	float *** sourceParamsPtrs = (float ***) malloc( 
+			I.n_source_regions_per_node * I.fai * sizeof(float **));
+	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(float **);
 
-	// Allocate space for array pointers to parameters
-	float ** fineSourcePtrs = (float **) malloc ( I.n_source_regions_per_node
-		   	* I.fai * sizeof(float *) );
-	*nbytes += I.n_source_regions_per_node * I.fai * sizeof(float *);
+	// Allocate space for pointers to parameters for a given energy group
+	float ** sourceGroupParams = (float **) malloc( I.n_source_regions_per_node
+			* I.fai * I.n_egroups * sizeof(float *));
 
-	// Allocate space for flux parameters (quadratic axially)
+	*nbytes += I.n_source_regions_per_node* I.fai * I.n_egroups * sizeof(float *);
+	
+	// Allocate space for flux values
 	float *** fineFlux = (float ***) malloc( I.n_source_regions_per_node
 		   	* sizeof(float **) );
 	*nbytes += I.n_source_regions_per_node * sizeof(float **);
@@ -115,9 +121,10 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	// Allocate space for cross section pointers
 	float ** sigT = (float **) malloc( I.n_source_regions_per_node
 			* sizeof(float *) );
+	*nbytes += I.n_source_regions_per_node * sizeof(float*);
 
-	// Allocate space for parameter data
-	float * data = (float *) malloc( (2 * I.fai + 1) * 
+	// Allocate space for parameter data (4 = 1 fineFlux + 3 sourceParams)
+	float * data = (float *) malloc( (4 * I.fai + 1) * 
 			I.n_source_regions_per_node * I.n_egroups * sizeof(float) );
 
 	*nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups 
@@ -129,12 +136,18 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 	// stitch allocation ptrs together for source data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		fineSource[i] = &fineSourcePtrs[i * I.fai];
+		sourceParams[i] = &sourceParamsPtrs[i * I.fai];
 
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		for(long j = 0; j < I.fai; j++)
-			fineSource[i][j] = &data[i * I.fai * I.n_egroups
-			   	+ j * I.n_egroups];
+		for(int j = 0; j < I.fai; j++)
+			sourceParams[i][j] = &sourceGroupParams[i * I.fai * I.n_egroups
+				+ j * I.n_egroups];
+
+	for( long i = 0; i < I.n_source_regions_per_node; i++)
+		for(int j = 0; j < I.fai; j++)
+			for( int g = 0; g < I.n_egroups; g++)
+				sourceParams[i][j][g] = &data[i * I.fai * I.n_egroups * 4 +
+					g * 4];
 
 	// stitch allocation ptrs together for flux data
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
@@ -142,12 +155,12 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for(int j = 0; j < I.fai; j++)
-			fineFlux[i][j] = &data[I.n_egroups * I.fai * 
-				(I.n_source_regions_per_node + i) + j * I.n_egroups];
+			fineFlux[i][j] = &data[i * I.fai * I.n_egroups * 4 
+				+ j * I.n_egroups * 4 + 3];
 	
 	// stitch allocation ptrs together for total XS
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		sigT[i] = &data[ 2 * I.n_source_regions_per_node * I.fai * I.n_egroups 
+		sigT[i] = &data[ I.n_source_regions_per_node * I.fai * I.n_egroups * 4
 			+ i * I.n_egroups];
 
 	///////////////////////////////////////////////////////////////////////////
@@ -155,20 +168,21 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	// Initialize source to random numbers
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for( int j = 0; j < I.fai; j++)
-			for( int k = 0; k < I.n_egroups; k++)
-				fineSource[i][j][k] = urand();
+			for( int g = 0; g < I.n_egroups; g++)
+				for( int k = 0; k < 3; k++)
+					sourceParams[i][j][g][k] = urand();
 		
 	// Initialize fine flux to zeros
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
 		for( int j = 0; j < I.fai; j++)
-			for( int k = 0; k < I.n_egroups; k++)
-				fineFlux[i][j][k] = 0;
+			for( int g = 0; g < I.n_egroups; g++)
+				fineFlux[i][j][g] = 0;
 	
 
 	// Initialize total XS to random numbers
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
-		for( int k = 0; k < I.n_egroups; k++)
-			sigT[i][k] = urand();
+		for( int g = 0; g < I.n_egroups; g++)
+			sigT[i][g] = urand();
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -184,7 +198,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 		sources[i].scattering_matrix = s_matrices[idx];
 		sources[i].XS = XS[idx];
 		sources[i].fine_flux = fineFlux[i];
-		sources[i].fine_source = fineSource[i]; 
+		sources[i].source_params = sourceParams[i]; 
 		sources[i].sigT = sigT[i];
 
 		// initialize FSR volume
@@ -195,7 +209,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	free( s_matrices );
 	free( XS );
 	free( fineFlux );
-	free( fineSource);
+	free( sourceParams );
 
 	return sources;
 }
@@ -212,6 +226,7 @@ void free_sources( Input I, Source * sources )
 	free( sources[0].scattering_matrix[0] );
 	free( sources[0].scattering_matrix );
 	// Free source values
-	free( sources[0].fine_source[0] );
-	free( sources[0].fine_source );
+	free( sources[0].source_params[0][0] );
+	free( sources[0].source_params[0] );
+	free( sources[0].source_params );
 }

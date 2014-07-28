@@ -96,7 +96,7 @@ typedef struct{
 // Source Region Structure
 typedef struct{
 	float ** fine_flux;
-	float ** fine_source;
+	float *** source_params;
 	float vol;
 	float * sigT;
 	float ** XS;

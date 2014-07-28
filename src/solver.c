@@ -177,16 +177,16 @@ void transport_sweep( Params params, Input I )
 
 							// pick a random FSR (cache miss expected)
 							#ifdef OPENMP
-							long QSR_id = rand_r(&seed) % 
+							long src_id = rand_r(&seed) % 
 								I.n_source_regions_per_node;
 							#else
-							long QSR_id = rand() % 
+							long src_id = rand() % 
 								I.n_source_regions_per_node;
 							#endif
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							attenuate_fluxes( track, &params.sources[QSR_id], 
+							attenuate_fluxes( track, &params.sources[src_id], 
 									I, params, ds, mu, 
 									params.tracks_2D[i].az_weight );
 
@@ -247,7 +247,7 @@ int get_neg_interval( float z, float dz)
 	return interval;
 }
 
-void attenuate_fluxes( Track * track, Source * QSR, Input I, 
+void attenuate_fluxes( Track * track, Source * src, Input I, 
 		Params params, float ds, float mu, float az_weight ) 
 {
 	// compute fine axial interval spacing
@@ -265,65 +265,27 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	float mu2 = mu * mu;
 
 	// load fine source region flux vector
-	float * FSR_flux = QSR -> fine_flux[fine_id];
+	float * FSR_flux = src -> fine_flux[fine_id];
 
 	// cycle over energy groups
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
-		float sigT = QSR->sigT[g];
+		float sigT = src->sigT[g];
 
 		// define source parameters
 		float q0, q1, q2;
 
-		// calculate source components
-		if( fine_id == 0 )
-		{
-			// load neighboring sources
-			float y2 = QSR->fine_source[fine_id][g];
-			float y3 = QSR->fine_source[fine_id+1][g];
+		
+		// load axial source components
+		float c0 = src->source_params[fine_id][g][0];
+		float c1 = src->source_params[fine_id][g][1];
+		float c2 = src->source_params[fine_id][g][2];
 
-			// do linear "fitting"
-			float c0 = y2;
-			float c1 = (y3 - y2) / dz;
-
-			// calculate q0, q1, q2
-			q0 = c0 + c1*zin;
-			q1 = c1;
-			q2 = 0;
-		}
-		else if( fine_id == I.fai - 1 )
-		{
-			// load neighboring sources
-			float y1 = QSR->fine_source[fine_id-1][g];
-			float y2 = QSR->fine_source[fine_id][g];
-
-			// do linear "fitting"
-			float c0 = y2;
-			float c1 = (y2 - y1) / dz;
-
-			// calculate q0, q1, q2
-			q0 = c0 + c1*zin;
-			q1 = c1;
-			q2 = 0;
-		}		
-		else
-		{
-			// load neighboring sources
-			float y1 = QSR->fine_source[fine_id-1][g];
-			float y2 = QSR->fine_source[fine_id][g];
-			float y3 = QSR->fine_source[fine_id+1][g];
-
-			// do quadratic "fitting"
-			float c0 = y2;
-			float c1 = (y1 - y3) / (2*dz);
-			float c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
-
-			// calculate q0, q1, q2
-			q0 = c0 + c1*zin + c2*zin*zin;
-			q1 = c1 + 2*c2*zin;
-			q2 = c2;
-		}
+		// calculate q0, q1, q2
+		q0 = c0 + c1*zin + c2*zin*zin;
+		q1 = c1 + 2*c2*zin;
+		q2 = c2;
 
 		// calculate common values for efficiency
 		float tau = sigT * ds;
@@ -431,6 +393,9 @@ float update_sources( Params params, Input I, float keff )
 	// source residual
 	float residual;
 
+	// calculate fine axial spacing
+	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+	
 	// calculate inverse multiplication facotr for efficiency
 	float inverse_k = 1.0 / keff;
 
@@ -444,6 +409,14 @@ float update_sources( Params params, Input I, float keff )
 	float * fission_rates = malloc(I.n_egroups * sizeof(float));
 	float * scatter_rates = malloc(I.n_egroups * sizeof(float));
 
+	// allocate storage of new source for "data fitting"
+	float ** newSrcArray = (float **) malloc( I.fai
+			* sizeof(float *));
+	float * newSrcData = (float *) malloc( I.fai * I.n_egroups
+			* sizeof(float));
+	for(int i = 0; i < I.fai; i++)
+		newSrcArray[i] = &newSrcData[i * I.n_egroups];
+	
 	// cycle through all coarse axial intervals to update source
 	for( long i = 0; i < I.n_source_regions_per_node; i++)
 	{
@@ -484,18 +457,61 @@ float update_sources( Params params, Input I, float keff )
 					/ (4.0 * M_PI);
 
 				// calculate residual
-				float oldSrc = src.fine_source[j][g];
+				float oldSrc = src.source_params[j][g][0];
 				group_res[g] = (newSrc - oldSrc) * (newSrc - oldSrc)
 					/ (oldSrc * oldSrc);
 
 				/* calculate new source in fine axial interval assuming 
 				 * isotropic source components */
-				src.fine_source[j][g] = newSrc;
+				newSrcArray[j][g] = newSrc;
 			}
+
 			fine_res[j] = pairwise_sum(group_res, (long) I.n_egroups);
 		}
+
+		// calculate axial source components
+		for( int j = 0; j < I.fai; j++)
+		{
+			for( int g = 0; g < I.n_egroups; g++)
+			{
+				// calculate linear source components
+				if( j == 0 )
+				{
+					float y2 = newSrcArray[j][g];
+					float y3 = newSrcArray[j+1][g];
+
+					src.source_params[j][g][0] = y2;
+					src.source_params[j][g][1] = (y3 - y2) / dz;
+					src.source_params[j][g][2] = 0;
+				}
+				// calculate linear source components
+				else if( j == I.fai - 1 )
+				{
+					float y1 = newSrcArray[j-1][g];
+					float y2 = newSrcArray[j][g];
+
+					src.source_params[j][g][0] = y2;
+					src.source_params[j][g][1] = (y2 - y1) / dz;
+					src.source_params[j][g][2] = 0;
+				}
+				// calculate quadratic source components
+				else{
+					float y1 = newSrcArray[j-1][g];
+					float y2 = newSrcArray[j][g];
+					float y3 = newSrcArray[j+1][g];
+
+					src.source_params[j][g][0] = y2;
+					src.source_params[j][g][1] = (y3 - y1) / (2*dz);
+					src.source_params[j][g][2] = (y1 - 2*y2 + y3) / (2*dz*dz);
+				}
+			}
+		}
+		
 		residuals[i] = pairwise_sum(fine_res, (long) I.fai);
 	}
+	for( int j = 0; j < I.fai; j++)
+		free(newSrcArray[j]);
+	free(newSrcArray);
 
 	// calculate source residual
 	residual = pairwise_sum(residuals, I.n_source_regions_per_node);
@@ -519,7 +535,7 @@ float compute_keff(Params params, Input I, CommGrid grid)
 	float * sigma = malloc( I.n_egroups * sizeof(float) );
 	float * group_rates = malloc( I.n_egroups * sizeof(float) );
 	float * fine_rates = malloc( I.fai * sizeof(float) );
-	float * QSR_rates = malloc( I.n_source_regions_per_node * sizeof(float) );
+	float * src_rates = malloc( I.n_source_regions_per_node * sizeof(float) );
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -542,10 +558,10 @@ float compute_keff(Params params, Input I, CommGrid grid)
 			fine_rates[j] = pairwise_sum( group_rates, (long) I.n_egroups );
 		}
 		// sum absorption over all fine axial intervals
-		QSR_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
+		src_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
 	}
 	// sum absorption over all source regions in a node
-	float node_abs = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
+	float node_abs = pairwise_sum( src_rates, I.n_source_regions_per_node);
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -568,10 +584,10 @@ float compute_keff(Params params, Input I, CommGrid grid)
 			fine_rates[j] = pairwise_sum( group_rates, (long) I.n_egroups );
 		}
 		// sum fission over all fine axial intervals
-		QSR_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
+		src_rates[i] = pairwise_sum( fine_rates, (long) I.fai );
 	}
 	// sum fission over all source regions in a node
-	float node_fission = pairwise_sum( QSR_rates, I.n_source_regions_per_node);
+	float node_fission = pairwise_sum( src_rates, I.n_source_regions_per_node);
 
 	///////////////////////////////////////////////////////////////////////////
 
@@ -623,7 +639,7 @@ float compute_keff(Params params, Input I, CommGrid grid)
 	free(sigma);
 	free(group_rates);
 	free(fine_rates);
-	free(QSR_rates);
+	free(src_rates);
 
 	return keff;
 }
