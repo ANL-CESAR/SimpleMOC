@@ -104,6 +104,8 @@ void print_input_summary(Input I)
 	printf("%-35s%.2lf\n", "reactor height:", I.height);
 	printf("%-35s%ld\n", "2D Src regions per assembly:", 
 			I.n_2D_source_regions_per_assembly);
+	printf("%-35s%zu (MB)\n", "Estimated Memory Usage:",
+			est_mem_usage(I) / 1024 / 1024);
 	border_print();
 }
 

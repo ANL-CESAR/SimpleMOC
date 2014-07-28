@@ -171,6 +171,7 @@ float pairwise_sum(float * vector, long size);
 Table buildExponentialTable( float precision, float maxVal );
 float interpolateTable( Table table, float x);
 double get_time(void);
+size_t est_mem_usage( Input I );
 
 // source.c
 Source * initialize_sources( Input I, size_t * nbytes );

@@ -109,3 +109,37 @@ double get_time(void)
 
 	return (double) time / (double) CLOCKS_PER_SEC;
 }
+
+// Memory Usage Estimator
+size_t est_mem_usage( Input I )
+{
+	size_t nbytes = 0;
+	
+	int z_stacked = (int) ( I.height / (I.axial_z_sep * 
+				I.decomp_assemblies_ax) );
+	
+	long n_xs_regions = I.n_source_regions_per_node / 8;
+
+	nbytes += I.ntracks_2D * sizeof(Track2D);
+	nbytes += I.segments_per_track * I.ntracks_2D * sizeof(Segment);
+	nbytes += I.ntracks_2D * sizeof(Track **);
+	nbytes += I.ntracks_2D * I.n_polar_angles * sizeof(Track *);
+	nbytes += I.ntracks * sizeof(Track);
+	nbytes += I.ntracks_2D * I.n_polar_angles * z_stacked 
+		* I.n_egroups * 3 * sizeof(float);
+	nbytes += I.n_source_regions_per_node * sizeof(Source);
+	nbytes += n_xs_regions * sizeof(float **);
+	nbytes += n_xs_regions * sizeof(float **);
+	nbytes += n_xs_regions * I.n_egroups * I.n_egroups * sizeof(float);
+	nbytes += n_xs_regions * sizeof(float **);
+	nbytes += n_xs_regions * I.n_egroups * sizeof(float *);
+	nbytes += n_xs_regions * I.n_egroups * 3 * sizeof(float);
+	nbytes += I.n_source_regions_per_node * sizeof(float **);
+	nbytes += I.n_source_regions_per_node * I.fai * sizeof(float *);
+	nbytes += I.n_source_regions_per_node * sizeof(float **);
+	nbytes += I.n_source_regions_per_node * I.fai * sizeof(float *);
+	nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups
+		* sizeof(float);
+	
+	return nbytes;
+}
