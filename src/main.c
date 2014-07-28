@@ -19,8 +19,9 @@ int main( int argc, char * argv[] )
 
 	srand(time(NULL) * (mype+1));
 
-	Input input = get_input();
+	Input input = set_default_input();
 	read_CLI( argc, argv, &input );
+	calculate_derived_inputs( &input );
 	
 	if( mype == 0 )
 		logo(version);

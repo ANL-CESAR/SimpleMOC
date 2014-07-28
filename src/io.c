@@ -131,6 +131,14 @@ void read_CLI( int argc, char * argv[], Input * input )
 			else
 				print_CLI_error();
 		}
+		// input file (-i)
+		else if( strcmp(arg, "-i") == 0 )
+		{
+			if( ++i < argc )
+				read_input_file( input, argv[i]);
+			else
+				print_CLI_error();
+		}
 		else
 			print_CLI_error();
 	}
@@ -151,4 +159,73 @@ void print_CLI_error(void)
 	exit(1);
 }
 
+void read_input_file( Input * I, char * fname)
+{
+	printf("Attempting to open FIle: %s\n", fname);
+    FILE * fp = fopen(fname, "r");
+	printf("Opened FIle: %s\n", fname);
+	if( fp == NULL )
+		printf("FIle Open FAILED\n");
+    char c[255];
 
+	char * stat;
+	int err;
+
+    err = fscanf(fp, "%d", &I->x_assemblies);
+    stat = fgets(c, 255, fp);
+
+	printf("X_assemblies = %d\n", &I->x_assemblies);
+
+    err = fscanf(fp, "%d", &I->y_assemblies);
+    stat = fgets(c, 255, fp);
+    
+	err = fscanf(fp, "%d", &I->cai);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->fai);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->axial_exp);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%f", &I->radial_ray_sep);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%f", &I->axial_z_sep);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->n_azimuthal);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->n_polar_angles);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->n_egroups);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->decompose);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->decomp_assemblies_ax);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->segments_per_track);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%f", &I->assembly_width);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%f", &I->height);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%f", &I->precision);
+    stat = fgets(c, 255, fp);
+
+	err = fscanf(fp, "%d", &I->n_2D_source_regions_per_assembly);
+    stat = fgets(c, 255, fp);
+	
+	err = fscanf(fp, "%d", &I->papi_event_set);
+    stat = fgets(c, 255, fp);
+
+	fclose(fp);
+}

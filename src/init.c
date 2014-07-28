@@ -1,7 +1,35 @@
 #include"SimpleMOC_header.h"
 
+// Calculate Derived Inputs
+void calculate_derived_inputs( Input * I )
+{
+	
+	#ifdef MPI
+	int mype;
+	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
+	I->mype = mype;
+	#endif
+
+
+	// calculate number of 2D tracks, enforcing divisible by 2
+	I->ntracks_2D = I->n_azimuthal * 
+		(I->assembly_width * sqrt(2) / I->radial_ray_sep);
+
+	I->ntracks_2D = 2 * ( I->ntracks_2D / 2 );
+
+	I->z_stacked = (int) ( I->height / (I->axial_z_sep * I->decomp_assemblies_ax));
+	I->ntracks = I->ntracks_2D * I->n_polar_angles * I->z_stacked;  
+	I->domain_height = I->height / I->decomp_assemblies_ax;
+
+	// TODO: Add file/CLI user input
+
+	I->n_source_regions_per_node = I->n_2D_source_regions_per_assembly *
+		I->cai / I->decomp_assemblies_ax;
+
+}
+
 // Gets I from user and sets defaults
-Input get_input( void )
+Input set_default_input( void )
 {
 	Input I;
 
@@ -34,31 +62,10 @@ Input get_input( void )
 	#ifdef PAPI
 	I.papi_event_set = 6;
 	#endif
-
-	#ifdef MPI
-	int mype;
-	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
-	I.mype = mype;
-	#endif
-
+	
 	#ifdef OPENMP
-	I.nthreads = omp_get_max_threads();
+	I->nthreads = omp_get_max_threads();
 	#endif
-
-	// calculate number of 2D tracks, enforcing divisible by 2
-	I.ntracks_2D = I.n_azimuthal * 
-		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
-
-	I.ntracks_2D = 2 * ( I.ntracks_2D / 2 );
-
-	I.z_stacked = (int) ( I.height / (I.axial_z_sep * I.decomp_assemblies_ax));
-	I.ntracks = I.ntracks_2D * I.n_polar_angles * I.z_stacked;  
-	I.domain_height = I.height / I.decomp_assemblies_ax;
-
-	// TODO: Add file/CLI user input
-
-	I.n_source_regions_per_node = I.n_2D_source_regions_per_assembly *
-		I.cai / I.decomp_assemblies_ax;
 
 	return I;
 }

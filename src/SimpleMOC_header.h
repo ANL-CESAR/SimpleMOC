@@ -141,9 +141,10 @@ typedef struct{
 } CommGrid;
 
 // init.c
-Input get_input( void );
+Input set_default_input( void );
 Params build_tracks( Input I );
 CommGrid init_mpi_grid( Input I );
+void calculate_derived_inputs( Input * I );
 
 // io.c
 void logo(int version);
@@ -153,6 +154,7 @@ void fancy_int( int a );
 void print_input_summary(Input input);
 void read_CLI( int argc, char * argv[], Input * input );
 void print_CLI_error(void);
+void read_input_file( Input * I, char * fname);
 
 // tracks.c
 Track2D * generate_2D_tracks( Input input, size_t * nbytes );
