@@ -102,6 +102,25 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[1] = PAPI_BR_CN;
 		events[2] = PAPI_BR_PRC;
 	}
+	// TLB Misses
+	if( I.papi_event_set == 7 )
+	{
+		*num_papi_events = 4;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+		int EventCode;
+		char * event1 = "perf::DTLB-LOADS";
+		char * event2 = "perf::DTLB-LOAD-MISSES";
+		char * event3 = "perf::DTLB-STORES";
+		char * event4 = "perf::DTLB-STORE-MISSES";
+		PAPI_event_name_to_code( event1, &EventCode );
+		events[0] = EventCode;	
+		PAPI_event_name_to_code( event2, &EventCode );
+		events[1] = EventCode;	
+		PAPI_event_name_to_code( event3, &EventCode );
+		events[2] = EventCode;	
+		PAPI_event_name_to_code( event4, &EventCode );
+		events[3] = EventCode;	
+	}
 
 	/////////////////////////////////////////////////////////////////////////
 	//                        PAPI EVENT SELECTION
@@ -371,6 +390,10 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 	static long stall_SB = 0;
 	static long stall_RS = 0;
 	static long stall_OO = 0;
+	static long tlb_load = 0;
+	static long tlb_load_m = 0;
+	static long tlb_store = 0;
+	static long tlb_store_m = 0;
 
 	#pragma omp critical (papi)
 	{
@@ -393,6 +416,14 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 				stall_RS += values[i];
 			if( strcmp(info.symbol, "RESOURCE_STALLS2:OOO_RSRC") == 0 )
 				stall_OO += values[i];
+			if( strcmp(info.symbol, "perf::DTLB-LOADS") == 0 )
+				tlb_load += values[i];
+			if( strcmp(info.symbol, "perf::DTLB-LOAD-MISSES") == 0 )
+				tlb_load_m += values[i];
+			if( strcmp(info.symbol, "perf::DTLB-STORES") == 0 )
+				tlb_store += values[i];
+			if( strcmp(info.symbol, "perf::DTLB-STORE-MISSES") == 0 )
+				tlb_store_m += values[i];
 		}
 		free(events);
 		free(values);	
@@ -423,6 +454,13 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 		if( I.papi_event_set == 3 )
 			printf("CPU Stalled Cycles: %.2lf%%\n",
 					stall_any / (double) total_cycles * 100.);	
+		if( I.papi_event_set == 7 )
+		{
+			printf("%-30s %.2lf%%\n", "Data TLB Load Miss Rate: ",
+					tlb_load_m / (double) tlb_load * 100 );
+			printf("%-30s %.2lf%%\n", "Data TLB Store Miss Rate: ",
+					tlb_store_m / (double) tlb_store * 100 );
+		}
 
 		border_print();
 	}
