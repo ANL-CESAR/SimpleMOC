@@ -400,9 +400,6 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 				src->fine_flux[k][g] *= adjust;
 	}
 
-	MPI_Barrier(grid.cart_comm_3d);
-	MPI_Barrier(MPI_COMM_WORLD);
-
 	// normalize boundary fluxes by same factor
 	for( long i = 0; i < I.ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)

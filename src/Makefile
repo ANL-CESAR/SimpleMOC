@@ -3,8 +3,8 @@
 #===============================================================================
 
 COMPILER    = gnu
-MPI         = yes
-OPENMP      = yes
+MPI         = no
+OPENMP      = no
 OPTIMIZE    = yes
 DEBUG       = no
 PROFILE     = no
@@ -43,6 +43,11 @@ endif
 # intel Compiler
 ifeq ($(COMPILER),intel)
   CC = icc
+endif
+
+# IBM XL Compiler
+ifeq ($(COMPILER),ibm)
+  CC = mpicc
 endif
 
 # BG/Q gcc Cross-Compiler
@@ -92,6 +97,9 @@ ifeq ($(COMPILER), gnu)
 endif
 ifeq ($(COMPILER), intel)
 	CFLAGS += -openmp
+endif
+ifeq ($(COMPILER), ibm)
+	CFLAGS += -qsmp
 endif
    	CFLAGS += -DOPENMP
 endif
