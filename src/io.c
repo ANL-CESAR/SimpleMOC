@@ -200,14 +200,19 @@ void read_input_file( Input * I, char * fname)
 	
 	err = fscanf(fp, "%d", &I->n_egroups);
     stat = fgets(c, 255, fp);
-	
-	err = fscanf(fp, "%d", &I->decompose);
+
+	int decompose;	
+	err = fscanf(fp, "%d", &decompose);
     stat = fgets(c, 255, fp);
+	if(decompose == 0)
+		I->decompose = false;
+	else
+		I->decompose = true;
 	
 	err = fscanf(fp, "%d", &I->decomp_assemblies_ax);
     stat = fgets(c, 255, fp);
 	
-	err = fscanf(fp, "%d", &I->segments_per_track);
+	err = fscanf(fp, "%ld", &I->segments_per_track);
     stat = fgets(c, 255, fp);
 	
 	err = fscanf(fp, "%f", &I->assembly_width);
@@ -219,7 +224,7 @@ void read_input_file( Input * I, char * fname)
 	err = fscanf(fp, "%f", &I->precision);
     stat = fgets(c, 255, fp);
 
-	err = fscanf(fp, "%d", &I->n_2D_source_regions_per_assembly);
+	err = fscanf(fp, "%ld", &I->n_2D_source_regions_per_assembly);
     stat = fgets(c, 255, fp);
 	
 	err = fscanf(fp, "%d", &I->papi_event_set);
