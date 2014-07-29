@@ -369,7 +369,6 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	float node_fission_rate = pairwise_sum(fission_rates, 
 			I.n_source_regions_per_node);
 
-	if( I.mype == 0 ) printf("Beginning All Reduce\n");
 	#ifdef MPI	
 	// accumulate total fission rate by MPI Allreduce
 	float total_fission_rate = 0;
@@ -384,7 +383,6 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	#else
 	float total_fission_rate = node_fission_rate;
 	#endif
-	if( I.mype == 0 ) printf("Finished All Reduce\n");
 
 	// free allocated memory
 	free(fission_rates);
@@ -404,9 +402,6 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 
 	MPI_Barrier(grid.cart_comm_3d);
 	MPI_Barrier(MPI_COMM_WORLD);
-	if( I.mype == 0 ) printf("Finished Fission Normalization\n");
-	printf("pointer needed: %p\n", params.tracks[0][0][0].start_flux);
-	printf("TracK weight: %f\n", params.tracks[0][0][0].p_weight);
 
 	// normalize boundary fluxes by same factor
 	for( long i = 0; i < I.ntracks_2D; i++)

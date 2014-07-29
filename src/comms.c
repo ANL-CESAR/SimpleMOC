@@ -14,7 +14,19 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long ntracks_per_axial_direction  = I.ntracks * x / (2*x + 4*h);
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
 
+	/*
+	if(I.mype==0)
+	{
+		printf("ntracks = %ld\n", I.ntracks);
+		printf("ntracks_per_radial_direction = %ld\n", ntracks_per_radial_direction);
+		printf("ntracks_per_axial_direction = %ld\n", ntracks_per_axial_direction);
+		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
+	}
+	*/
+
 	// correct so that all tracks are used and are symmetric
+	// FIXME: This computation is incorrect (adds in millions of extra tracks)
+	/*
 	long remaining_tracks = I.ntracks - 2 * ntracks_per_axial_direction
 	   - 4 * ntracks_per_radial_direction;
 
@@ -24,6 +36,18 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	
 	long add_axial = I.ntracks - add_radial;
 	ntracks_per_axial_direction += add_axial / 2;
+	*/
+
+	/*
+	if(I.mype==0)
+	{
+		printf("ntracks = %ld\n", I.ntracks);
+		printf("ntracks_per_radial_direction = %ld\n", ntracks_per_radial_direction);
+		printf("ntracks_per_axial_direction = %ld\n", ntracks_per_axial_direction);
+		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
+	}
+	MPI_Barrier(grid.cart_comm_3d);
+	*/
 
 	// Calculate all requests needed
 	long max_requests = ntracks_per_radial_direction / 100;
@@ -69,12 +93,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		ntracks_per_axial_direction / 100,
 		ntracks_per_axial_direction / 100
 	};
-
-	for( int i = 0; i < 6; i++ )
-	{
-		printf("send_dest[%d] = %d, num_messages[%d] = %d\n", i, send_dest[i], i, num_messages[i]);
-	}
-
 
 	// loop over all rectangular surfaces
 	for( int i = 0; i < 6; i++ )
@@ -133,8 +151,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		if( rec_sources[i] == -1)
 		{
 			long dim = num_messages[i] * I.n_egroups * 100;
-			for( long j =0; j < dim; j++)
-				flux_array[recv_idx + j] = 0;
+			//for( long j =0; j < dim; j++)
+				//flux_array[recv_idx + j] = 0;
 			recv_idx += dim;
 		}
 		else
@@ -160,7 +178,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			}
 		}
 	}
-
 	
 	/////////////////////////////////////////////////////////////////////////
 

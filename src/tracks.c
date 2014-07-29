@@ -100,8 +100,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	}
 
 	// Allocate space for Flux Arrays
-	size_t flux_bytes_needed = I.ntracks_2D * I.n_polar_angles * I.z_stacked 
-		* I.n_egroups * 3 * sizeof(float);
+	size_t flux_bytes_needed = I.ntracks * I.n_egroups * 3 * sizeof(float);
 	
 	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", 
 			flux_bytes_needed / 1024 / 1024);
@@ -110,7 +109,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	*nbytes += flux_bytes_needed;
 	size_t flux_idx = 0;
 
-	long offset = I.ntracks_2D * I.n_polar_angles * I.z_stacked * I.n_egroups;
+	long offset = I.ntracks * I.n_egroups;
 
 	for( long i = 0; i < I.ntracks_2D; i++ )
 	{

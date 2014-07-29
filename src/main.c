@@ -59,7 +59,7 @@ int main( int argc, char * argv[] )
 	{
 		// Transport Sweep
 		start = get_time();
-		//transport_sweep(params, input);
+		transport_sweep(params, input);
 		stop = get_time();
 		time_transport += stop-start;
 
