@@ -509,8 +509,7 @@ float update_sources( Params params, Input I, float keff )
 		
 		residuals[i] = pairwise_sum(fine_res, (long) I.fai);
 	}
-	for( int j = 0; j < I.fai; j++)
-		free(newSrcArray[j]);
+	free(newSrcArray[0]);
 	free(newSrcArray);
 
 	// calculate source residual
