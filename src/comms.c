@@ -20,7 +20,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	long add_radial = remaining_tracks * ( 4*h / (2*x + 4*h) );
 	add_radial = 4 * (add_radial / 4);
-	ntracks_per_raidal_direction += add_radial / 4;
+	ntracks_per_radial_direction += add_radial / 4;
 	
 	long add_axial = I.ntracks - add_radial;
 	ntracks_per_axial_direction += add_axial / 2;
@@ -69,6 +69,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		ntracks_per_axial_direction / 100,
 		ntracks_per_axial_direction / 100
 	};
+
+	for( int i = 0; i < 6; i++ )
+	{
+		printf("send_dest[%d] = %d, num_messages[%d] = %d\n", i, send_dest[i], i, num_messages[i]);
+	}
 
 
 	// loop over all rectangular surfaces
@@ -166,6 +171,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	}
 
 	MPI_Barrier( grid.cart_comm_3d );
+	MPI_Barrier( MPI_COMM_WORLD);
 
 	if(I.mype==0) printf("Finished Inter-Node Border Flux Transfer.\n");
 

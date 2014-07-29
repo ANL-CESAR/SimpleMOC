@@ -5,23 +5,14 @@ void transport_sweep( Params params, Input I )
 {
 	if(I.mype==0) printf("Starting transport sweep ...\n");
 
-	// Determine total number of tracks
-	long ntracks_2D = I.n_azimuthal * 
-		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
-
-	int z_stacked = (int) ( I.height / (I.axial_z_sep 
-				* I.decomp_assemblies_ax) );
-	
-	long ntracks = ntracks_2D * I.n_polar_angles * z_stacked;  
-
 	// calculate the height of a node's domain and of each FSR
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
 	double fine_delta_z = node_delta_z / (I.cai * I.fai);
 
 	// initialize fluxes in transport sweep
-	for( int i = 0; i < ntracks_2D; i++)
+	for( int i = 0; i < I.ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
-			for( int k = 0; k < z_stacked; k++)
+			for( int k = 0; k < I.z_stacked; k++)
 			{
 				Track * track = &params.tracks[i][j][k];
 				for( int g = 0; g < I.n_egroups; g++)
@@ -32,8 +23,7 @@ void transport_sweep( Params params, Input I )
 	 * angles, polar angles, and z stacked rays) */
 
 	#pragma omp parallel default(none) \
-	shared( I, params, ntracks_2D, z_stacked, ntracks, node_delta_z, \
-			fine_delta_z )
+	shared( I, params, node_delta_z, fine_delta_z )
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
@@ -51,7 +41,7 @@ void transport_sweep( Params params, Input I )
 		#endif
 
 		#pragma omp for schedule( dynamic ) 
-		for (long i = 0; i < ntracks_2D; i++)
+		for (long i = 0; i < I.ntracks_2D; i++)
 		{
 			// print progress
 			#ifdef OPENMP
@@ -65,7 +55,7 @@ void transport_sweep( Params params, Input I )
 			if( i % 50 == 0)
 				if(I.mype==0)
 					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", 
-							ntracks_2D );
+							I.ntracks_2D );
 			#endif
 
 
@@ -80,7 +70,7 @@ void transport_sweep( Params params, Input I )
 
 				// start with all z stacked rays
 				int begin_stacked = 0;
-				int end_stacked = z_stacked;
+				int end_stacked = I.z_stacked;
 
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
@@ -208,7 +198,7 @@ void transport_sweep( Params params, Input I )
 			}
 		}
 		#ifdef OPENMP
-		if(thread == 0) printf("\n");
+		if(thread == 0 && I.mype==0) printf("\n");
 		#endif
 		
 		#ifdef PAPI
@@ -354,6 +344,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 // renormalize flux for next transport sweep iteration
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
+	if( I.mype == 0 ) printf("Renormalizing Flux...\n");
 	// tally total fission rate (pair-wise sum)
 	float * fission_rates = malloc( I.n_source_regions_per_node 
 			* sizeof(float) );
@@ -378,19 +369,22 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	float node_fission_rate = pairwise_sum(fission_rates, 
 			I.n_source_regions_per_node);
 
+	if( I.mype == 0 ) printf("Beginning All Reduce\n");
 	#ifdef MPI	
-	// accumulate total fission rate by MPI reduction
+	// accumulate total fission rate by MPI Allreduce
 	float total_fission_rate = 0;
-	MPI_Reduce( &node_fission_rate, // Send Buffer
+	MPI_Barrier(grid.cart_comm_3d);
+	MPI_Allreduce( &node_fission_rate, // Send Buffer
 			&total_fission_rate,    // Receive Buffer
 			1,                    	// Element Count
 			MPI_FLOAT,           	// Element Type
 			MPI_SUM,              	// Reduciton Operation Type
-			0,                    	// Master Rank
 			grid.cart_comm_3d );  	// MPI Communicator
+	MPI_Barrier(grid.cart_comm_3d);
 	#else
 	float total_fission_rate = node_fission_rate;
 	#endif
+	if( I.mype == 0 ) printf("Finished All Reduce\n");
 
 	// free allocated memory
 	free(fission_rates);
@@ -408,20 +402,20 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 				src->fine_flux[k][g] *= adjust;
 	}
 
-	// calculate track dimensions
-	long ntracks_2D = I.n_azimuthal * 
-		(I.assembly_width * sqrt(2) / I.radial_ray_sep);
-
-	int z_stacked = (int) ( I.height / (I.axial_z_sep 
-				* I.decomp_assemblies_ax) );
+	MPI_Barrier(grid.cart_comm_3d);
+	MPI_Barrier(MPI_COMM_WORLD);
+	if( I.mype == 0 ) printf("Finished Fission Normalization\n");
+	printf("pointer needed: %p\n", params.tracks[0][0][0].start_flux);
+	printf("TracK weight: %f\n", params.tracks[0][0][0].p_weight);
 
 	// normalize boundary fluxes by same factor
-	for( int i = 0; i < ntracks_2D; i++)
+	for( long i = 0; i < I.ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
-			for( int k = 0; k < z_stacked; k++)
+			for( int k = 0; k < I.z_stacked; k++)
 				for( int g = 0; g < I.n_egroups; g++)
 					params.tracks[i][j][k].start_flux[g] *= norm_factor;
 
+	if( I.mype == 0 ) printf("Renormalizing Flux Complete.\n");
 	return;
 }
 

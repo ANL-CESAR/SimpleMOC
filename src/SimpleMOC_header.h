@@ -158,7 +158,7 @@ void read_input_file( Input * I, char * fname);
 
 // tracks.c
 Track2D * generate_2D_tracks( Input input, size_t * nbytes );
-void generate_2D_segments( Input input, Track2D * tracks, long ntracks,
+void generate_2D_segments( Input input, Track2D * tracks,
 	   	size_t * nbytes );
 void free_2D_tracks( Track2D * tracks );
 Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);

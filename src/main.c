@@ -12,7 +12,7 @@ int main( int argc, char * argv[] )
 	MPI_Comm_size(MPI_COMM_WORLD, &nranks);
 	MPI_Comm_rank(MPI_COMM_WORLD, &mype);
 	#endif
-	
+
 	#ifdef PAPI
 	papi_serial_init();
 	#endif
@@ -22,14 +22,14 @@ int main( int argc, char * argv[] )
 	Input input = set_default_input();
 	read_CLI( argc, argv, &input );
 	calculate_derived_inputs( &input );
-	
+
 	if( mype == 0 )
 		logo(version);
-	
+
 	#ifdef OPENMP
 	omp_set_num_threads(input.nthreads); 
 	#endif
-	
+
 	CommGrid grid = init_mpi_grid( input );
 
 	if( mype == 0 )
@@ -59,7 +59,7 @@ int main( int argc, char * argv[] )
 	{
 		// Transport Sweep
 		start = get_time();
-		transport_sweep(params, input);
+		//transport_sweep(params, input);
 		stop = get_time();
 		time_transport += stop-start;
 
@@ -92,13 +92,14 @@ int main( int argc, char * argv[] )
 			printf("keff = %lf\n", keff);
 	}
 
+	double time_total = time_transport + time_flux_exchange 
+		+ time_renormalize_flux + time_update_sources + time_compute_keff;
+
 	if( mype == 0 )
 	{
 		border_print();
-		center_print("Results Summary", 79);
+		center_print("RESULTS SUMMARY", 79);
 		border_print();
-		double time_total = time_transport + time_flux_exchange 
-			+ time_renormalize_flux + time_update_sources + time_compute_keff;
 
 		printf("Transport Sweep Time:         %6.2lf sec   (%4.1lf%%)\n", 
 				time_transport, 100*time_transport/time_total);
@@ -111,15 +112,34 @@ int main( int argc, char * argv[] )
 		printf("K-Effective Calc Time:        %6.2lf sec   (%4.1lf%%)\n", 
 				time_compute_keff, 100*time_compute_keff/time_total);
 		printf("Total Time:                   %6.2lf sec\n", time_total);
-		printf("Tracks per Second per domain: "); 
-		fancy_int( input.ntracks / time_transport );
+	}
 
+	long tracks_per_second = input.ntracks/time_transport;
+
+	#ifdef MPI
+	MPI_Barrier(grid.cart_comm_3d);
+	long global_tps = 0;
+	MPI_Reduce( &tracks_per_second, // Send Buffer
+			&global_tps,            // Receive Buffer
+			1,                    	// Element Count
+			MPI_LONG,           	// Element Type
+			MPI_SUM,              	// Reduciton Operation Type
+			0,                    	// Master Rank
+			grid.cart_comm_3d );  	// MPI Communicator
+	MPI_Barrier(grid.cart_comm_3d);
+	tracks_per_second = global_tps;
+	#endif
+
+	if( mype == 0 )
+	{
+		printf("Total Tracks per Second:        ");
+		fancy_int( tracks_per_second );
 		border_print();
 	}
 
 	free_2D_tracks( params.tracks_2D );
 	free_tracks( params.tracks );
-	
+
 	#ifdef MPI
 	MPI_Finalize();
 	#endif
