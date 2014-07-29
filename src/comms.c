@@ -14,7 +14,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long ntracks_per_axial_direction  = I.ntracks * x / (2*x + 4*h);
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
 
-	/*
 	if(I.mype==0)
 	{
 		printf("ntracks = %ld\n", I.ntracks);
@@ -22,7 +21,13 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		printf("ntracks_per_axial_direction = %ld\n", ntracks_per_axial_direction);
 		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
 	}
+
+	/*
+	long remaining_tracks = I.ntracks - 2 * ntracks_per_axial_direction
+	   - 4 * ntracks_per_radial_direction;
+	if(I.mype==0) printf("remaining tracks: %ld\n", remaining_tracks);
 	*/
+	
 
 	// correct so that all tracks are used and are symmetric
 	// FIXME: This computation is incorrect (adds in millions of extra tracks)
@@ -34,20 +39,19 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	add_radial = 4 * (add_radial / 4);
 	ntracks_per_radial_direction += add_radial / 4;
 	
-	long add_axial = I.ntracks - add_radial;
+	long add_axial = I.ntracks - add_radial;           // I think this line is where error is
 	ntracks_per_axial_direction += add_axial / 2;
 	*/
 
-	/*
 	if(I.mype==0)
 	{
+		printf("After eveneing.....\n");
 		printf("ntracks = %ld\n", I.ntracks);
 		printf("ntracks_per_radial_direction = %ld\n", ntracks_per_radial_direction);
 		printf("ntracks_per_axial_direction = %ld\n", ntracks_per_axial_direction);
 		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
 	}
 	MPI_Barrier(grid.cart_comm_3d);
-	*/
 
 	// Calculate all requests needed
 	long max_requests = ntracks_per_radial_direction / 100;
