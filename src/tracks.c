@@ -130,8 +130,8 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 
 				/* Allocate start and end flux arrays (moved allocations out of
 				 * loop so they are contiguous) */
-				tracks[i][j][k].start_flux = &flux_space[flux_idx];
-				tracks[i][j][k].end_flux = &flux_space[offset + flux_idx];
+				tracks[i][j][k].end_flux = &flux_space[flux_idx];
+				tracks[i][j][k].start_flux = &flux_space[offset + flux_idx];
 				tracks[i][j][k].psi = &flux_space[offset*2 + flux_idx];
 				flux_idx += I.n_egroups;
 
