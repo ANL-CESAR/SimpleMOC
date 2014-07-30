@@ -88,6 +88,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					num_messages[i] * I.n_egroups * tracks_per_msg );
 
 			send_idx += num_messages[i] * I.n_egroups * tracks_per_msg;
+			msg_id += num_messages[i];
 		}
 		else
 		{
@@ -138,6 +139,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			for( long j =0; j < dim; j++)
 				flux_array[recv_idx + j] = 0;
 			recv_idx += dim;
+			msg_id += num_messages[i];
 		}
 		else
 		{

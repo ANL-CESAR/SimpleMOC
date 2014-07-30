@@ -124,7 +124,7 @@ CommGrid init_mpi_grid( Input I )
 	#ifdef MPI
 	MPI_Comm cart_comm_3d;
 	int ndims = 3;
-	int dims[3] = {2,2,2};
+	int dims[3] = {3,3,2};
 	int period[3] = {0,0,0};
    	int reorder = 1;
 
