@@ -2,9 +2,9 @@
 # User Options
 #===============================================================================
 
-COMPILER    = gnu
-MPI         = no
-OPENMP      = no
+COMPILER    = ibm
+MPI         = yes
+OPENMP      = yes
 OPTIMIZE    = yes
 DEBUG       = no
 PROFILE     = no
