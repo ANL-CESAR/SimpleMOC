@@ -22,16 +22,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
 	}
 
-	/*
-	long remaining_tracks = I.ntracks - 2 * ntracks_per_axial_direction
-	   - 4 * ntracks_per_radial_direction;
 	if(I.mype==0) printf("remaining tracks: %ld\n", remaining_tracks);
-	*/
 	
 
 	// correct so that all tracks are used and are symmetric
-	// FIXME: This computation is incorrect (adds in millions of extra tracks)
-	/*
 	long remaining_tracks = I.ntracks - 2 * ntracks_per_axial_direction
 	   - 4 * ntracks_per_radial_direction;
 
@@ -39,9 +33,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	add_radial = 4 * (add_radial / 4);
 	ntracks_per_radial_direction += add_radial / 4;
 	
-	long add_axial = I.ntracks - add_radial;           // I think this line is where error is
+	long add_axial = remaining_tracks - add_radial;
 	ntracks_per_axial_direction += add_axial / 2;
-	*/
 
 	if(I.mype==0)
 	{
