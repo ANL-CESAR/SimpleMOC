@@ -7,6 +7,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Barrier(grid.cart_comm_3d);
 	if(I.mype==0) printf("Beginning Inter-Node Border Flux Transfer...\n");
 
+	int tracks_per_msg = tracks_per_msg00;
+	
 	float h = I.domain_height;
 	float x = I.assembly_width;
 
@@ -26,9 +28,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	ntracks_per_axial_direction += add_axial / 2;
 
 	// Calculate all requests needed
-	long max_requests = ntracks_per_radial_direction / 100;
+	long max_requests = ntracks_per_radial_direction / tracks_per_msg;
 	max_requests *= 4;
-	max_requests += 2 * (ntracks_per_axial_direction / 100 );
+	max_requests += 2 * (ntracks_per_axial_direction / tracks_per_msg );
 
 	// One for send , one for received
 	max_requests *= 2;
@@ -39,6 +41,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			sizeof(MPI_Request));
 
 	long n_requests = 0;
+
+	// Computer Message Size
+	size_t bytes = I.n_egroups * sizeof(float) * tracks_per_msg;
+	if(I.mype==0) printf("MPI Message Size: %.2lf (MB)\n",
+		bytes / 1024. / 1024. );
 
 	// Use knowledge of underlying flux structure for efficiency
 	float * flux_array = params.tracks[0][0][0].start_flux;
@@ -62,12 +69,12 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// make an array of number of messages
 	long num_messages[6] =
 	{
-		ntracks_per_radial_direction / 100,
-		ntracks_per_radial_direction / 100,
-		ntracks_per_radial_direction / 100,
-		ntracks_per_radial_direction / 100,
-		ntracks_per_axial_direction / 100,
-		ntracks_per_axial_direction / 100
+		ntracks_per_radial_direction / tracks_per_msg,
+		ntracks_per_radial_direction / tracks_per_msg,
+		ntracks_per_radial_direction / tracks_per_msg,
+		ntracks_per_radial_direction / tracks_per_msg,
+		ntracks_per_axial_direction / tracks_per_msg,
+		ntracks_per_axial_direction / tracks_per_msg
 	};
 
 
@@ -78,9 +85,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		if( send_dest[i] == -1 )
 		{
 			* params.leakage += pairwise_sum( &flux_array[send_idx],
-					num_messages[i] * I.n_egroups * 100 );
+					num_messages[i] * I.n_egroups * tracks_per_msg );
 
-			send_idx += num_messages[i] * I.n_egroups * 100;
+			send_idx += num_messages[i] * I.n_egroups * tracks_per_msg;
+			msg_id += num_messages[i];
 		}
 		else
 		{
@@ -89,7 +97,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			{
 				MPI_Isend(
 					&flux_array[send_idx],   // Send Buffer
-					100,                     // Number of Elements
+					tracks_per_msg,                     // Number of Elements
 					grid.Flux_Array,         /* Type of element 
 											    (all energy group array) */
 					send_dest[i],	         // Destination MPI rank
@@ -97,7 +105,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					grid.cart_comm_3d,       // MPI Communicator
 					&request[req_id] );      /* MPI Request (to monitor 
 												when call finishes) */
-				send_idx += (long) I.n_egroups*100;
+				send_idx += (long) I.n_egroups*tracks_per_msg;
 				msg_id++;
 				req_id++;
 				n_requests++;
@@ -127,10 +135,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		// check if border assembly
 		if( rec_sources[i] == -1)
 		{
-			long dim = num_messages[i] * I.n_egroups * 100;
+			long dim = num_messages[i] * I.n_egroups * tracks_per_msg;
 			for( long j =0; j < dim; j++)
 				flux_array[recv_idx + j] = 0;
 			recv_idx += dim;
+			msg_id += num_messages[i];
 		}
 		else
 		{
@@ -139,7 +148,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			{
 				MPI_Irecv(
 					&flux_array[recv_idx],   // Recv Buffer
-					100,                     // Number of Elements
+					tracks_per_msg,          // Number of Elements
 					grid.Flux_Array,         /* Type of element 
 												(all energy group array) */
 					rec_sources[i],          // MPI rank to Receive From
@@ -148,7 +157,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					&request[req_id] );      /* MPI Request (to monitor 
 												when call finishes) */
 
-				recv_idx += (long) I.n_egroups*100;
+				recv_idx += (long) I.n_egroups*tracks_per_msg;
 				msg_id++;
 				req_id++;
 				n_requests++;
