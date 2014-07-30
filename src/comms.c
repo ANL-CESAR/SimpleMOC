@@ -14,6 +14,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long ntracks_per_axial_direction  = I.ntracks * x / (2*x + 4*h);
 	long ntracks_per_radial_direction = I.ntracks * h / (2*x + 4*h);
 
+	/*
 	if(I.mype==0)
 	{
 		printf("ntracks = %ld\n", I.ntracks);
@@ -21,6 +22,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		printf("ntracks_per_axial_direction = %ld\n", ntracks_per_axial_direction);
 		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
 	}
+	*/
 
 	/*
 	long remaining_tracks = I.ntracks - 2 * ntracks_per_axial_direction
@@ -43,6 +45,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	ntracks_per_axial_direction += add_axial / 2;
 	*/
 
+	/*
 	if(I.mype==0)
 	{
 		printf("After eveneing.....\n");
@@ -51,7 +54,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		printf("ntracks_per_axial_direction = %ld\n", ntracks_per_axial_direction);
 		printf("total combined = %ld\n", ntracks_per_radial_direction * 4 + ntracks_per_axial_direction * 2);
 	}
-	MPI_Barrier(grid.cart_comm_3d);
+	*/
 
 	// Calculate all requests needed
 	long max_requests = ntracks_per_radial_direction / 100;
@@ -155,8 +158,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		if( rec_sources[i] == -1)
 		{
 			long dim = num_messages[i] * I.n_egroups * 100;
-			//for( long j =0; j < dim; j++)
-				//flux_array[recv_idx + j] = 0;
+			for( long j =0; j < dim; j++)
+				flux_array[recv_idx + j] = 0;
 			recv_idx += dim;
 		}
 		else
