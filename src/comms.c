@@ -22,7 +22,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	add_radial = 4 * (add_radial / 4);
 	ntracks_per_raidal_direction += add_radial / 4;
 	
-	long add_axial = I.ntracks - add_radial;
+	long add_axial = remaining_tracks - add_radial;
 	ntracks_per_axial_direction += add_axial / 2;
 
 	// Calculate all requests needed
