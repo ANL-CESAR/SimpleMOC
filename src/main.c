@@ -4,9 +4,9 @@ int main( int argc, char * argv[] )
 {
 	int version = 0;
 	int mype = 0;
-	int nranks;
 
 	#ifdef MPI
+	int nranks;
 	MPI_Status stat;
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &nranks);

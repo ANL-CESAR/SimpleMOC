@@ -81,7 +81,7 @@ void print_input_summary(Input I)
 	printf("%-35s%d\n", "MPI Ranks:", nranks); 
 	#endif
 	#ifdef OPENMP
-	printf("%-35s%ld\n", "Number of Threads:", I.nthreads);
+	printf("%-35s%d\n", "Number of Threads:", I.nthreads);
 	#endif
 	printf("%-35s%d\n", "x-axis assemblies:", I.x_assemblies);
 	printf("%-35s%d\n", "y-axis assemblies:", I.y_assemblies);
