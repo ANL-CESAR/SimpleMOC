@@ -31,8 +31,95 @@ characterterics and viability of the Method of Characteristics (MOC)
 for 3D neutron transport calculations in the context of full scale
 light water reactor simulation.
 
+==============================================================================
+Quick Start Guide
+==============================================================================
+
+Download----------------------------------------------------------------------
+
+	For the most up-to-date version of SimpleMOC, we recommend that you
+	download from our git repository. This can be accomplished via
+	cloning the repository from the command line, or by downloading a zip
+	from our github page.
+
+	Git Repository Clone:
+		
+		Use the following command to clone SimpleMOC to your machine:
+
+		>$ git clone https://github.com/ANL-CESAR/SimpleMOC.git
+
+		Once cloned, you can update the code to the newest version
+		using the following command (when in the SimpleMOC directory):
+
+		>$ git pull
+
+Compilation-------------------------------------------------------------------
+
+	To compile XSBench with default (serial mode) settings, use the following
+	command:
+
+	>$ make
+
+	To enable shared memory (OpenMP) or distributed memory (MPI) paralleism,
+	set the OpenMP and/or MPI flags to "yes" in the makefile before building.
+	See below for more details regarding advanced compilation options.
+
+Running SimpleMOC-------------------------------------------------------------
+
+	To run SimpleMOC with default settings, use the following command:
+
+	>$ ./SimpleMOC
+
+	For non-default settings, SimpleMOC supports the following command line
+	options:	
+
+	Usage: ./SimpleMOC <options>
+	Options include:
+	  -t <threads>     Number of OpenMP threads to run
+	  -i <filename>    Input file name with customized parameters.
+	Default (no arguments given) runs a small model using baked-in parameters.
+
+==============================================================================
+Advanced Compilation, Debugging, Optimization, and Profiling
+==============================================================================
+
+There are a number of switches that can be set at the top of the makefile
+to enable MPI and OpenMP parallelism, along with more advanced compilation
+features.
+
+Here is a sample of the control panel at the top of the makefile:
+
+COMPILER    = gnu
+MPI         = no
+OPENMP      = no
+OPTIMIZE    = yes
+DEBUG       = no
+PROFILE     = no
+PAPI        = no
+
+Explanation of Flags:
+
+COMPILER <gnu, intel, ibm> - This selects your compiler.
+
+MPI - Enables MPI support in the code. Distribution of the reactor domain
+      accross ranks should be set in the input file.
+
+OpenMP - Enables OpenMP support in the code. By default, the code will
+         run using the maximum number of threads on the system, unless
+         otherwise specified with the "-t" command line argument.
+
+OPTIMIZE - Adds compiler optimization flag "-O3".
+
+DEBUG - Adds the compiler flag "-g".
+
+PROFILE - Adds the compiler flag "-pg".
+
+PAPI - Enables PAPI support in the code. You may need to alter the makefile
+       or your environment to ensure proper linking with the PAPI library.
+       See PAPI section below for more details.
+
 ===============================================================================
-Strawman Reactor Defintion
+SimpleMOC Strawman Reactor Defintion
 ===============================================================================
 
 For the purposes of simplicity this mini-app uses a conservative "strawman"
@@ -42,57 +129,36 @@ user-defined geometries are not supported.
 
 The reactor model used by this application is detailed as follows:
 
-Fuel Pin:
-	- Composed of 10 radial rings, representing materials similar to physical
-	  geometry (i.e., fuel, He gap, cladding, water). Slices are taken
-	  as volumetrically equal for the purposes of simplicity.
-	- This represents an extremely conservative model with hundreds of fuel
-	  nuclides in all pins (i.e., not fresh fuel).
-
-Assembly:
-	- 17 x 17 lattice cells, each containing a fuel pin surrounded by
-	  borated water.
-
-Reactor:
-	- The assemblies are arranged in a rectangular shape, as defined by
-	  the user. 
-
 ===============================================================================
 Input Variables
 ===============================================================================
 
-x_assemblies
-	Number of assemblies in the x-axis of the reactor
+By default, the program will run with a conservatively small set of inputs
+so that at most ~900MB of memory is used on a node.
 
-y_assemblies
-	Number of assemblies in the y-axis of the reactor
+Custom inputs can be defined via input file using the "-i" command line
+argument.
 
-cai
-	This is the number of course axial intervals
+A sample input file is given in "default.in". The variables the user can
+define are given below:
 
-fai
-	This is the number of fine axial intervals per course axial interval
+x_assemblies   : Number of assemblies in the x-axis of the reactor
+y_assemblies   : Number of assemblies in the y-axis of the reactor
+cai            : Number of coarse axial intervals
+fai            : Number of fine axial intervals per coarse  axial interval
+axial_exp      : Axial source expansion order
+radial_ray_sep :  Radial ray separation
+axial_z_sep    :  Axial stacked z-ray separation
+n_azimuthal    :  Number of azimuthal angles (should be 32)
+n_polar_angles :  Number of polar angles
+n_egroups      :  Number of energy groups
+decompose      : Turn decomposition on/off (true = 1, flase = 0) 
+decomp_assemblies_ax : Number of assemblies per sub-domain (axially) 
+segments_per_track : Average number of segments per track
+assembly_width : Width of an assembly - 1.26 x 17 cm
+height         : Height of the reactor
+precision      : precision for source convergence
+n_2D_source_regions_per_assembly : 2D src regions per assembly 
+papi_event_set : PAPI Event Set Choice 
 
-axial_exp
-	Axial source expansion order
-
-radial_ray_sep
-	Radial ray separation
-
-axial_z_sep
-	Axial stacked z-ray separation
-
-n_azimuthal
-	Number of azimuthal angles
-
-n_polar_angles
-	Number of polar angles
-
-n_egroups
-	Number of energy groups
-
-decompose
-	Turn decomposition on/off
-
-decomp_assemblies_ax
-	Number of assemblies per sub-domain (axially)
+===============================================================================

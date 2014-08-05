@@ -157,6 +157,7 @@ void print_CLI_error(void)
 	printf("Usage: ./SimpleMOC <options>\n");
 	printf("Options include:\n");
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
+	printf("  -i <filename>    Input file name\n");
 	printf("See readme for full description of default run values\n");
 	exit(1);
 }
