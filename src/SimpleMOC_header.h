@@ -149,6 +149,7 @@ typedef struct{
 	float * tau;
 	float * sigT2;
 	float * expVal;
+	float * flux_integral;
 } AttenuateVars;
 
 

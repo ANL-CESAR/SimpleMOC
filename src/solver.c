@@ -11,6 +11,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	float * tau = A.tau;
 	float * sigT2 = A.sigT2;
 	float * expVal = A.expVal;
+	float * flux_integral = A.flux_integral;
 
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -115,16 +116,24 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
-		float flux_integral = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g])
+		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g])
 			/ sigT2[g]
 			+ q1[g] * mu * (tau[g] * (tau[g] - 2) + 2 * expVal[g])
 			/ (sigT[g] * sigT2[g])
 			+ q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3) + 6) - 6 * expVal[g])
 			/ (3 * sigT2[g] * sigT2[g]);
-
+	}
+	
+	#pragma omp simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
 		#pragma omp atomic
-		FSR_flux[g] += weight * flux_integral;
+		FSR_flux[g] += weight * flux_integral[g];
+	}
 
+	#pragma omp simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
 		// update angular flux
 		track->psi[g] = track->psi[g] * (1.0 - expVal[g]) + q0[g] * expVal[g] / sigT[g]
 			+ q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 *
@@ -180,6 +189,7 @@ void transport_sweep( Params params, Input I )
 		A.tau = (float *) malloc( I.n_egroups * sizeof(float));
 		A.sigT2 = (float *) malloc( I.n_egroups * sizeof(float));
 		A.expVal = (float *) malloc( I.n_egroups * sizeof(float));
+		A.flux_integral = (float *) malloc( I.n_egroups * sizeof(float));
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < I.ntracks_2D; i++)
