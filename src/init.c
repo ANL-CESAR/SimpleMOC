@@ -183,3 +183,19 @@ CommGrid init_mpi_grid( Input I )
 
 	return grid;
 }
+
+#ifdef OPENMP
+// Intialized OpenMP Source Region Locks
+omp_lock_t * init_locks( Input I )
+{
+	// Allocate locks array
+	long n_locks = I.n_source_regions_per_node * I.cai; 
+	omp_lock_t * locks = (omp_lock_t *) malloc( n_locks* sizeof(omp_lock_t));
+	
+	// Initialize locks array
+	for( long i = 0; i < n_locks; i++ )
+		omp_init_lock(&locks[i]);
+
+	return locks;
+}	
+#endif

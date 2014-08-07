@@ -127,13 +127,19 @@ void attenuate_fluxes( Track * restrict track, Source * restrict QSR, Input I,
 		tally[g] = weight * flux_integral[g];
 	}
 
+	#ifdef OPENMP
+	omp_set_lock(QSR->locks + fine_id);
+	#endif
+
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		float tmp = tally[g];
-		#pragma omp atomic
-		FSR_flux[g] += tmp;
+		FSR_flux[g] += tally[g];
 	}
+
+	#ifdef OPENMP
+	omp_unset_lock(QSR->locks + fine_id);
+	#endif
 
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)

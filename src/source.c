@@ -171,6 +171,12 @@ Source * initialize_sources( Input I, size_t * nbytes )
 			sigT[i][k] = urand();
 
 	///////////////////////////////////////////////////////////////////////////
+	//
+	
+	#ifdef OPENMP
+	omp_lock_t * locks = init_locks(I);
+	long lock_idx = 0;
+	#endif
 
 	// Assign to source regions
 	for( long i = 0; i < I.n_source_regions_per_node; i++ )
@@ -189,6 +195,11 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 		// initialize FSR volume
 		sources[i].vol = urand();
+
+		#ifdef OPENMP
+		sources[i].locks = &locks[lock_idx];
+		lock_idx += I.cai;
+		#endif
 	}
 
 	// free memory of temporary variables

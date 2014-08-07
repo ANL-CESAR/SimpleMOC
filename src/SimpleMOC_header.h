@@ -101,6 +101,9 @@ typedef struct{
 	float * sigT;
 	float ** XS;
 	float ** scattering_matrix;
+	#ifdef OPENMP
+	omp_lock_t * locks;
+	#endif
 } Source;
 
 // Table structure for computing exponential
@@ -159,6 +162,9 @@ Input set_default_input( void );
 Params build_tracks( Input I );
 CommGrid init_mpi_grid( Input I );
 void calculate_derived_inputs( Input * I );
+#ifdef OPENMP
+omp_lock_t * init_locks( Input I );
+#endif
 
 // io.c
 void logo(int version);
