@@ -197,7 +197,7 @@ void free_sources( Input I, Source * sources );
 void transport_sweep( Params params, Input I );
 int get_pos_interval( float z, float dz);
 int get_neg_interval( float z, float dz);
-void attenuate_fluxes( Track * track, Source * QSR, Input I, 
+void attenuate_fluxes( Track * restrict track, Source * restrict QSR, Input I, 
 		Params params, float ds, float mu, float az_weight, AttenuateVars A ); 
 void renormalize_flux( Params params, Input I, CommGrid grid );
 float update_sources( Params params, Input I, float keff );

@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER    = intel
+COMPILER    = gnu
 MPI         = no
 OPENMP      = yes
 OPTIMIZE    = yes
@@ -56,7 +56,7 @@ ifeq ($(MACHINE),bluegene)
 endif
 
 # Standard Flags
-CFLAGS := -std=gnu99
+CFLAGS := -std=gnu99 -ftree-vectorizer-verbose=1
 
 # Linker Flags
 LDFLAGS = -lm
