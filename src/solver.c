@@ -32,6 +32,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	if( fine_id == 0 )
 	{
 		// cycle over energy groups
+		#pragma omp simd
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -51,6 +52,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	else if ( fine_id == I.fai - 1 )
 	{
 		// cycle over energy groups
+		#pragma omp simd
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -70,6 +72,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	else
 	{
 		// cycle over energy groups
+		#pragma omp simd
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -91,6 +94,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 
 
 	// cycle over energy groups
+	#pragma omp simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
@@ -102,10 +106,12 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	}
 
 	// cycle over energy groups
+	#pragma omp simd
 	for( int g = 0; g < I.n_egroups; g++)
 		expVal[g] = interpolateTable( params.expTable, tau[g] );  
 
 	// cycle over energy groups
+	#pragma omp simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
