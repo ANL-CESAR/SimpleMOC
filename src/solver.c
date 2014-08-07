@@ -1,8 +1,17 @@
 #include"SimpleMOC_header.h"
 
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, float ds, float mu, float az_weight ) 
+		Params params, float ds, float mu, float az_weight, AttenuateVars A ) 
 {
+	// unload attenuate vars
+	float * q0 = A.q0;
+	float * q1 = A.q1;
+	float * q2 = A.q2;
+	float * sigT = A.sigT;
+	float * tau = A.tau;
+	float * sigT2 = A.sigT2;
+	float * expVal = A.expVal;
+
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
 
@@ -19,10 +28,6 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 
 	// load fine source region flux vector
 	float * FSR_flux = QSR -> fine_flux[fine_id];
-
-	float q0[100];
-	float q1[100];
-	float q2[100];
 
 	if( fine_id == 0 )
 	{
@@ -84,9 +89,6 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		}
 	}
 
-	float sigT[100];
-	float tau[100];
-	float sigT2[100];
 
 	// cycle over energy groups
 	for( int g = 0; g < I.n_egroups; g++)
@@ -99,7 +101,6 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		sigT2[g] = sigT[g] * sigT[g];
 	}
 
-	float expVal[100];
 	// cycle over energy groups
 	for( int g = 0; g < I.n_egroups; g++)
 		expVal[g] = interpolateTable( params.expTable, tau[g] );  
@@ -164,6 +165,15 @@ void transport_sweep( Params params, Input I )
 			counter_init(&eventset, &num_papi_events, I);
 		}
 		#endif
+
+		AttenuateVars A;
+		A.q0 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.q1 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.q2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.sigT = (float *) malloc( I.n_egroups * sizeof(float));
+		A.tau = (float *) malloc( I.n_egroups * sizeof(float));
+		A.sigT2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.expVal = (float *) malloc( I.n_egroups * sizeof(float));
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < I.ntracks_2D; i++)
@@ -303,7 +313,7 @@ void transport_sweep( Params params, Input I )
 							 * over FSR */
 							attenuate_fluxes( track, &params.sources[QSR_id], 
 									I, params, ds, mu, 
-									params.tracks_2D[i].az_weight );
+									params.tracks_2D[i].az_weight, A );
 
 							// update with new z height or reset if finished
 							if( n == params.tracks_2D[i].n_segments - 1  
