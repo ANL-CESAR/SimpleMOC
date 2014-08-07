@@ -185,6 +185,8 @@ int get_pos_interval( float z, float dz);
 int get_neg_interval( float z, float dz);
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
 		Params params, float ds, float mu, float az_weight ); 
+void alt_attenuate_fluxes( Track * track, Source * QSR, Input I, 
+		Params params, float ds, float mu, float az_weight ); 
 void renormalize_flux( Params params, Input I, CommGrid grid );
 float update_sources( Params params, Input I, float keff );
 float compute_keff( Params params, Input I, CommGrid grid);
