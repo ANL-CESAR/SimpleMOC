@@ -119,10 +119,10 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 		// add contribution to new source flux
 		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g])
 			/ sigT2[g]
-			+ q1[g] * mu * (tau[g] * (tau[g] - 2) + 2 * expVal[g])
+			+ q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g])
 			/ (sigT[g] * sigT2[g])
-			+ q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3) + 6) - 6 * expVal[g])
-			/ (3 * sigT2[g] * sigT2[g]);
+			+ q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g])
+			/ (3.f * sigT2[g] * sigT2[g]);
 
 	}
 	
@@ -144,9 +144,9 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// update angular flux
-		track->psi[g] = track->psi[g] * (1.0 - expVal[g]) + q0[g] * expVal[g] / sigT[g]
+		track->psi[g] = track->psi[g] * (1.f - expVal[g]) + q0[g] * expVal[g] / sigT[g]
 			+ q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 *
-			(tau[g] * (tau[g] - 2) + 2 * expVal[g]) / (sigT2[g] * sigT[g]);
+			(tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
 	}
 }	
 
