@@ -20,17 +20,14 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	// load fine source region flux vector
 	float * FSR_flux = QSR -> fine_flux[fine_id];
 
-	// cycle over energy groups
-	for( int g = 0; g < I.n_egroups; g++)
+	float q0[100];
+	float q1[100];
+	float q2[100];
+
+	if( fine_id == 0 )
 	{
-		// load total cross section
-		float sigT = QSR->sigT[g];
-
-		// define source parameters
-		float q0, q1, q2;
-
-		// calculate source components
-		if( fine_id == 0 )
+		// cycle over energy groups
+		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
 			float y2 = QSR->fine_source[fine_id][g];
@@ -41,11 +38,15 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 			float c1 = (y3 - y2) / dz;
 
 			// calculate q0, q1, q2
-			q0 = c0 + c1*zin;
-			q1 = c1;
-			q2 = 0;
+			q0[g] = c0 + c1*zin;
+			q1[g] = c1;
+			q2[g] = 0;
 		}
-		else if( fine_id == I.fai - 1 )
+	}
+	else if ( fine_id == I.fai - 1 )
+	{
+		// cycle over energy groups
+		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
 			float y1 = QSR->fine_source[fine_id-1][g];
@@ -56,11 +57,15 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 			float c1 = (y2 - y1) / dz;
 
 			// calculate q0, q1, q2
-			q0 = c0 + c1*zin;
-			q1 = c1;
-			q2 = 0;
-		}		
-		else
+			q0[g] = c0 + c1*zin;
+			q1[g] = c1;
+			q2[g] = 0;
+		}
+	}
+	else
+	{
+		// cycle over energy groups
+		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
 			float y1 = QSR->fine_source[fine_id-1][g];
@@ -73,33 +78,50 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 			float c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
 
 			// calculate q0, q1, q2
-			q0 = c0 + c1*zin + c2*zin*zin;
-			q1 = c1 + 2*c2*zin;
-			q2 = c2;
+			q0[g] = c0 + c1*zin + c2*zin*zin;
+			q1[g] = c1 + 2*c2*zin;
+			q2[g] = c2;
 		}
+	}
+
+	float sigT[100];
+	float tau[100];
+	float sigT2[100];
+
+	// cycle over energy groups
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		// load total cross section
+		sigT[g] = QSR->sigT[g];
 
 		// calculate common values for efficiency
-		float tau = sigT * ds;
-		float sigT2 = sigT * sigT;
+		tau[g] = sigT[g] * ds;
+		sigT2[g] = sigT[g] * sigT[g];
+	}
 
-		// compute exponential ( 1 - exp(-x) ) using table lookup
-		float expVal = interpolateTable( params.expTable, tau );  
+	float expVal[100];
+	// cycle over energy groups
+	for( int g = 0; g < I.n_egroups; g++)
+		expVal[g] = interpolateTable( params.expTable, tau[g] );  
 
+	// cycle over energy groups
+	for( int g = 0; g < I.n_egroups; g++)
+	{
 		// add contribution to new source flux
-		float flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
-			/ sigT2
-			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
-			/ (sigT * sigT2)
-			+ q2 * mu2 * (tau * (tau * (tau - 3) + 6) - 6 * expVal)
-			/ (3 * sigT2 * sigT2);
+		float flux_integral = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g])
+			/ sigT2[g]
+			+ q1[g] * mu * (tau[g] * (tau[g] - 2) + 2 * expVal[g])
+			/ (sigT[g] * sigT2[g])
+			+ q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3) + 6) - 6 * expVal[g])
+			/ (3 * sigT2[g] * sigT2[g]);
 
 		#pragma omp atomic
 		FSR_flux[g] += weight * flux_integral;
 
 		// update angular flux
-		track->psi[g] = track->psi[g] * (1.0 - expVal) + q0 * expVal / sigT
-			+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
-			(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
+		track->psi[g] = track->psi[g] * (1.0 - expVal[g]) + q0[g] * expVal[g] / sigT[g]
+			+ q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 *
+			(tau[g] * (tau[g] - 2) + 2 * expVal[g]) / (sigT2[g] * sigT[g]);
 	}
 }	
 
@@ -133,14 +155,14 @@ void transport_sweep( Params params, Input I )
 		int nthreads = omp_get_num_threads();
 		unsigned int seed = time(NULL) * (thread+1);
 		#endif
-		
+
 		#ifdef PAPI
-        int eventset = PAPI_NULL;
-        int num_papi_events;
-        #pragma omp critical
-        {
-            counter_init(&eventset, &num_papi_events, I);
-        }
+		int eventset = PAPI_NULL;
+		int num_papi_events;
+		#pragma omp critical
+		{
+			counter_init(&eventset, &num_papi_events, I);
+		}
 		#endif
 
 		#pragma omp for schedule( dynamic ) 
@@ -150,9 +172,9 @@ void transport_sweep( Params params, Input I )
 			#ifdef OPENMP
 			if(I.mype==0 && thread == 0)
 			{
-	            printf("\rAttenuating Tracks... (%.0lf%% completed)",
-					(i / ( (double)I.ntracks_2D / (double) nthreads ))
-					/ (double) nthreads * 100.0);
+				printf("\rAttenuating Tracks... (%.0lf%% completed)",
+						(i / ( (double)I.ntracks_2D / (double) nthreads ))
+						/ (double) nthreads * 100.0);
 			}
 			#else
 			if( i % 50 == 0)
@@ -197,10 +219,10 @@ void transport_sweep( Params params, Input I )
 						int curr_interval;
 						if( pos_z_dir)
 							curr_interval = get_pos_interval(track->z_height, 
-								fine_delta_z);
+									fine_delta_z);
 						else
 							curr_interval = get_neg_interval(track->z_height, 
-								fine_delta_z);
+									fine_delta_z);
 
 						while( !seg_complete )
 						{
@@ -215,7 +237,7 @@ void transport_sweep( Params params, Input I )
 							int new_interval;
 							if( pos_z_dir )
 								new_interval = get_pos_interval(z, 
-									fine_delta_z);
+										fine_delta_z);
 							else
 								new_interval = get_neg_interval(z,
 										fine_delta_z);
@@ -303,21 +325,21 @@ void transport_sweep( Params params, Input I )
 		#ifdef OPENMP
 		if(thread == 0 && I.mype==0) printf("\n");
 		#endif
-		
+
 		#ifdef PAPI
-        if( thread == 0 )
-        {
-            printf("\n");
-            border_print();
-            center_print("PAPI COUNTER RESULTS", 79);
-            border_print();
-            printf("Count          \tSmybol      \tDescription\n");
-        }
-        {
-        #pragma omp barrier
-        }
-        counter_stop(&eventset, num_papi_events, I);
-        #endif
+		if( thread == 0 )
+		{
+			printf("\n");
+			border_print();
+			center_print("PAPI COUNTER RESULTS", 79);
+			border_print();
+			printf("Count          \tSmybol      \tDescription\n");
+		}
+		{
+			#pragma omp barrier
+		}
+		counter_stop(&eventset, num_papi_events, I);
+		#endif
 	}
 
 	return;
