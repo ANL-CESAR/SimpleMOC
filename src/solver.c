@@ -12,6 +12,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	float * sigT2 = A.sigT2;
 	float * expVal = A.expVal;
 	float * flux_integral = A.flux_integral;
+	float * tally = A.tally;
 
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -33,7 +34,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	if( fine_id == 0 )
 	{
 		// cycle over energy groups
-		#pragma omp simd
+		#pragma simd
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -53,7 +54,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	else if ( fine_id == I.fai - 1 )
 	{
 		// cycle over energy groups
-		#pragma omp simd
+		#pragma simd
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -73,7 +74,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	else
 	{
 		// cycle over energy groups
-		#pragma omp simd
+		#pragma simd
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -95,7 +96,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 
 
 	// cycle over energy groups
-	#pragma omp simd
+	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
@@ -107,12 +108,12 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	}
 
 	// cycle over energy groups
-	#pragma omp simd
+	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 		expVal[g] = interpolateTable( params.expTable, tau[g] );  
 
 	// cycle over energy groups
-	#pragma omp simd
+	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
@@ -122,16 +123,24 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 			/ (sigT[g] * sigT2[g])
 			+ q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3) + 6) - 6 * expVal[g])
 			/ (3 * sigT2[g] * sigT2[g]);
+
 	}
 	
-	#pragma omp simd
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		// Prepare tally
+		tally[g] = weight * flux_integral[g];
+	}
+
+	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		#pragma omp atomic
-		FSR_flux[g] += weight * flux_integral[g];
+		FSR_flux[g] += tally[g];
 	}
 
-	#pragma omp simd
+	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// update angular flux
@@ -141,6 +150,22 @@ void attenuate_fluxes( Track * track, Source * QSR, Input I,
 	}
 }	
 
+/* Interpolates a formed exponential table to compute ( 1- exp(-x) )
+ *  at the desired x value */
+float interpolateTable( Table table, float x)
+{
+	// check to ensure value is in domain
+	if( x > table.maxVal )
+		return 1.0;
+	else
+	{
+		int interval = (int) ( x / table.dx + 0.5 * table.dx );
+		float slope = table.values[ 2 * interval ];
+		float intercept = table.values[ 2 * interval + 1 ];
+		float val = slope * x + intercept;
+		return val;
+	}
+}
 // run one full transport sweep, return k
 void transport_sweep( Params params, Input I )
 {
@@ -190,6 +215,7 @@ void transport_sweep( Params params, Input I )
 		A.sigT2 = (float *) malloc( I.n_egroups * sizeof(float));
 		A.expVal = (float *) malloc( I.n_egroups * sizeof(float));
 		A.flux_integral = (float *) malloc( I.n_egroups * sizeof(float));
+		A.tally = (float *) malloc( I.n_egroups * sizeof(float));
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < I.ntracks_2D; i++)

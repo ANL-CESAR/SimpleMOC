@@ -76,22 +76,6 @@ Table buildExponentialTable( float precision, float maxVal )
 	return table;
 }
 
-/* Interpolates a formed exponential table to compute ( 1- exp(-x) )
- *  at the desired x value */
-float interpolateTable( Table table, float x)
-{
-	// check to ensure value is in domain
-	if( x > table.maxVal )
-		return 1.0;
-	else
-	{
-		int interval = (int) ( x / table.dx + 0.5 * table.dx );
-		float slope = table.values[ 2 * interval ];
-		float intercept = table.values[ 2 * interval + 1 ];
-		float val = slope * x + intercept;
-		return val;
-	}
-}
 
 // Timer function. Depends on if compiled with MPI, openmp, or vanilla
 double get_time(void)
