@@ -129,8 +129,8 @@ void transport_sweep( Params params, Input I )
 								// correct z
 								if( pos_z_dir )
 								{
-									z = fine_delta_z * (float) curr_interval;
 									curr_interval++;
+									z = fine_delta_z * (float) curr_interval;
 								}
 								else{
 									curr_interval--;
