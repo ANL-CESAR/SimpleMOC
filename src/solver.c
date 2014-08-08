@@ -75,7 +75,7 @@ void transport_sweep( Params params, Input I )
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
-					float s = params.tracks_2D[i].segments[n].length 
+					float s_full = params.tracks_2D[i].segments[n].length 
 						/ sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
@@ -84,6 +84,9 @@ void transport_sweep( Params params, Input I )
 					// loop over remaining z-stacked rays
 					for( int k = begin_stacked; k < end_stacked; k++)
 					{
+						// initialize s to full length
+						float s = s_full;
+
 						// select current track
 						Track * track = &params.tracks[i][j][k];
 

@@ -108,6 +108,7 @@ typedef struct{
 	float * values;
 	float dx;
 	float maxVal;
+	int N;
 } Table;
 
 // Params Structure for easier data pointer passing
