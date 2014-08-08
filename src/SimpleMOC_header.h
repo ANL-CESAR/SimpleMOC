@@ -58,6 +58,14 @@ typedef struct{
 
 	// Source regions per node (derived)	
 	long n_source_regions_per_node; 
+
+    #ifdef PAPI
+    // String for command line PAPI event
+    char event_name[PAPI_MAX_STR_LEN]; 
+    // Array to accumulate PAPI counts across all threads
+    long long *vals_accum;
+    #endif
+
 } Input;
 
 // Localized geometrical region ID
@@ -197,7 +205,7 @@ void gen_norm_pts(float mean, float sigma, int n_pts);
 // papi.c
 void papi_serial_init(void);
 void counter_init( int *eventset, int *num_papi_events, Input I );
-void counter_stop( int * eventset, int num_papi_events, Input I );
+void counter_stop( int * eventset, int num_papi_events, Input * I );
 
 // comms.c
 #ifdef MPI

@@ -213,7 +213,7 @@ void transport_sweep( Params params, Input I )
         {
         #pragma omp barrier
         }
-        counter_stop(&eventset, num_papi_events, I);
+        counter_stop(&eventset, num_papi_events, &I);
         #endif
 	}
 
