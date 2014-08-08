@@ -4,7 +4,7 @@
 
 COMPILER    = intel
 MPI         = no
-OPENMP      = no
+OPENMP      = yes
 OPTIMIZE    = yes
 DEBUG       = yes
 PROFILE     = no
