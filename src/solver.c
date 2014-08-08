@@ -1,5 +1,212 @@
 #include"SimpleMOC_header.h"
 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, 
+		Params params, float ds, float mu, float az_weight, AttenuateVars A ) 
+{
+	// unload attenuate vars
+	float * q0 = A.q0;
+	float * q1 = A.q1;
+	float * q2 = A.q2;
+	float * sigT = A.sigT;
+	float * tau = A.tau;
+	float * sigT2 = A.sigT2;
+	float * expVal = A.expVal;
+	float * flux_integral = A.flux_integral;
+	float * tally = A.tally;
+	float * t1 = A.t1;
+	float * t2 = A.t2;
+	float * t3 = A.t3;
+	float * f1 = A.f1;
+	float * f2 = A.f2;
+	float * f3 = A.f3;
+
+	// compute fine axial interval spacing
+	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+
+	// compute fine axial region ID
+	int fine_id = (int) ( I.height / dz ) % I.cai;
+
+	// compute z height in cell
+	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
+
+	// compute weight (azimuthal * polar)
+	// NOTE: real app would also have volume weight component
+	float weight = track->p_weight * az_weight;
+	float mu2 = mu * mu;
+
+	// load fine source region flux vector
+	float * FSR_flux = QSR -> fine_flux[fine_id];
+
+	if( fine_id == 0 )
+	{
+		// cycle over energy groups
+		#pragma simd
+		for( int g = 0; g < I.n_egroups; g++)
+		{
+			// load neighboring sources
+			float y2 = QSR->fine_source[fine_id][g];
+			float y3 = QSR->fine_source[fine_id+1][g];
+
+			// do linear "fitting"
+			float c0 = y2;
+			float c1 = (y3 - y2) / dz;
+
+			// calculate q0, q1, q2
+			q0[g] = c0 + c1*zin;
+			q1[g] = c1;
+			q2[g] = 0;
+		}
+	}
+	else if ( fine_id == I.fai - 1 )
+	{
+		// cycle over energy groups
+		#pragma simd
+		for( int g = 0; g < I.n_egroups; g++)
+		{
+			// load neighboring sources
+			float y1 = QSR->fine_source[fine_id-1][g];
+			float y2 = QSR->fine_source[fine_id][g];
+
+			// do linear "fitting"
+			float c0 = y2;
+			float c1 = (y2 - y1) / dz;
+
+			// calculate q0, q1, q2
+			q0[g] = c0 + c1*zin;
+			q1[g] = c1;
+			q2[g] = 0;
+		}
+	}
+	else
+	{
+		// cycle over energy groups
+		#pragma simd
+		for( int g = 0; g < I.n_egroups; g++)
+		{
+			// load neighboring sources
+			float y1 = QSR->fine_source[fine_id-1][g];
+			float y2 = QSR->fine_source[fine_id][g];
+			float y3 = QSR->fine_source[fine_id+1][g];
+
+			// do quadratic "fitting"
+			float c0 = y2;
+			float c1 = (y1 - y3) / (2*dz);
+			float c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
+
+			// calculate q0, q1, q2
+			q0[g] = c0 + c1*zin + c2*zin*zin;
+			q1[g] = c1 + 2*c2*zin;
+			q2[g] = c2;
+		}
+	}
+
+
+	// cycle over energy groups
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		// load total cross section
+		sigT[g] = QSR->sigT[g];
+
+		// calculate common values for efficiency
+		tau[g] = sigT[g] * ds;
+		sigT2[g] = sigT[g] * sigT[g];
+	}
+
+	// cycle over energy groups
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+		expVal[g] = interpolateTable( params.expTable, tau[g] );  
+
+	// Flux Integral
+	
+	// Term 1
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		f1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
+	}
+	// Term 2
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		f2[g] = q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]); 
+	}
+	// Term 3
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		f3[g] = q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
+	}
+	// Total
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		flux_integral[g] = f1[g] + f2[g] + f3[g];
+	}
+
+	/*
+	   #pragma simd
+	   for( int g = 0; g < I.n_egroups; g++)
+	   {
+	// add contribution to new source flux
+	flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]) + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
+	}
+	*/
+
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		// Prepare tally
+		tally[g] = weight * flux_integral[g];
+	}
+
+	#ifdef OPENMP
+	omp_set_lock(QSR->locks + fine_id);
+	#endif
+
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		FSR_flux[g] += tally[g];
+	}
+
+	#ifdef OPENMP
+	omp_unset_lock(QSR->locks + fine_id);
+	#endif
+
+
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t1[g] = q0[g] * expVal[g] / sigT[g]; 
+	}
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t2[g] = q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g]; 
+	}
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t3[g] =	q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
+	}
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		track->psi[g] = track->psi[g] * (1.f - expVal[g]) + t1[g] + t2[g] + t3[g];
+	}
+
+	/*
+	   #pragma simd
+	   for( int g = 0; g < I.n_egroups; g++)
+	   {
+	// update angular flux
+	track->psi[g] = track->psi[g] * (1.f - expVal[g]) + q0[g] * expVal[g] / sigT[g] + q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
+	}
+	*/
+}	
+
 // run one full transport sweep, return k
 void transport_sweep( Params params, Input I )
 {
@@ -30,15 +237,32 @@ void transport_sweep( Params params, Input I )
 		int nthreads = omp_get_num_threads();
 		unsigned int seed = time(NULL) * (thread+1);
 		#endif
-		
+
 		#ifdef PAPI
-        int eventset = PAPI_NULL;
-        int num_papi_events;
-        #pragma omp critical
-        {
-            counter_init(&eventset, &num_papi_events, I);
-        }
+		int eventset = PAPI_NULL;
+		int num_papi_events;
+		#pragma omp critical
+		{
+			counter_init(&eventset, &num_papi_events, I);
+		}
 		#endif
+
+		AttenuateVars A;
+		A.q0 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.q1 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.q2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.sigT = (float *) malloc( I.n_egroups * sizeof(float));
+		A.tau = (float *) malloc( I.n_egroups * sizeof(float));
+		A.sigT2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.expVal = (float *) malloc( I.n_egroups * sizeof(float));
+		A.flux_integral = (float *) malloc( I.n_egroups * sizeof(float));
+		A.tally = (float *) malloc( I.n_egroups * sizeof(float));
+		A.t1 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.t2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.t3 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.f1 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.f2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.f3 = (float *) malloc( I.n_egroups * sizeof(float));
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < I.ntracks_2D; i++)
@@ -47,9 +271,9 @@ void transport_sweep( Params params, Input I )
 			#ifdef OPENMP
 			if(I.mype==0 && thread == 0)
 			{
-	            printf("\rAttenuating Tracks... (%.0lf%% completed)",
-					(i / ( (double)I.ntracks_2D / (double) nthreads ))
-					/ (double) nthreads * 100.0);
+				printf("\rAttenuating Tracks... (%.0lf%% completed)",
+						(i / ( (double)I.ntracks_2D / (double) nthreads ))
+						/ (double) nthreads * 100.0);
 			}
 			#else
 			if( i % 50 == 0)
@@ -79,7 +303,7 @@ void transport_sweep( Params params, Input I )
 						/ sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
-					float ds;
+					float ds = 0;
 
 					// loop over remaining z-stacked rays
 					for( int k = begin_stacked; k < end_stacked; k++)
@@ -97,10 +321,10 @@ void transport_sweep( Params params, Input I )
 						int curr_interval;
 						if( pos_z_dir)
 							curr_interval = get_pos_interval(track->z_height, 
-								fine_delta_z);
+									fine_delta_z);
 						else
 							curr_interval = get_neg_interval(track->z_height, 
-								fine_delta_z);
+									fine_delta_z);
 
 						while( !seg_complete )
 						{
@@ -115,7 +339,7 @@ void transport_sweep( Params params, Input I )
 							int new_interval;
 							if( pos_z_dir )
 								new_interval = get_pos_interval(z, 
-									fine_delta_z);
+										fine_delta_z);
 							else
 								new_interval = get_neg_interval(z,
 										fine_delta_z);
@@ -142,6 +366,16 @@ void transport_sweep( Params params, Input I )
 
 								// calculate distance travelled in FSR (ds)
 								ds = (z - track->z_height) / cos(p_angle);
+
+								// FIXME
+								if( ds < 0 )
+								{
+									printf("NEGATIVE ds calculated!!");
+									printf("z = %f", z);
+									printf("track->z_height = %f", track->z_height);
+									printf("cos(p_angle) = %f", cos(p_angle));
+								}
+								// FIXME
 
 								// update track length remaining
 								s -= ds;
@@ -179,9 +413,7 @@ void transport_sweep( Params params, Input I )
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							attenuate_fluxes( track, &params.sources[QSR_id], 
-									I, params, ds, mu, 
-									params.tracks_2D[i].az_weight );
+							attenuate_fluxes( track, params.sources +QSR_id, I, params, ds, mu, params.tracks_2D[i].az_weight, A );
 
 							// update with new z height or reset if finished
 							if( n == params.tracks_2D[i].n_segments - 1  
@@ -203,7 +435,7 @@ void transport_sweep( Params params, Input I )
 		#ifdef OPENMP
 		if(thread == 0 && I.mype==0) printf("\n");
 		#endif
-		
+
 		#ifdef PAPI
         if( thread == 0 )
         {
@@ -240,108 +472,6 @@ int get_neg_interval( float z, float dz)
 	return interval;
 }
 
-void attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, float ds, float mu, float az_weight ) 
-{
-	// compute fine axial interval spacing
-	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
-
-	// compute fine axial region ID
-	int fine_id = (int) ( I.height / dz ) % I.cai;
-
-	// compute z height in cell
-	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
-
-	// compute weight (azimuthal * polar)
-	// NOTE: real app would also have volume weight component
-	float weight = track->p_weight * az_weight;
-	float mu2 = mu * mu;
-
-	// load fine source region flux vector
-	float * FSR_flux = QSR -> fine_flux[fine_id];
-
-	// cycle over energy groups
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-		// load total cross section
-		float sigT = QSR->sigT[g];
-
-		// define source parameters
-		float q0, q1, q2;
-
-		// calculate source components
-		if( fine_id == 0 )
-		{
-			// load neighboring sources
-			float y2 = QSR->fine_source[fine_id][g];
-			float y3 = QSR->fine_source[fine_id+1][g];
-
-			// do linear "fitting"
-			float c0 = y2;
-			float c1 = (y3 - y2) / dz;
-
-			// calculate q0, q1, q2
-			q0 = c0 + c1*zin;
-			q1 = c1;
-			q2 = 0;
-		}
-		else if( fine_id == I.fai - 1 )
-		{
-			// load neighboring sources
-			float y1 = QSR->fine_source[fine_id-1][g];
-			float y2 = QSR->fine_source[fine_id][g];
-
-			// do linear "fitting"
-			float c0 = y2;
-			float c1 = (y2 - y1) / dz;
-
-			// calculate q0, q1, q2
-			q0 = c0 + c1*zin;
-			q1 = c1;
-			q2 = 0;
-		}		
-		else
-		{
-			// load neighboring sources
-			float y1 = QSR->fine_source[fine_id-1][g];
-			float y2 = QSR->fine_source[fine_id][g];
-			float y3 = QSR->fine_source[fine_id+1][g];
-
-			// do quadratic "fitting"
-			float c0 = y2;
-			float c1 = (y1 - y3) / (2*dz);
-			float c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
-
-			// calculate q0, q1, q2
-			q0 = c0 + c1*zin + c2*zin*zin;
-			q1 = c1 + 2*c2*zin;
-			q2 = c2;
-		}
-
-		// calculate common values for efficiency
-		float tau = sigT * ds;
-		float sigT2 = sigT * sigT;
-
-		// compute exponential ( 1 - exp(-x) ) using table lookup
-		float expVal = interpolateTable( params.expTable, tau );  
-
-		// add contribution to new source flux
-		float flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
-			/ sigT2
-			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
-			/ (sigT * sigT2)
-			+ q2 * mu2 * (tau * (tau * (tau - 3) + 6) - 6 * expVal)
-			/ (3 * sigT2 * sigT2);
-
-		#pragma omp atomic
-		FSR_flux[g] += weight * flux_integral;
-
-		// update angular flux
-		track->psi[g] = track->psi[g] * (1.0 - expVal) + q0 * expVal / sigT
-			+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
-			(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
-	}
-}	
 
 void alt_attenuate_fluxes( Track * track, Source * QSR, Input I, 
 		Params params, float ds, float mu, float az_weight ) 
@@ -719,4 +849,27 @@ float compute_keff(Params params, Input I, CommGrid grid)
 	return keff;
 }
 
-
+/* Interpolates a formed exponential table to compute ( 1- exp(-x) )
+ *  at the desired x value */
+float interpolateTable( Table table, float x)
+{
+	// check to ensure value is in domain
+	if( x > table.maxVal )
+		return 1.0;
+	else
+	{
+		int interval = (int) ( x / table.dx + 0.5 * table.dx );
+		if( interval >= table.N || interval < 0)
+		{
+			printf( "Interval = %d\n", interval);
+			printf( "N = %d\n", table.N);
+			printf( "x = %f\n", x);
+			printf( "dx = %f\n", table.dx);
+			exit(1);
+		}
+		float slope = table.values[ 2 * interval ];
+		float intercept = table.values[ 2 * interval + 1 ];
+		float val = slope * x + intercept;
+		return val;
+	}
+}

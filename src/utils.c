@@ -57,7 +57,8 @@ Table buildExponentialTable( float precision, float maxVal )
 	float dx = maxVal / (float) N;
 
 	// allocate an array to store information
-	float * tableVals = malloc( 2 * N * sizeof(float) );
+	float * tableVals = malloc( (2 * N + 1) * sizeof(float) );
+	printf("2*n + 1 = %d\n", 2*N+1);
 
 	// store linear segment information (slope and y-intercept)
 	for( int n = 0; n < N; n++ )
@@ -75,31 +76,6 @@ Table buildExponentialTable( float precision, float maxVal )
 	table.N = N;
 
 	return table;
-}
-
-/* Interpolates a formed exponential table to compute ( 1- exp(-x) )
- *  at the desired x value */
-float interpolateTable( Table table, float x)
-{
-	// check to ensure value is in domain
-	if( x > table.maxVal )
-		return 1.0;
-	else
-	{
-		int interval = (int) ( x / table.dx + 0.5 * table.dx );
-		if( interval >= table.N || interval < 0)
-		{
-			printf( "Interval = %d\n", interval);
-			printf( "N = %d\n", table.N);
-			printf( "x = %f\n", x);
-			printf( "dx = %f\n", table.dx);
-			exit(1);
-		}
-		float slope = table.values[ 2 * interval ];
-		float intercept = table.values[ 2 * interval + 1 ];
-		float val = slope * x + intercept;
-		return val;
-	}
 }
 
 // Timer function. Depends on if compiled with MPI, openmp, or vanilla
