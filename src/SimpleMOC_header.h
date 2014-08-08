@@ -109,6 +109,9 @@ typedef struct{
 	float * sigT;
 	float ** XS;
 	float ** scattering_matrix;
+	#ifdef OPENMP
+	omp_lock_t * locks;
+	#endif
 } Source;
 
 // Table structure for computing exponential
@@ -149,11 +152,34 @@ typedef struct{
 	int z_neg_dest;
 } CommGrid;
 
+// Attenuation Arrays
+typedef struct{
+	float * q0;
+	float * q1;
+	float * q2;
+	float * sigT;
+	float * tau;
+	float * sigT2;
+	float * expVal;
+	float * flux_integral;
+	float * tally;
+	float * t1;
+	float * t2;
+	float * t3;
+	float * f1;
+	float * f2;
+	float * f3;
+} AttenuateVars;
+
+
 // init.c
 Input set_default_input( void );
 Params build_tracks( Input I );
 CommGrid init_mpi_grid( Input I );
 void calculate_derived_inputs( Input * I );
+#ifdef OPENMP
+omp_lock_t * init_locks( Input I );
+#endif
 
 // io.c
 void logo(int version);
@@ -193,9 +219,7 @@ void transport_sweep( Params params, Input I );
 int get_pos_interval( float z, float dz);
 int get_neg_interval( float z, float dz);
 void attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, float ds, float mu, float az_weight ); 
-void alt_attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, float ds, float mu, float az_weight ); 
+		Params params, float ds, float mu, float az_weight, AttenuateVars A ); 
 void renormalize_flux( Params params, Input I, CommGrid grid );
 float update_sources( Params params, Input I, float keff );
 float compute_keff( Params params, Input I, CommGrid grid);
