@@ -71,7 +71,7 @@ Table buildExponentialTable( float precision, float maxVal )
 	// assign data to table
 	table.dx = dx;
 	table.values = tableVals;
-	table.maxVal = maxVal;
+	table.maxVal = maxVal - table.dx;
 
 	return table;
 }
