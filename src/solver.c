@@ -657,7 +657,7 @@ float update_sources( Params params, Input I, float keff )
 
 	// allocate residual arrays
 	float * group_res = (float *) malloc(I.n_egroups * sizeof(float));
-	float * fine_res = (float *) malloc(I.n_egroups * sizeof(float));
+	float * fine_res = (float *) malloc(I.fai * sizeof(float));
 	float * residuals = (float *) malloc(I.n_source_regions_per_node 
 			* sizeof(float));
 
