@@ -310,6 +310,16 @@ void transport_sweep( Params params, Input I )
 								// calculate distance travelled in FSR (ds)
 								ds = (z - track->z_height) / cos(p_angle);
 
+								// FIXME
+								if( ds < 0 )
+								{
+									printf("NEGATIVE ds calculated!!");
+									printf("z = %f", z);
+									printf("track->z_height = %f", track->z_height);
+									printf("cos(p_angle) = %f", cos(p_angle));
+								}
+								// FIXME
+
 								// update track length remaining
 								s -= ds;
 
