@@ -57,8 +57,7 @@ Table buildExponentialTable( float precision, float maxVal )
 	float dx = maxVal / (float) N;
 
 	// allocate an array to store information
-	float * tableVals = malloc( (2 * N + 1) * sizeof(float) );
-	printf("2*n + 1 = %d\n", 2*N+1);
+	float * tableVals = malloc( (2 * N ) * sizeof(float) );
 
 	// store linear segment information (slope and y-intercept)
 	for( int n = 0; n < N; n++ )

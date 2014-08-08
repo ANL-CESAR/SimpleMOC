@@ -859,6 +859,7 @@ float interpolateTable( Table table, float x)
 	else
 	{
 		int interval = (int) ( x / table.dx + 0.5 * table.dx );
+		/*
 		if( interval >= table.N || interval < 0)
 		{
 			printf( "Interval = %d\n", interval);
@@ -867,6 +868,7 @@ float interpolateTable( Table table, float x)
 			printf( "dx = %f\n", table.dx);
 			exit(1);
 		}
+		*/
 		float slope = table.values[ 2 * interval ];
 		float intercept = table.values[ 2 * interval + 1 ];
 		float val = slope * x + intercept;
