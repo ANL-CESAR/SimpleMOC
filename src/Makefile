@@ -8,7 +8,7 @@ OPENMP      = no
 OPTIMIZE    = yes
 DEBUG       = yes
 PROFILE     = no
-PAPI        = yes
+PAPI        = no
 BENCHMARK   = no
 
 #===============================================================================
@@ -56,7 +56,7 @@ ifeq ($(MACHINE),bluegene)
 endif
 
 # Standard Flags
-CFLAGS := -std=gnu99 -O0
+CFLAGS := -std=gnu99
 
 # Linker Flags
 LDFLAGS = -lm

@@ -108,8 +108,10 @@ void print_input_summary(Input I)
 	printf("%-35s", "3D Tracks:"); fancy_int(I.ntracks);
 	printf("%-35s%zu (MB)\n", "Estimated Memory Usage:",
 			est_mem_usage(I) / 1024 / 1024);
+	#ifdef PAPI
     if( I.papi_event_set == -1)
         printf("%-35s%s\n", "PAPI event to count:", I.event_name);
+	#endif
 	border_print();
 }
 
