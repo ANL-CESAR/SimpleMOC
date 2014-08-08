@@ -108,6 +108,8 @@ void print_input_summary(Input I)
 	printf("%-35s", "3D Tracks:"); fancy_int(I.ntracks);
 	printf("%-35s%zu (MB)\n", "Estimated Memory Usage:",
 			est_mem_usage(I) / 1024 / 1024);
+    if( I.papi_event_set == -1)
+        printf("%-35s%s\n", "PAPI event to count:", I.event_name);
 	border_print();
 }
 
@@ -141,6 +143,18 @@ void read_CLI( int argc, char * argv[], Input * input )
 			else
 				print_CLI_error();
 		}
+        #ifdef PAPI
+        // Add single PAPI event
+        else if( strcmp(arg, "-p") == 0 )
+        {
+            if( ++i < argc ){
+                input->papi_event_set = -1;
+                strcpy(input->event_name, argv[i]);
+            }
+            else
+                print_CLI_error();
+        }
+        #endif
 		else
 			print_CLI_error();
 	}
@@ -158,6 +172,7 @@ void print_CLI_error(void)
 	printf("Options include:\n");
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -i <filename>    Input file name\n");
+    printf("  -p <PAPI event>  PAPI event name to count (1 only) \n");
 	printf("See readme for full description of default run values\n");
 	exit(1);
 }

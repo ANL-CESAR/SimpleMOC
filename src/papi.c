@@ -17,7 +17,13 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 	int stat;
 
 	int * events;
-
+    
+    // Command line event
+    if( I.papi_event_set == -1){
+        *num_papi_events = 1;
+		events = (int *) malloc( *num_papi_events * sizeof(int));
+        PAPI_event_name_to_code( I.event_name, &events[0]);
+    }
 	// FLOPS
 	if( I.papi_event_set == 0 )
 	{
@@ -371,7 +377,7 @@ printf("Initializing PAPI counters...\n");
  */
 
 // Stops the papi counters and prints results
-void counter_stop( int * eventset, int num_papi_events, Input I )
+void counter_stop( int * eventset, int num_papi_events, Input * I )
 {
 	int * events = malloc(num_papi_events * sizeof(int));
 	int n = num_papi_events;
@@ -379,6 +385,10 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 	PAPI_event_info_t info;
 
 	long_long * values = malloc( num_papi_events * sizeof(long_long));
+    #pragma omp master
+    {
+        I->vals_accum = calloc( num_papi_events, sizeof(long long));
+    }
 	PAPI_stop(*eventset, values);
 	int thread = omp_get_thread_num();
 	int nthreads = omp_get_num_threads();
@@ -400,6 +410,7 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 		printf("Thread %d\n", thread);
 		for( int i = 0; i < num_papi_events; i++ )
 		{
+            I->vals_accum[i] += values[i];
 			PAPI_get_event_info(events[i], &info);
 			printf("%-15lld\t%s\t%s\n", values[i],info.symbol,info.long_descr);
 			if( strcmp(info.symbol, "PAPI_L3_TCM") == 0 )
@@ -433,16 +444,26 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 	}
 	#pragma omp master
 	{
+        if( omp_get_num_threads() > 1){
+            printf("Thread Totals:\n");
+            for( int i = 0; i < num_papi_events; i++ )
+            {
+                PAPI_get_event_info(events[i], &info);
+                printf("%-15lld\t%s\t%s\n", I->vals_accum[i],info.symbol,info.long_descr);
+            }
+        }
+        free( I->vals_accum );
+
 		border_print();
 		center_print("PERFORMANCE SUMMARY", 79);
 		border_print();
 		long cycles = (long) (total_cycles / (double) nthreads);
 		double bw = LLC_cache_miss*64./cycles*2.8e9/1024./1024./1024.;
-		if( I.papi_event_set == 0 )
+		if( I->papi_event_set == 0 )
 			printf("GFLOPs: %.3lf\n", FLOPS / (double) cycles * 2.8  );
-		if( I.papi_event_set == 1 )
+		if( I->papi_event_set == 1 )
 			printf("Bandwidth: %.3lf (GB/s)\n", bw);
-		if( I.papi_event_set == 2 )
+		if( I->papi_event_set == 2 )
 		{
 			printf("%-30s %.2lf%%\n", "Store Buffer Full:",
 					stall_SB / (double) stall_any * 100.);
@@ -451,10 +472,10 @@ void counter_stop( int * eventset, int num_papi_events, Input I )
 			printf("%-30s %.2lf%%\n", "OO Pipeline Full:",
 					stall_OO / (double) stall_any * 100.);
 		}
-		if( I.papi_event_set == 3 )
+		if( I->papi_event_set == 3 )
 			printf("CPU Stalled Cycles: %.2lf%%\n",
 					stall_any / (double) total_cycles * 100.);	
-		if( I.papi_event_set == 7 )
+		if( I->papi_event_set == 7 )
 		{
 			printf("%-30s %.2lf%%\n", "Data TLB Load Miss Rate: ",
 					tlb_load_m / (double) tlb_load * 100 );
