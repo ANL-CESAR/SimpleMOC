@@ -4,8 +4,8 @@
 
 COMPILER    = intel
 MPI         = no
-OPENMP      = yes
-OPTIMIZE    = yes
+OPENMP      = no
+OPTIMIZE    = no
 DEBUG       = yes
 PROFILE     = no
 PAPI        = no
@@ -56,7 +56,7 @@ ifeq ($(MACHINE),bluegene)
 endif
 
 # Standard Flags
-CFLAGS := -std=gnu99
+CFLAGS := -std=gnu99 -O0
 
 # Linker Flags
 LDFLAGS = -lm

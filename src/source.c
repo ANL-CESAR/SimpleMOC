@@ -3,6 +3,7 @@
 Source * initialize_sources( Input I, size_t * nbytes )
 {
 	// Allocate space
+	printf("N source regions per node: %ld\n", I.n_source_regions_per_node);
 	Source * sources = (Source *) malloc( I.n_source_regions_per_node 
 			* sizeof(Source) );
 	*nbytes += I.n_source_regions_per_node * sizeof(Source);
@@ -207,6 +208,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 	free( XS );
 	free( fineFlux );
 	free( fineSource);
+	free( sigT);
 
 	return sources;
 }

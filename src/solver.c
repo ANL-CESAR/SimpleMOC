@@ -1,6 +1,6 @@
 #include"SimpleMOC_header.h"
 
-void attenuate_fluxes( Track * restrict track, Source * restrict QSR, Input I, 
+void attenuate_fluxes( Track * track, Source * QSR, Input I, 
 		Params params, float ds, float mu, float az_weight, AttenuateVars A ) 
 {
 	// unload attenuate vars
@@ -13,6 +13,12 @@ void attenuate_fluxes( Track * restrict track, Source * restrict QSR, Input I,
 	float * expVal = A.expVal;
 	float * flux_integral = A.flux_integral;
 	float * tally = A.tally;
+	float * t1 = A.t1;
+	float * t2 = A.t2;
+	float * t3 = A.t3;
+	float * f1 = A.f1;
+	float * f2 = A.f2;
+	float * f3 = A.f3;
 
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -112,14 +118,42 @@ void attenuate_fluxes( Track * restrict track, Source * restrict QSR, Input I,
 	for( int g = 0; g < I.n_egroups; g++)
 		expVal[g] = interpolateTable( params.expTable, tau[g] );  
 
-	// cycle over energy groups
+	// Flux Integral
+	
+	// Term 1
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		// add contribution to new source flux
-		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]) + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
+		f1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
 	}
-	
+	// Term 2
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		f2[g] = q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]); 
+	}
+	// Term 3
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		f3[g] = q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
+	}
+	// Total
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		flux_integral[g] = f1[g] + f2[g] + f3[g];
+	}
+
+	/*
+	   #pragma simd
+	   for( int g = 0; g < I.n_egroups; g++)
+	   {
+	// add contribution to new source flux
+	flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]) + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
+	}
+	*/
+
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
@@ -141,12 +175,36 @@ void attenuate_fluxes( Track * restrict track, Source * restrict QSR, Input I,
 	omp_unset_lock(QSR->locks + fine_id);
 	#endif
 
+
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		// update angular flux
-		track->psi[g] = track->psi[g] * (1.f - expVal[g]) + q0[g] * expVal[g] / sigT[g] + q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
+		t1[g] = q0[g] * expVal[g] / sigT[g]; 
 	}
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t2[g] = q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g]; 
+	}
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t3[g] =	q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
+	}
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		track->psi[g] = track->psi[g] * (1.f - expVal[g]) + t1[g] + t2[g] + t3[g];
+	}
+
+	/*
+	   #pragma simd
+	   for( int g = 0; g < I.n_egroups; g++)
+	   {
+	// update angular flux
+	track->psi[g] = track->psi[g] * (1.f - expVal[g]) + q0[g] * expVal[g] / sigT[g] + q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
+	}
+	*/
 }	
 
 /* Interpolates a formed exponential table to compute ( 1- exp(-x) )
@@ -156,9 +214,13 @@ float interpolateTable( Table table, float x)
 	// check to ensure value is in domain
 	if( x > table.maxVal )
 		return 1.0;
+	else if( x <= 0.0 )
+		return 1.0;
 	else
 	{
 		int interval = (int) ( x / table.dx + 0.5 * table.dx );
+		if( 2*interval + 1 >= 707 || interval < 0 )
+			printf("interval too big\n");
 		float slope = table.values[ 2 * interval ];
 		float intercept = table.values[ 2 * interval + 1 ];
 		float val = slope * x + intercept;
@@ -215,6 +277,12 @@ void transport_sweep( Params params, Input I )
 		A.expVal = (float *) malloc( I.n_egroups * sizeof(float));
 		A.flux_integral = (float *) malloc( I.n_egroups * sizeof(float));
 		A.tally = (float *) malloc( I.n_egroups * sizeof(float));
+		A.t1 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.t2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.t3 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.f1 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.f2 = (float *) malloc( I.n_egroups * sizeof(float));
+		A.f3 = (float *) malloc( I.n_egroups * sizeof(float));
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < I.ntracks_2D; i++)
@@ -255,7 +323,7 @@ void transport_sweep( Params params, Input I )
 						/ sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
-					float ds;
+					float ds = 0;
 
 					// loop over remaining z-stacked rays
 					for( int k = begin_stacked; k < end_stacked; k++)
@@ -274,7 +342,6 @@ void transport_sweep( Params params, Input I )
 						else
 							curr_interval = get_neg_interval(track->z_height, 
 									fine_delta_z);
-
 						while( !seg_complete )
 						{
 							// flag to reset z position
@@ -315,7 +382,6 @@ void transport_sweep( Params params, Input I )
 
 								// calculate distance travelled in FSR (ds)
 								ds = (z - track->z_height) / cos(p_angle);
-
 								// update track length remaining
 								s -= ds;
 
@@ -352,9 +418,7 @@ void transport_sweep( Params params, Input I )
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							attenuate_fluxes( track, &params.sources[QSR_id], 
-									I, params, ds, mu, 
-									params.tracks_2D[i].az_weight, A );
+							attenuate_fluxes( track, params.sources +QSR_id, I, params, ds, mu, params.tracks_2D[i].az_weight, A );
 
 							// update with new z height or reset if finished
 							if( n == params.tracks_2D[i].n_segments - 1  
