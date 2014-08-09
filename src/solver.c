@@ -1,24 +1,26 @@
 #include"SimpleMOC_header.h"
 
-void attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, float ds, float mu, float az_weight, AttenuateVars A ) 
+void attenuate_fluxes( Track * track, Source * QSR, Input * I_in, 
+		Params * params_in, float ds, float mu, float az_weight, AttenuateVars * A ) 
 {
+	Input I = *I_in;
+	Params params = *params_in;
 	// unload attenuate vars
-	float * q0 = A.q0;
-	float * q1 = A.q1;
-	float * q2 = A.q2;
-	float * sigT = A.sigT;
-	float * tau = A.tau;
-	float * sigT2 = A.sigT2;
-	float * expVal = A.expVal;
-	float * flux_integral = A.flux_integral;
-	float * tally = A.tally;
-	float * t1 = A.t1;
-	float * t2 = A.t2;
-	float * t3 = A.t3;
-	float * f1 = A.f1;
-	float * f2 = A.f2;
-	float * f3 = A.f3;
+	float * q0 = A->q0;
+	float * q1 = A->q1;
+	float * q2 = A->q2;
+	float * sigT = A->sigT;
+	float * tau = A->tau;
+	float * sigT2 = A->sigT2;
+	float * expVal = A->expVal;
+	float * flux_integral = A->flux_integral;
+	float * tally = A->tally;
+	float * t1 = A->t1;
+	float * t2 = A->t2;
+	float * t3 = A->t3;
+	float * f1 = A->f1;
+	float * f2 = A->f2;
+	float * f3 = A->f3;
 
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -229,14 +231,17 @@ void transport_sweep( Params params, Input I )
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
 
+	//print_Input_struct( I );
+
 	#pragma omp parallel default(none) \
-	shared( I, params, node_delta_z, fine_delta_z )
+	shared( I, params, node_delta_z, fine_delta_z ) 
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
 		int nthreads = omp_get_num_threads();
 		unsigned int seed = time(NULL) * (thread+1);
 		#endif
+	//print_Input_struct( I );
 
 		#ifdef PAPI
 		int eventset = PAPI_NULL;
@@ -403,7 +408,7 @@ void transport_sweep( Params params, Input I )
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							attenuate_fluxes( track, params.sources +QSR_id, I, params, ds, mu, params.tracks_2D[i].az_weight, A );
+							attenuate_fluxes( track, params.sources +QSR_id, &I, &params, ds, mu, params.tracks_2D[i].az_weight, &A );
 
 							// update with new z height or reset if finished
 							if( n == params.tracks_2D[i].n_segments - 1  
