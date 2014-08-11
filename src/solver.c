@@ -574,6 +574,47 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input I,
 	}
 }
 
+void attenuate_FSR_fluxes( Track * track, Source * FSR, Input I,
+		Params params, float ds, float mu, float az_weight )
+{
+	// compute fine axial interval spacing
+	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+	
+	// compute fine axial region ID
+	int fine_id = (int) ( I.height / dz ) % I.cai;
+	
+	// compute z height in cell
+	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
+	
+	// compute weight (azimuthal * polar)
+	// NOTE: real app would also have volume weight component
+	float weight = track->p_weight * az_weight * mu;
+
+	// load fine source region flux vector
+	float * FSR_flux = FSR -> fine_flux[fine_id];
+
+	// cycle over energy groups
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		// load total cross section and source
+		float sigT = FSR->sigT[g];
+		float q = FSR->fine_source[fine_id][g] / sigT;
+
+		// compute exponential ( 1 - exp(-x) ) using table lookup
+		float expVal = interpolateTable( params.expTable, sigT * ds );
+
+		// compute angular flux attenuation
+		float delta_psi = (track->psi[g] - q) * expVal;
+
+		// add contribution to new source flux
+		#pragma omp atomic
+		FSR_flux[g] += weight * delta_psi;
+
+		// update angular flux
+		track->psi[g] -= delta_psi;
+	}
+}
+
 // renormalize flux for next transport sweep iteration
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
