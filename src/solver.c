@@ -421,7 +421,7 @@ void transport_sweep( Params params, Input I )
 								attenuate_FSR_fluxes( track,
 										&params.sources[QSR_id],
 										&I, &params, ds, mu,
-										params.tracks_2D[i].az_wieght);
+										params.tracks_2D[i].az_weight);
 							else
 							{
 								printf("Error: invalid axial expansion order");
@@ -487,14 +487,14 @@ int get_neg_interval( float z, float dz)
 }
 
 
-void alt_attenuate_fluxes( Track * track, Source * QSR, Input I, 
-		Params params, float ds, float mu, float az_weight ) 
+void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I, 
+		Params * params, float ds, float mu, float az_weight ) 
 {
 	// compute fine axial interval spacing
-	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+	float dz = I->height / (I->fai * I->decomp_assemblies_ax * I->cai);
 
 	// compute fine axial region ID
-	int fine_id = (int) ( I.height / dz ) % I.cai;
+	int fine_id = (int) ( I->height / dz ) % I->cai;
 
 	// compute z height in cell
 	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
@@ -508,7 +508,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input I,
 	float * FSR_flux = QSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
-	for( int g = 0; g < I.n_egroups; g++)
+	for( int g = 0; g < I->n_egroups; g++)
 	{
 		// load total cross section
 		float sigT = QSR->sigT[g];
@@ -532,7 +532,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input I,
 			q1 = c1;
 			q2 = 0;
 		}
-		else if( fine_id == I.fai - 1 )
+		else if( fine_id == I->fai - 1 )
 		{
 			// load neighboring sources
 			float y1 = QSR->fine_source[fine_id-1][g];
@@ -570,7 +570,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input I,
 		float sigT2 = sigT * sigT;
 
 		// compute exponential ( 1 - exp(-x) ) using table lookup
-		float expVal = interpolateTable( params.expTable, tau );  
+		float expVal = interpolateTable( params->expTable, tau );  
 
 		// add contribution to new source flux
 		float flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
@@ -590,14 +590,14 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input I,
 	}
 }
 
-void attenuate_FSR_fluxes( Track * track, Source * FSR, Input I,
-		Params params, float ds, float mu, float az_weight )
+void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
+		Params * params, float ds, float mu, float az_weight )
 {
 	// compute fine axial interval spacing
-	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
+	float dz = I->height / (I->fai * I->decomp_assemblies_ax * I->cai);
 	
 	// compute fine axial region ID
-	int fine_id = (int) ( I.height / dz ) % I.cai;
+	int fine_id = (int) ( I->height / dz ) % I->cai;
 	
 	// compute z height in cell
 	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
@@ -610,14 +610,14 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input I,
 	float * FSR_flux = FSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
-	for( int g = 0; g < I.n_egroups; g++)
+	for( int g = 0; g < I->n_egroups; g++)
 	{
 		// load total cross section and source
 		float sigT = FSR->sigT[g];
 		float q = FSR->fine_source[fine_id][g] / sigT;
 
 		// compute exponential ( 1 - exp(-x) ) using table lookup
-		float expVal = interpolateTable( params.expTable, sigT * ds );
+		float expVal = interpolateTable( params->expTable, sigT * ds );
 
 		// compute angular flux attenuation
 		float delta_psi = (track->psi[g] - q) * expVal;
