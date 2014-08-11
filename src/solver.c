@@ -5,6 +5,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 {
 	Input I = *I_in;
 	Params params = *params_in;
+
 	// unload attenuate vars
 	float * q0 = A->q0;
 	float * q1 = A->q1;
@@ -13,14 +14,13 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	float * tau = A->tau;
 	float * sigT2 = A->sigT2;
 	float * expVal = A->expVal;
+	float * reuse = A->reuse;
 	float * flux_integral = A->flux_integral;
 	float * tally = A->tally;
 	float * t1 = A->t1;
 	float * t2 = A->t2;
 	float * t3 = A->t3;
-	float * f1 = A->f1;
-	float * f2 = A->f2;
-	float * f3 = A->f3;
+	float * t4 = A->t4;
 
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
@@ -29,7 +29,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	int fine_id = (int) ( I.height / dz ) % I.cai;
 
 	// compute z height in cell
-	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
+	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5f );
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
@@ -92,12 +92,12 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 
 			// do quadratic "fitting"
 			float c0 = y2;
-			float c1 = (y1 - y3) / (2*dz);
-			float c2 = (y1 - 2*y2 + y3) / (2*dz*dz);
+			float c1 = (y1 - y3) / (2.f*dz);
+			float c2 = (y1 - 2.f*y2 + y3) / (2.f*dz*dz);
 
 			// calculate q0, q1, q2
 			q0[g] = c0 + c1*zin + c2*zin*zin;
-			q1[g] = c1 + 2*c2*zin;
+			q1[g] = c1 + 2.f*c2*zin;
 			q2[g] = c2;
 		}
 	}
@@ -122,39 +122,20 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 
 	// Flux Integral
 	
-	// Term 1
+	// Re-used Term
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		f1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
+		reuse[g] = tau[g] * (tau[g] - 2.f) + 2.f * expVal[g] / (sigT[g] * sigT2[g]); 
 	}
-	// Term 2
+	// Add Flux Integral
+	// (surprisingly faster as single line rather than smaller simd vectors)
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		f2[g] = q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]); 
+		// add contribution to new source flux
+		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
 	}
-	// Term 3
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-		f3[g] = q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
-	}
-	// Total
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-		flux_integral[g] = f1[g] + f2[g] + f3[g];
-	}
-
-	/*
-	   #pragma simd
-	   for( int g = 0; g < I.n_egroups; g++)
-	   {
-	// add contribution to new source flux
-	flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT[g] * sigT2[g]) + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
-	}
-	*/
 
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
@@ -177,26 +158,35 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	omp_unset_lock(QSR->locks + fine_id);
 	#endif
 
-
+	// Term 1
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t1[g] = q0[g] * expVal[g] / sigT[g]; 
+		t1[g] = q0[g] * expVal[g] / sigT[g];  
 	}
+	// Term 2
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		t2[g] = q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g]; 
 	}
+	// Term 3
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t3[g] =	q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
+		t3[g] =	q2[g] * mu2 * reuse[g];
 	}
+	// Term 4
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		track->psi[g] = track->psi[g] * (1.f - expVal[g]) + t1[g] + t2[g] + t3[g];
+		t4[g] = track->psi[g] * (1.f - expVal[g]);
+	}
+	// Total psi
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		track->psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
 	}
 
 	/*
@@ -241,7 +231,7 @@ void transport_sweep( Params params, Input I )
 		int nthreads = omp_get_num_threads();
 		unsigned int seed = time(NULL) * (thread+1);
 		#endif
-	//print_Input_struct( I );
+		//print_Input_struct( I );
 
 		#ifdef PAPI
 		int eventset = PAPI_NULL;
@@ -253,21 +243,34 @@ void transport_sweep( Params params, Input I )
 		#endif
 
 		AttenuateVars A;
-		A.q0 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.q1 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.q2 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.sigT = (float *) malloc( I.n_egroups * sizeof(float));
-		A.tau = (float *) malloc( I.n_egroups * sizeof(float));
-		A.sigT2 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.expVal = (float *) malloc( I.n_egroups * sizeof(float));
-		A.flux_integral = (float *) malloc( I.n_egroups * sizeof(float));
-		A.tally = (float *) malloc( I.n_egroups * sizeof(float));
-		A.t1 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.t2 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.t3 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.f1 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.f2 = (float *) malloc( I.n_egroups * sizeof(float));
-		A.f3 = (float *) malloc( I.n_egroups * sizeof(float));
+		float * ptr = (float * ) malloc( I.n_egroups * 14 * sizeof(float));
+		A.q0 = ptr;
+		ptr += I.n_egroups;
+		A.q1 = ptr;
+		ptr += I.n_egroups;
+		A.q2 = ptr;
+		ptr += I.n_egroups;
+		A.sigT = ptr;
+		ptr += I.n_egroups;
+		A.tau = ptr;
+		ptr += I.n_egroups;
+		A.sigT2 = ptr;
+		ptr += I.n_egroups;
+		A.expVal = ptr;
+		ptr += I.n_egroups;
+		A.reuse = ptr;
+		ptr += I.n_egroups;
+		A.flux_integral = ptr;
+		ptr += I.n_egroups;
+		A.tally = ptr;
+		ptr += I.n_egroups;
+		A.t1 = ptr;
+		ptr += I.n_egroups;
+		A.t2 = ptr;
+		ptr += I.n_egroups;
+		A.t3 = ptr;
+		ptr += I.n_egroups;
+		A.t4 = ptr;
 
 		#pragma omp for schedule( dynamic ) 
 		for (long i = 0; i < I.ntracks_2D; i++)
@@ -432,19 +435,19 @@ void transport_sweep( Params params, Input I )
 		#endif
 
 		#ifdef PAPI
-        if( thread == 0 )
-        {
-            printf("\n");
-            border_print();
-            center_print("PAPI COUNTER RESULTS", 79);
-            border_print();
-            printf("Count          \tSmybol      \tDescription\n");
-        }
-        {
-        #pragma omp barrier
-        }
-        counter_stop(&eventset, num_papi_events, &I);
-        #endif
+		if( thread == 0 )
+		{
+			printf("\n");
+			border_print();
+			center_print("PAPI COUNTER RESULTS", 79);
+			border_print();
+			printf("Count          \tSmybol      \tDescription\n");
+		}
+		{
+			#pragma omp barrier
+		}
+		counter_stop(&eventset, num_papi_events, &I);
+		#endif
 	}
 
 	return;
@@ -850,20 +853,20 @@ float interpolateTable( Table table, float x)
 {
 	// check to ensure value is in domain
 	if( x > table.maxVal )
-		return 1.0;
+		return 1.0f;
 	else
 	{
-		int interval = (int) ( x / table.dx + 0.5 * table.dx );
+		int interval = (int) ( x / table.dx + 0.5f * table.dx );
 		/*
-		if( interval >= table.N || interval < 0)
-		{
-			printf( "Interval = %d\n", interval);
-			printf( "N = %d\n", table.N);
-			printf( "x = %f\n", x);
-			printf( "dx = %f\n", table.dx);
-			exit(1);
-		}
-		*/
+		   if( interval >= table.N || interval < 0)
+		   {
+		   printf( "Interval = %d\n", interval);
+		   printf( "N = %d\n", table.N);
+		   printf( "x = %f\n", x);
+		   printf( "dx = %f\n", table.dx);
+		   exit(1);
+		   }
+		   */
 		float slope = table.values[ 2 * interval ];
 		float intercept = table.values[ 2 * interval + 1 ];
 		float val = slope * x + intercept;
