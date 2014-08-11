@@ -368,8 +368,8 @@ void transport_sweep( Params params, Input I )
 									z = fine_delta_z * (float) curr_interval;
 								}
 								else{
-									curr_interval--;
 									z = fine_delta_z * (float) curr_interval;
+									curr_interval--;
 								}
 
 								// calculate distance travelled in FSR (ds)
