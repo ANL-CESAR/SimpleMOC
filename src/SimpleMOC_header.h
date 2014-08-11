@@ -221,7 +221,7 @@ int get_neg_interval( float z, float dz);
 void attenuate_fluxes( Track * track, Source * QSR, Input * I, 
 		Params * params, float ds, float mu, float az_weight, AttenuateVars * A ); 
 void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
-		Params * params, float ds, float mu, float az_weight );
+		Params * params, float ds, float mu, float az_weight, AttenuateVars * A );
 void alt_attenuate_fluxes( Track * track, Source * FSR, Input * I,
 		Params * params, float ds, float mu, float az_weight );
 void renormalize_flux( Params params, Input I, CommGrid grid );

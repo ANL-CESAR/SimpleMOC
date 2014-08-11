@@ -421,7 +421,7 @@ void transport_sweep( Params params, Input I )
 								attenuate_FSR_fluxes( track,
 										&params.sources[QSR_id],
 										&I, &params, ds, mu,
-										params.tracks_2D[i].az_weight);
+										params.tracks_2D[i].az_weight, &A );
 							else
 							{
 								printf("Error: invalid axial expansion order");
@@ -591,8 +591,16 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 }
 
 void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
-		Params * params, float ds, float mu, float az_weight )
+		Params * params_in, float ds, float mu, float az_weight, AttenuateVars *A)
 {
+	// upack attenuate vars struct
+	float *  restrict tally = A->tally;
+	float *  restrict expVal = A->expVal;
+	float *  restrict sigT = A->sigT;
+	float *  restrict tau = A->tau;
+
+	Params params = * params_in;
+
 	// compute fine axial interval spacing
 	float dz = I->height / (I->fai * I->decomp_assemblies_ax * I->cai);
 	
@@ -610,25 +618,52 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	float * FSR_flux = FSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
+	#pragma simd
 	for( int g = 0; g < I->n_egroups; g++)
 	{
-		// load total cross section and source
-		float sigT = FSR->sigT[g];
-		float q = FSR->fine_source[fine_id][g] / sigT;
+		// load total cross section
+		sigT[g] = FSR->sigT[g];
+		tau[g] = sigT[g] * ds;
+	}
 
-		// compute exponential ( 1 - exp(-x) ) using table lookup
-		float expVal = interpolateTable( params->expTable, sigT * ds );
+	// compute exponential ( 1 - exp(-x) ) using table lookup
+	#pragma simd
+	for(int g = 0; g < I->n_egroups; g++)
+	{
+		expVal[g] = interpolateTable( params.expTable, tau[g] );
+	}
 
+	#pragma simd
+	for( int g = 0; g < I->n_egroups; g++)
+	{
 		// compute angular flux attenuation
-		float delta_psi = (track->psi[g] - q) * expVal;
+		float q = FSR->fine_source[fine_id][g] / sigT[g];
+		float delta_psi = (track->psi[g] - q) * expVal[g];
 
 		// add contribution to new source flux
-		#pragma omp atomic
-		FSR_flux[g] += weight * delta_psi;
+		tally[g] = weight * delta_psi;
 
 		// update angular flux
 		track->psi[g] -= delta_psi;
 	}
+
+
+
+	#ifdef OPENMP
+	omp_set_lock(&FSR->locks[fine_id]);
+	#endif
+
+	#pragma simd
+	for( int g = 0; g < I->n_egroups; g++)
+	{
+		FSR_flux[g] += tally[g];
+	}
+
+	#ifdef OPENMP
+	omp_unset_lock(&FSR->locks[fine_id]);
+	#endif
+
+
 }
 
 // renormalize flux for next transport sweep iteration
