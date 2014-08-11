@@ -74,7 +74,7 @@ endif
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
 ifeq ($(COMPILER),gnu)
-  CFLAGS += -O3 -ffast-math -ftree-vectorize -msse2
+  CFLAGS += -Ofast -ffast-math -ftree-vectorize -msse2
 endif
 ifeq ($(COMPILER),intel)
   CFLAGS += -O3 -xhost -ansi-alias -no-prec-div -DINTEL
