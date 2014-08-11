@@ -29,7 +29,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 	{
 		*num_papi_events = 2;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
-		events[0] = PAPI_FP_OPS;
+		events[0] = PAPI_SP_OPS;
 		events[1] = PAPI_TOT_CYC;
 	}
 	// Bandwidth
@@ -417,7 +417,7 @@ void counter_stop( int * eventset, int num_papi_events, Input * I )
 				LLC_cache_miss += values[i];
 			if( strcmp(info.symbol, "PAPI_TOT_CYC") == 0 )
 				total_cycles += values[i];
-			if( strcmp(info.symbol, "PAPI_FP_OPS") == 0 )
+			if( strcmp(info.symbol, "PAPI_SP_OPS") == 0 )
 				FLOPS += values[i];
 			if( strcmp(info.symbol, "RESOURCE_STALLS:ANY") == 0 )
 				stall_any += values[i];

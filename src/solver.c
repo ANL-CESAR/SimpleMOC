@@ -7,20 +7,20 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	Params params = *params_in;
 
 	// unload attenuate vars
-	float * q0 = A->q0;
-	float * q1 = A->q1;
-	float * q2 = A->q2;
-	float * sigT = A->sigT;
-	float * tau = A->tau;
-	float * sigT2 = A->sigT2;
-	float * expVal = A->expVal;
-	float * reuse = A->reuse;
-	float * flux_integral = A->flux_integral;
-	float * tally = A->tally;
-	float * t1 = A->t1;
-	float * t2 = A->t2;
-	float * t3 = A->t3;
-	float * t4 = A->t4;
+	float * restrict q0 = A->q0;
+	float *  restrict q1 = A->q1;
+	float *  restrict q2 = A->q2;
+	float *  restrict sigT = A->sigT;
+	float *  restrict tau = A->tau;
+	float *  restrict sigT2 = A->sigT2;
+	float *  restrict expVal = A->expVal;
+	float *  restrict reuse = A->reuse;
+	float *  restrict flux_integral = A->flux_integral;
+	float *  restrict tally = A->tally;
+	float *  restrict t1 = A->t1;
+	float *  restrict t2 = A->t2;
+	float *  restrict t3 = A->t3;
+	float *  restrict t4 = A->t4;
 
 	// compute fine axial interval spacing
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
