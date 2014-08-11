@@ -128,6 +128,40 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	{
 		reuse[g] = tau[g] * (tau[g] - 2.f) + 2.f * expVal[g] / (sigT[g] * sigT2[g]); 
 	}
+
+	// Term 1
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
+	}
+	// Term 2
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t2[g] = q1[g] * mu * reuse[g]; 
+	}
+	// Term 3
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t3[g] =  tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g] ;
+	}
+	// Term 4
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		t4[g] = q2[g] * mu2 / (3.f * sigT2[g] * sigT2[g]);
+	}
+	// Integral
+	#pragma simd
+	for( int g = 0; g < I.n_egroups; g++)
+	{
+		flux_integral[g] = t1[g] + t2[g] + t3[g] * t4[g];
+	}
+	
+
+	/*
 	// Add Flux Integral
 	// (surprisingly faster as single line rather than smaller simd vectors)
 	#pragma simd
@@ -136,6 +170,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 		// add contribution to new source flux
 		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
 	}
+	*/
 
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
