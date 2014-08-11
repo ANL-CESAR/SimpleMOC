@@ -6,7 +6,7 @@ COMPILER    = intel
 MPI         = no
 OPENMP      = yes
 OPTIMIZE    = yes
-DEBUG       = yes
+DEBUG       = no
 PROFILE     = no
 PAPI        = no
 BENCHMARK   = no
@@ -74,6 +74,9 @@ endif
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
   CFLAGS += -O3
+ifeq ($(COMPILER),intel)
+  CFLAGS += -xhost
+endif
 endif
 
 # PAPI source (you may need to provide -I and -L pointing
