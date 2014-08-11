@@ -22,20 +22,20 @@ void print_Input_struct( Input I )
 	printf("%lf\n", I.height);             	// Height of the reactor - 400 cm
 	printf("%lf\n", I.domain_height);      	// Z Height of a domain
 	printf("%lf\n", I.precision);		   	// precision for source convergence
-	printf("%d\n", I.mype);                 	// MPI Rank
-	printf("%d\n", I.ntracks_2D);           	// Number of 2D tracks (derived)
+	printf("%ld\n", I.mype);                 	// MPI Rank
+	printf("%ld\n", I.ntracks_2D);           	// Number of 2D tracks (derived)
 	printf("%d\n", I.z_stacked);             	// Number of z rays (derived)
-	printf("%d\n", I.ntracks);              	/* Total number of 3D tracks per assembly
+	printf("%ld\n", I.ntracks);              	/* Total number of 3D tracks per assembly
 								   (derived) */
 	printf("%d\n", I.nthreads);              	// Number of OpenMP Threads
 	printf("%d\n", I.papi_event_set);         // PAPI event set
 	// 0 - FLOPS   1 - Bandwidth   2 - CPU Stall reason
 	
 	// Source regions per assembly (3M estimate)
-	printf("%lf\n", I.n_2D_source_regions_per_assembly);
+	printf("%ld\n", I.n_2D_source_regions_per_assembly);
 
 	// Source regions per node (derived)	
-	printf("%lf\n", I.n_source_regions_per_node); 
+	printf("%ld\n", I.n_source_regions_per_node); 
 	printf("END INPUT STRUCT\n");
 	
 }
