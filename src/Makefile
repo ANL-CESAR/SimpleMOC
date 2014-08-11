@@ -73,9 +73,14 @@ endif
 
 # Optimization Flags
 ifeq ($(OPTIMIZE),yes)
+ifeq ($(COMPILER),gnu)
   CFLAGS += -O3
+endif
 ifeq ($(COMPILER),intel)
-  CFLAGS += -xhost
+  CFLAGS += -O3 -xhost -ansi-alias -no-prec-div -DINTEL
+endif
+ifeq ($(COMPILER),ibm)
+  CFLAGS += -O5 -qhot -qsimd=auto -qalias=ansi:allptrs -qarch=qp -DIBM
 endif
 endif
 

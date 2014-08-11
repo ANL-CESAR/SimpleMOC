@@ -42,7 +42,11 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	if( fine_id == 0 )
 	{
 		// cycle over energy groups
+		#ifdef INTEL
 		#pragma simd
+		#elif defined IBM
+		#pragma simd_level(10)
+		#endif
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -62,7 +66,11 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	else if ( fine_id == I.fai - 1 )
 	{
 		// cycle over energy groups
+		#ifdef INTEL
 		#pragma simd
+		#elif defined IBM
+		#pragma simd_level(10)
+		#endif
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -82,7 +90,11 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	else
 	{
 		// cycle over energy groups
+		#ifdef INTEL
 		#pragma simd
+		#elif defined IBM
+		#pragma simd_level(10)
+		#endif
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
@@ -104,7 +116,11 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 
 
 	// cycle over energy groups
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// load total cross section
@@ -116,14 +132,22 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	}
 
 	// cycle over energy groups
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 		expVal[g] = interpolateTable( params.expTable, tau[g] );  
 
 	// Flux Integral
-	
+
 	// Re-used Term
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		reuse[g] = tau[g] * (tau[g] - 2.f) + 2.f * expVal[g] / (sigT[g] * sigT2[g]); 
@@ -134,44 +158,55 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
+	t1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
 	}
 	// Term 2
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t2[g] = q1[g] * mu * reuse[g]; 
+	t2[g] = q1[g] * mu * reuse[g]; 
 	}
 	// Term 3
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t3[g] =  tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g] ;
+	t3[g] =  tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g] ;
 	}
 	// Term 4
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t4[g] = q2[g] * mu2 / (3.f * sigT2[g] * sigT2[g]);
+	t4[g] = q2[g] * mu2 / (3.f * sigT2[g] * sigT2[g]);
 	}
 	// Integral
 	#pragma simd
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		flux_integral[g] = t1[g] + t2[g] + t3[g] * t4[g];
+	flux_integral[g] = t1[g] + t2[g] + t3[g] * t4[g];
 	}
 	*/
 
 	// Add Flux Integral
 	// (surprisingly faster as single line rather than smaller simd vectors)
+	//#pragma simd
+
+	//#pragma vector nontemporal
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
 		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
 	}
 
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// Prepare tally
@@ -182,7 +217,11 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	omp_set_lock(QSR->locks + fine_id);
 	#endif
 
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		FSR_flux[g] += tally[g];
@@ -193,31 +232,51 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#endif
 
 	// Term 1
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		t1[g] = q0[g] * expVal[g] / sigT[g];  
 	}
 	// Term 2
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		t2[g] = q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g]; 
 	}
 	// Term 3
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		t3[g] =	q2[g] * mu2 * reuse[g];
 	}
 	// Term 4
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		t4[g] = track->psi[g] * (1.f - expVal[g]);
 	}
 	// Total psi
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		track->psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
@@ -637,13 +696,13 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 
 	// compute fine axial interval spacing
 	float dz = I->height / (I->fai * I->decomp_assemblies_ax * I->cai);
-	
+
 	// compute fine axial region ID
 	int fine_id = (int) ( I->height / dz ) % I->cai;
-	
+
 	// compute z height in cell
 	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
-	
+
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
 	float weight = track->p_weight * az_weight * mu;
