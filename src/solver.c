@@ -411,7 +411,23 @@ void transport_sweep( Params params, Input I )
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							attenuate_fluxes( track, params.sources +QSR_id, &I, &params, ds, mu, params.tracks_2D[i].az_weight, &A );
+							if( I.axial_exp == 2 )
+								attenuate_fluxes( track, 
+										&params.sources[QSR_id], 
+										&I, &params, ds, mu, 
+										params.tracks_2D[i].az_weight, &A );
+
+							else if( I.axial_exp == 0 )
+								attenuate_FSR_fluxes( track,
+										&params.sources[QSR_id],
+										&I, &params, ds, mu,
+										params.tracks_2D[i].az_wieght);
+							else
+							{
+								printf("Error: invalid axial expansion order");
+								printf("\n Please input 0 or 2\n");
+								exit(1);
+							}
 
 							// update with new z height or reset if finished
 							if( n == params.tracks_2D[i].n_segments - 1  
