@@ -208,6 +208,7 @@ Table buildExponentialTable( float precision, float maxVal );
 float interpolateTable( Table table, float x);
 double get_time(void);
 size_t est_mem_usage( Input I );
+double time_per_intersection( Input I, double time );
 
 // source.c
 Source * initialize_sources( Input I, size_t * nbytes );

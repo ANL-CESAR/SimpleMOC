@@ -127,3 +127,11 @@ size_t est_mem_usage( Input I )
 	
 	return nbytes;
 }
+
+// Calculates Time per Intersection
+double time_per_intersection( Input I, double time )
+{
+	double tpi = time / (double) I.ntracks /
+		(double) I.segments_per_track / (double) I.n_egroups / 1e-9; 
+	return tpi;
+}
