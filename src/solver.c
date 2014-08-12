@@ -1,7 +1,8 @@
 #include"SimpleMOC_header.h"
 
 void attenuate_fluxes( Track * track, Source * QSR, Input * I_in, 
-		Params * params_in, float ds, float mu, float az_weight, AttenuateVars * A ) 
+		Params * params_in, float ds, float mu, float az_weight, 
+		AttenuateVars * A ) 
 {
 	Input I = *I_in;
 	Params params = *params_in;
@@ -26,7 +27,8 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	float dz = I.height / (I.fai * I.decomp_assemblies_ax * I.cai);
 
 	// compute z height in cell
-	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5f );
+	float zin = track->z_height - dz * 
+		( (int)( track->z_height / dz ) + 0.5f );
 
 	// compute fine axial region ID
 	int fine_id = (int) ( zin / dz ) % I.cai;
@@ -150,7 +152,8 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		reuse[g] = tau[g] * (tau[g] - 2.f) + 2.f * expVal[g] / (sigT[g] * sigT2[g]); 
+		reuse[g] = tau[g] * (tau[g] - 2.f) + 2.f * expVal[g] 
+			/ (sigT[g] * sigT2[g]); 
 	}
 
 	/*
@@ -199,7 +202,10 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
-		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 * (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) / (3.f * sigT2[g] * sigT2[g]);
+		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g])
+			* expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 
+			* (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) 
+			/ (3.f * sigT2[g] * sigT2[g]);
 	}
 
 	#ifdef INTEL
@@ -684,7 +690,8 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 }
 
 void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
-		Params * params_in, float ds, float mu, float az_weight, AttenuateVars *A)
+		Params * params_in, float ds, float mu, float az_weight, 
+		AttenuateVars *A)
 {
 	// upack attenuate vars struct
 	float *  restrict tally = A->tally;
@@ -698,7 +705,8 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	float dz = I->height / (I->fai * I->decomp_assemblies_ax * I->cai);
 
 	// compute z height in cell
-	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
+	float zin = track->z_height - dz * 
+		( (int)( track->z_height / dz ) + 0.5f );
 
 	// compute fine axial region ID
 	int fine_id = (int) ( zin / dz ) % I->cai;
