@@ -711,7 +711,11 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	float * FSR_flux = FSR -> fine_flux[fine_id];
 
 	// cycle over energy groups
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I->n_egroups; g++)
 	{
 		// load total cross section
@@ -720,13 +724,21 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	}
 
 	// compute exponential ( 1 - exp(-x) ) using table lookup
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for(int g = 0; g < I->n_egroups; g++)
 	{
 		expVal[g] = interpolateTable( params.expTable, tau[g] );
 	}
 
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I->n_egroups; g++)
 	{
 		// compute angular flux attenuation
@@ -746,7 +758,11 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	omp_set_lock(&FSR->locks[fine_id]);
 	#endif
 
+	#ifdef INTEL
 	#pragma simd
+	#elif defined IBM
+	#pragma simd_level(10)
+	#endif
 	for( int g = 0; g < I->n_egroups; g++)
 	{
 		FSR_flux[g] += tally[g];
