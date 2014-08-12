@@ -173,6 +173,7 @@ typedef struct{
 
 // init.c
 Input set_default_input( void );
+void set_small_input( Input * I );
 Params build_tracks( Input I );
 CommGrid init_mpi_grid( Input I );
 void calculate_derived_inputs( Input * I );

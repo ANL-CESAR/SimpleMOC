@@ -145,6 +145,10 @@ void read_CLI( int argc, char * argv[], Input * input )
 			else
 				print_CLI_error();
 		}
+		// set input for small problem (-s)
+		else if( strcmp(arg, "-s") == 0)
+			set_small_input( input );
+
         #ifdef PAPI
         // Add single PAPI event
         else if( strcmp(arg, "-p") == 0 )
