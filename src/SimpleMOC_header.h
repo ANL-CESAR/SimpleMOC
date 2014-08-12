@@ -9,6 +9,7 @@
 #include<stdbool.h>
 #include<limits.h>
 #include<assert.h>
+#include<unistd.h>
 
 #ifdef MPI
 #include<mpi.h>

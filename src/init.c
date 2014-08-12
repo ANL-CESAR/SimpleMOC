@@ -71,26 +71,26 @@ Input set_default_input( void )
 // Changes defaults to small problem size
 void set_small_input( Input * I )
 {
-	I->x_assemblies = 15;      	/* Number of assemblies in the x-axis 
-								   of the reactor */
-	I->y_assemblies = 15;        /* Number of assemblies in the y-axis 
-								    of the reactor */
-	I->cai = 5;                	 // Number of coarse axial intervals
-	I->fai = 3;                  /* Number of fine axial intervals per coarse 
-								    axial interval */
-	I->axial_exp = 2;            // Axial source expansion order
-	I->radial_ray_sep = 0.5;     // Radial ray separation
-	I->axial_z_sep = 0.2;        // Axial stacked z-ray separation
-	I->n_azimuthal = 10;         // Number of azimuthal angles (should be 32)
-	I->n_polar_angles = 10;      // Number of polar angles
-	I->n_egroups = 2;          	// Number of energy groups
-	I->decompose = false;      	/* Turn decomposition on/off (true = on, 
-								   flase = off) */
-	I->decomp_assemblies_ax = 1; /* Number of assemblies per sub-domain 
-								   (axially) */
-	I->segments_per_track = 20;  // Average number of segments per track (123)
-	I->assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
-	I->height = 400.0;           // Height of the reactor - 400 cm
+	I->x_assemblies = 15;      		/* Number of assemblies in the x-axis 
+								   		of the reactor */
+	I->y_assemblies = 15;        	/* Number of assemblies in the y-axis 
+								    	of the reactor */
+	I->cai = 5;                	 	// Number of coarse axial intervals
+	I->fai = 3;                  	/* Number of fine axial intervals per 
+									   coarse axial interval */
+	I->axial_exp = 2;            	// Axial source expansion order
+	I->radial_ray_sep = 0.5;     	// Radial ray separation
+	I->axial_z_sep = 0.2;        	// Axial stacked z-ray separation
+	I->n_azimuthal = 10;         	// Number of azimuthal angles
+	I->n_polar_angles = 10;      	// Number of polar angles
+	I->n_egroups = 2;          		// Number of energy groups
+	I->decompose = false;      	 	/* Turn decomposition on/off (true = on, 
+								   		flase = off) */
+	I->decomp_assemblies_ax = 1; 	/* Number of assemblies per sub-domain 
+								   		(axially) */
+	I->segments_per_track = 20;  	// Average number of segments per track
+	I->assembly_width = 1.26*17; 	// Width of an assembly - 1.26 x 17 cm
+	I->height = 400.0;           	// Height of the reactor - 400 cm
 	I->precision = 0.01;			// precision for source convergence
 
 	// source regions per assembly (estimate)
