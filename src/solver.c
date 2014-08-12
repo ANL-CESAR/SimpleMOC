@@ -589,14 +589,14 @@ int get_neg_interval( float z, float dz)
 void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I, 
 		Params * params, float ds, float mu, float az_weight ) 
 {
-	// compute fine axial region ID
-	int fine_id = (int) ( I->height / dz ) % I->cai;
+	// compute fine axial interval spacing
+	float dz = I->height / (I->fai * I->decomp_assemblies_ax * I->cai);
 
 	// compute z height in cell
 	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
 
-	// compute fine axial interval spacing
-	float dz = zin / (I->fai * I->decomp_assemblies_ax * I->cai);
+	// compute fine axial region ID
+	int fine_id = (int) ( zin / dz ) % I->cai;
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
