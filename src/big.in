@@ -9,7 +9,7 @@
 10 - n_polar_angles -  Number of polar angles
 100 - n_egroups -  Number of energy groups
 1 - decompose - Turn decomposition on/off (true = 1, flase = 0) 
-3 - decomp_assemblies_ax - Number of assemblies per sub-domain (axially) 
+25 - decomp_assemblies_ax - Number of assemblies per sub-domain (axially) 
 20 - segments_per_track - Average number of segments per track
 21.42 - assembly_width - Width of an assembly - 1.26 x 17 cm
 400.0 - height - Height of the reactor
