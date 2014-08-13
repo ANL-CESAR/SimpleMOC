@@ -635,7 +635,14 @@ int get_alt_neg_interval( float z, float dz)
 	printf("Z = %f\n", z);
 	printf("dz = %f\n", dz);
 	printf("Z/dz = %f\n", z/dz);
+	float temp = z/dz;
 	printf("INT_MAX - z/dz = %f\n", INT_MAX - z/dz);
+	
+	printf("\ntemp correction: \n");
+	printf("temp = %f\n", temp);
+	printf("INT_MAX = %d\n", INT_MAX);
+	printf("INT_MAX - temp = %f\n\n", INT_MAX - temp);
+	
 	printf("Converted to int = %d\n", (int) (INT_MAX - z / dz));
 	printf("MAX_INT = %d\n",INT_MAX);
 	printf("Interval = %d\n", INT_MAX - (int) (INT_MAX - z / dz));
