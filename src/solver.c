@@ -32,6 +32,13 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 
 	// compute fine axial region ID
 	int fine_id = (int) ( track->z_height / dz ) % I.fai;
+	if( fine_id >= I.fai || fine_id < 0 )
+	{
+		printf("Track height = %f\n", track->z_height);
+		printf("Fine ID = %d\n", fine_id);
+		exit(2);
+	}
+
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
@@ -433,6 +440,24 @@ void transport_sweep( Params params, Input I )
 							curr_interval = get_neg_interval(track->z_height, 
 									fine_delta_z);
 
+						if(curr_interval == -1)
+						{
+							printf("\nWoah!!!!!\n");
+							printf("Direction = %d\n", (int) pos_z_dir);
+							printf("Z = %f\n", track->z_height);
+							printf("dz = %f\n", fine_delta_z);
+							printf("Z/dz = %f\n", track->z_height / fine_delta_z);
+							printf("INT_MAX - z/dz = %f\n", INT_MAX - track->z_height / fine_delta_z);
+							printf("Converted to int = %d\n", (int) (INT_MAX - track->z_height / fine_delta_z));
+							printf("MAX_INT = %d\n",INT_MAX);
+							printf("Interval = %d\n", INT_MAX - (int) (INT_MAX - track->z_height / fine_delta_z));
+							
+							curr_interval = get_alt_neg_interval(track->z_height, 
+									fine_delta_z);
+							printf("But now interval = %d\n",curr_interval);
+
+							exit(3);
+						}
 						while( !seg_complete )
 						{
 							// flag to reset z position
@@ -455,6 +480,13 @@ void transport_sweep( Params params, Input I )
 							{
 								seg_complete = true;
 								ds = s;
+								if(z < 0){
+									printf("New interval = %d\n",new_interval);
+									printf("Old = %d\n",curr_interval);
+									printf("New z = %f\n",z);
+									printf("Old = %f\n", track->z_height);
+								}
+
 							}
 
 							// otherwise, we need to recalculate distances
@@ -467,8 +499,13 @@ void transport_sweep( Params params, Input I )
 									z = fine_delta_z * (float) curr_interval;
 								}
 								else{
-									z = fine_delta_z * (float) curr_interval;
 									curr_interval--;
+									z = fine_delta_z * (float) curr_interval;
+									if(curr_interval == 0)
+									{
+										printf("C track height = %f\n",track->z_height);
+										printf("C z = %f\n", z);
+									}
 								}
 
 								// calculate distance travelled in FSR (ds)
@@ -537,8 +574,15 @@ void transport_sweep( Params params, Input I )
 								else
 									track->z_height = I.axial_z_sep * (k+1);
 							}
-							else
+							else{
+								if( z < 0 )
+								{
+									printf("z = %f\n", z);
+									exit(1);
+								}
+
 								track->z_height = z;
+								}
 
 						}
 					}
@@ -580,6 +624,23 @@ int get_pos_interval( float z, float dz)
  * negative direction */
 int get_neg_interval( float z, float dz)
 {
+	// NOTE: a bit of trickery using floors to obtain ceils 
+	int interval = INT_MAX - (int) ( INT_MAX - ( z / dz ) );
+	return interval;
+}
+
+int get_alt_neg_interval( float z, float dz)
+{
+	printf("ALTERNATE\n\n");
+	printf("Z = %f\n", z);
+	printf("dz = %f\n", dz);
+	printf("Z/dz = %f\n", z/dz);
+	printf("INT_MAX - z/dz = %f\n", INT_MAX - z/dz);
+	printf("Converted to int = %d\n", (int) (INT_MAX - z / dz));
+	printf("MAX_INT = %d\n",INT_MAX);
+	printf("Interval = %d\n", INT_MAX - (int) (INT_MAX - z / dz));
+							
+
 	// NOTE: a bit of trickery using floors to obtain ceils 
 	int interval = INT_MAX - (int) ( INT_MAX - ( z / dz ) );
 	return interval;
