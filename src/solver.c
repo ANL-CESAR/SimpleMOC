@@ -31,7 +31,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 		( (int)( track->z_height / dz ) + 0.5f );
 
 	// compute fine axial region ID
-	int fine_id = (int) ( zin / dz ) % I.cai;
+	int fine_id = (int) ( track->z_height / dz ) % I.cai;
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
@@ -596,7 +596,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 	float zin = track->z_height - dz * ( (int)( track->z_height / dz ) + 0.5 );
 
 	// compute fine axial region ID
-	int fine_id = (int) ( zin / dz ) % I->cai;
+	int fine_id = (int) ( track->z_height / dz ) % I->cai;
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
@@ -709,7 +709,7 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 		( (int)( track->z_height / dz ) + 0.5f );
 
 	// compute fine axial region ID
-	int fine_id = (int) ( zin / dz ) % I->cai;
+	int fine_id = (int) ( track->z_height / dz ) % I->cai;
 
 	// compute weight (azimuthal * polar)
 	// NOTE: real app would also have volume weight component
