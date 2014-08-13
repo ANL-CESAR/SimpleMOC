@@ -3,9 +3,9 @@
 9 - cai - Number of coarse axial intervals
 3 - fai - Number of fine axial intervals per coarse  axial interval
 2 - axial_exp - Axial source expansion order
-0.5 - radial_ray_sep -  Radial ray separation
+0.05 - radial_ray_sep -  Radial ray separation
 0.25 - axial_z_sep -  Axial stacked z-ray separation
-32 - n_azimuthal  -  Number of azimuthal angles (should be 32)
+64 - n_azimuthal  -  Number of azimuthal angles (should be 32)
 10 - n_polar_angles -  Number of polar angles
 100 - n_egroups -  Number of energy groups
 1 - decompose - Turn decomposition on/off (true = 1, flase = 0) 
