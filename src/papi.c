@@ -9,6 +9,11 @@ void papi_serial_init(void)
 		fprintf(stderr, "PAPI library init error!\n");
 		exit(1);
 	}
+	if (( PAPI_thread_init((long unsigned int (*)(void))
+					pthread_self )) != PAPI_OK){
+		PAPI_perror("PAPI_thread_init");
+		exit(1);
+	}
 }
 
 void counter_init( int *eventset, int *num_papi_events, Input I )
@@ -306,12 +311,6 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 
 	int thread = omp_get_thread_num();
 
-	if ((stat = PAPI_thread_init((long unsigned int (*)(void))
-					omp_get_thread_num)) != PAPI_OK){
-		PAPI_perror("PAPI_thread_init");
-		exit(1);
-	}
-
 	if ( (stat= PAPI_create_eventset(eventset)) != PAPI_OK)
 	{
 		PAPI_perror("PAPI_create_eventset");
@@ -385,10 +384,6 @@ void counter_stop( int * eventset, int num_papi_events, Input * I )
 	PAPI_event_info_t info;
 
 	long_long * values = malloc( num_papi_events * sizeof(long_long));
-    #pragma omp master
-    {
-        I->vals_accum = calloc( num_papi_events, sizeof(long long));
-    }
 	PAPI_stop(*eventset, values);
 	int thread = omp_get_thread_num();
 	int nthreads = omp_get_num_threads();
@@ -404,6 +399,14 @@ void counter_stop( int * eventset, int num_papi_events, Input * I )
 	static long tlb_load_m = 0;
 	static long tlb_store = 0;
 	static long tlb_store_m = 0;
+
+    #pragma omp master
+    {
+        I->vals_accum = malloc( num_papi_events * sizeof(long long));
+        for(int i=0; i < num_papi_events ; i ++)
+            I->vals_accum[i] = 0;
+    }
+    #pragma omp barrier
 
 	#pragma omp critical (papi)
 	{
