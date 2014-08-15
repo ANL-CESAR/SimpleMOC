@@ -115,6 +115,7 @@ void print_input_summary(Input I)
 	border_print();
 }
 
+// reads command line inputs and applies options
 void read_CLI( int argc, char * argv[], Input * input )
 {
 	// defaults to max threads on the system	
@@ -172,6 +173,7 @@ void read_CLI( int argc, char * argv[], Input * input )
 		print_CLI_error();
 }
 
+// print error to screen, inform program options
 void print_CLI_error(void)
 {
 	printf("Usage: ./SimpleMOC <options>\n");
@@ -179,10 +181,12 @@ void print_CLI_error(void)
 	printf("  -t <threads>     Number of OpenMP threads to run\n");
 	printf("  -i <filename>    Input file name\n");
     printf("  -p <PAPI event>  PAPI event name to count (1 only) \n");
+    printf("  -s               Small problem flag \n");
 	printf("See readme for full description of default run values\n");
 	exit(1);
 }
 
+// read input file describing problem parameters
 void read_input_file( Input * I, char * fname)
 {
 	printf("Attempting to open FIle: %s\n", fname);

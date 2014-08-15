@@ -1,7 +1,7 @@
 #include"SimpleMOC_header.h"
 
 #ifdef MPI
-// Faster Transfer information between nodes (angular fluxes)
+// Transfer information between nodes (angular fluxes)
 void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 {
 	MPI_Barrier(grid.cart_comm_3d);

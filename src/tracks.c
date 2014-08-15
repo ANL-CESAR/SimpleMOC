@@ -58,17 +58,20 @@ void generate_2D_segments(
 	}
 }
 
+// generate segments per 2D track based on a normal distribution
 long segments_per_2D_track_distribution( Input I )
 {
 	return nrand(I.segments_per_track, sqrt(I.segments_per_track));
 }
 
+// free memory associated with 2D tracks
 void free_2D_tracks( Track2D * tracks )
 {
 	free(tracks[0].segments);
 	free(tracks);
 }
 
+// allocate memory for tracks (primarily angular fluxes)
 Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 {
 	// Allocate space for tracks (3D)
@@ -145,6 +148,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	return tracks;
 }
 
+// free memory associated with tracks
 void free_tracks( Track *** tracks )
 {
 	free(tracks);

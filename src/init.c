@@ -158,8 +158,6 @@ CommGrid init_mpi_grid( Input I )
 	int period[3] = {0,0,0};
    	int reorder = 1;
 
-	// TODO: Set params based off of user inputs
-
 	MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, period, reorder, 
 			&cart_comm_3d);
 

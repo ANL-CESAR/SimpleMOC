@@ -1,5 +1,6 @@
 #include"SimpleMOC_header.h"
 
+// intitialize source structures and intitialize XS values to random numbers
 Source * initialize_sources( Input I, size_t * nbytes )
 {
 	// Allocate space
