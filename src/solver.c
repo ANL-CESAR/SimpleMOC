@@ -1,5 +1,16 @@
 #include"SimpleMOC_header.h"
 
+/* Efficient version of attenuate fluxes which determines the change in angular
+ * flux along a particular track across a fine axial region and tallies the 
+ * contribution to the scalar flux in the fine axial region. This function
+ * assumes a quadratic source, which is calculated on the fly using neighboring
+ * source values. 
+ * 
+ * This version decomposes the work into many for loops for efficient SIMD 
+ * instructions and to reduce register pressure. For a more descriptive 
+ * (but less effiient) version of the code in terms of the underlying physics, 
+ * see alt_attenuate_fluxes which solves the problem in a more naive, 
+ * straightforward manner. */
 void attenuate_fluxes( Track * track, Source * QSR, Input * I_in, 
 		Params * params_in, float ds, float mu, float az_weight, 
 		AttenuateVars * A ) 
@@ -156,43 +167,6 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 			/ (sigT[g] * sigT2[g]); 
 	}
 
-	/*
-	// Term 1
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-	t1[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g]) * expVal[g]) / sigT2[g]; 
-	}
-	// Term 2
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-	t2[g] = q1[g] * mu * reuse[g]; 
-	}
-	// Term 3
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-	t3[g] =  tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g] ;
-	}
-	// Term 4
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-	t4[g] = q2[g] * mu2 / (3.f * sigT2[g] * sigT2[g]);
-	}
-	// Integral
-	#pragma simd
-	for( int g = 0; g < I.n_egroups; g++)
-	{
-	flux_integral[g] = t1[g] + t2[g] + t3[g] * t4[g];
-	}
-	*/
-
-	// Add Flux Integral
-	// (surprisingly faster as single line rather than smaller simd vectors)
-	//#pragma simd
-
 	//#pragma vector nontemporal
 	#ifdef INTEL
 	#pragma simd
@@ -287,15 +261,6 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	{
 		track->psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
 	}
-
-	/*
-	   #pragma simd
-	   for( int g = 0; g < I.n_egroups; g++)
-	   {
-	// update angular flux
-	track->psi[g] = track->psi[g] * (1.f - expVal[g]) + q0[g] * expVal[g] / sigT[g] + q1[g] * mu * (tau[g] - expVal[g]) / sigT2[g] + q2[g] * mu2 * (tau[g] * (tau[g] - 2.f) + 2.f * expVal[g]) / (sigT2[g] * sigT[g]);
-	}
-	*/
 }	
 
 // run one full transport sweep, return k
@@ -586,6 +551,14 @@ int get_neg_interval( float z, float dz)
 	return interval;
 }
 
+/* Determines the change in angular flux along a particular track across a fine
+ * axial region and tallies the contribution to the scalar flux in the fine 
+ * axial region. This function assumes a quadratic source, which is calculated 
+ * on the fly using neighboring source values.
+ *
+ * This legacy function is unused since it is less efficient than the current 
+ * attenuate_fluxes function. However, it provides a more straightforward 
+ * description of the underlying physical problem. */
 void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I, 
 		Params * params, float ds, float mu, float az_weight ) 
 {
@@ -689,6 +662,9 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 	}
 }
 
+/* Determines the change in angular flux along a particular track across a fine
+ * axial region and tallies the contribution to the scalar flux in the fine 
+ * axial region. This function assumes a constant  source. */ 
 void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 		Params * params_in, float ds, float mu, float az_weight, 
 		AttenuateVars *A)
@@ -783,7 +759,9 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 
 }
 
-// renormalize flux for next transport sweep iteration
+/* Renormalizes scalar and angular flux for next transport sweep iteration.
+ * Calculation requires multiple pair-wise sums and a reduction accross all 
+ * nodes. */
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
 	if( I.mype == 0 ) printf("Renormalizing Flux...\n");
@@ -853,7 +831,9 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	return;
 }
 
-// Updates sources for next iteration
+/* Updates sources for next iteration by computing scattering and fission
+ * components. Calculation includes multiple pair-wise sums and reductions
+ * accross all nodes */
 float update_sources( Params params, Input I, float keff )
 {
 	// source residual
@@ -941,6 +921,8 @@ float update_sources( Params params, Input I, float keff )
 	return residual;
 }
 
+/* Computes globall k-effective using multiple pair-wise summations and finally
+ * a reduction accross all nodes */
 float compute_keff(Params params, Input I, CommGrid grid)
 {
 	// allocate temporary memory
