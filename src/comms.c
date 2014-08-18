@@ -119,9 +119,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			else if( send_dest[j] == -1 )
 			{
 				* params.leakage += pairwise_sum( &flux_array[idx],
-						num_messages[j] * I.n_egroups * tracks_per_msg );
+						I.n_egroups * tracks_per_msg );
 
-				idx += num_messages[j] * I.n_egroups * tracks_per_msg;
+				idx += I.n_egroups * tracks_per_msg;
 				msg_send_id += num_messages[j];
 			}
 			else
@@ -158,7 +158,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			else
 			{
 				MPI_Irecv(
-						&buffer[j],   // Recv Buffer
+						buffer[j],   // Recv Buffer
 						tracks_per_msg,          // Number of Elements
 						grid.Flux_Array,         /* Type of element 
 													(all energy group array) */
