@@ -183,7 +183,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	}
 
-	free(&buffer[0]);
+	free(&buffer[0][0]);
 	free(buffer);
 
 
