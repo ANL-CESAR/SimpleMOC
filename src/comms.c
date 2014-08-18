@@ -149,11 +149,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			// Check if Border Case
 			else if( rec_sources[j] == -1)
 			{
-				long dim = num_messages[j] * I.n_egroups * tracks_per_msg;
+				long dim = I.n_egroups * tracks_per_msg;
 				for( long k =0; k < dim; k++)
 					buffer[j][k] = 0;
 				bookmark += dim;
-				msg_recv_id += num_messages[j];
+				msg_recv_id++;
 			}
 			else
 			{

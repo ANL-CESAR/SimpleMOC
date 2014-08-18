@@ -110,7 +110,7 @@ size_t est_mem_usage( Input I )
 	nbytes += I.ntracks_2D * I.n_polar_angles * sizeof(Track *);
 	nbytes += I.ntracks * sizeof(Track);
 	nbytes += I.ntracks_2D * I.n_polar_angles * z_stacked 
-		* I.n_egroups * 2 * sizeof(float);
+		* I.n_egroups * sizeof(float);
 	nbytes += I.n_source_regions_per_node * sizeof(Source);
 	nbytes += n_xs_regions * sizeof(float **);
 	nbytes += n_xs_regions * sizeof(float **);
@@ -124,6 +124,9 @@ size_t est_mem_usage( Input I )
 	nbytes += I.n_source_regions_per_node * I.fai * sizeof(float *);
 	nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups
 		* sizeof(float);
+	
+	// MPI Buffers
+	nbytes += 6 * I.n_egroups * 10000 * sizeof(float);
 	
 	return nbytes;
 }
