@@ -2,7 +2,7 @@
 13 - y_assemblies - Number of assemblies in the y-axis of the reactor
 9 - cai - Number of coarse axial intervals
 3 - fai - Number of fine axial intervals per coarse  axial interval
-2 - axial_exp - Axial source expansion order
+0 - axial_exp - Axial source expansion order
 0.5 - radial_ray_sep -  Radial ray separation
 0.25 - axial_z_sep -  Axial stacked z-ray separation
 32 - n_azimuthal  -  Number of azimuthal angles (should be 32)
