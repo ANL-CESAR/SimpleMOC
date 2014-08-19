@@ -37,8 +37,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	long send_idx = 0;
 	MPI_Status stat;
-	MPI_Request *request = (MPI_Request *) malloc( 12 * 
-			sizeof(MPI_Request));
 
 	// Computer Message Size
 	size_t bytes = I.n_egroups * sizeof(float) * tracks_per_msg;
@@ -103,10 +101,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	long idx = 0;
 	for( long i = 0; i < max_msgs_per_dir; i++ )
 	{
+		MPI_Request request[12];
 		int active[6] = {0};
 		long bookmark = idx;
-		long req_id = 0;
-		long msg_send_id = 0;
 		for( int j = 0; j < 6; j++ )
 		{
 			if( i >= num_messages[j] )
@@ -128,13 +125,11 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					send_dest[j],	         // Destination MPI rank
 					j,                  // Message ID
 					grid.cart_comm_3d,       // MPI Communicator
-					&request[req_id] );      /* MPI Request (to monitor 
+					&request[j] );      /* MPI Request (to monitor 
 												when call finishes) */
 				idx += (long) I.n_egroups*tracks_per_msg;
-				req_id++;
 			}
 		}
-		long msg_recv_id = 0;
 		for( int j = 0; j < 6; j++ )
 		{
 			if( i >= num_messages[j] )
@@ -156,24 +151,18 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 						rec_sources[j],          // MPI rank to Receive From
 						j,                  // Message ID
 						grid.cart_comm_3d,       // MPI Communicator
-						&request[req_id] );      /* MPI Request (to monitor 
+						&request[j] );      /* MPI Request (to monitor 
 													when call finishes) */
-
-				req_id++;
 				active[j] = 1;
 			}
 		}
 
-		//MPI_Barrier( grid.cart_comm_3d );
-		// Wait for all Communication to Complete
-		for( long i = 0; i < req_id; i++ )
-		{
-			MPI_Wait( &request[i], &stat );
-		}
+		// Block for Comm Round to complete & copy received data out of buffer
 		for( int j = 0; j < 6; j++ )
 		{
 			if( active[j] == 1 )
 			{
+				MPI_Wait( &request[j], &stat );
 				memcpy(&flux_array[bookmark],buffer[j],I.n_egroups*tracks_per_msg);
 				bookmark += (long) I.n_egroups*tracks_per_msg;
 			}
@@ -190,8 +179,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	MPI_Barrier( MPI_COMM_WORLD);
 
 	if(I.mype==0) printf("Finished Inter-Node Border Flux Transfer.\n");
-
-	free(request);
 }
 #endif
 

@@ -2,11 +2,11 @@
 # User Options
 #===============================================================================
 
-COMPILER    = ibm
+COMPILER    = gnu
 MPI         = yes
 OPENMP      = yes
 OPTIMIZE    = yes
-DEBUG       = no
+DEBUG       = yes
 PROFILE     = no
 PAPI        = no
 BENCHMARK   = no
