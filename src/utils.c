@@ -126,7 +126,9 @@ size_t est_mem_usage( Input I )
 		* sizeof(float);
 	
 	// MPI Buffers
+	#ifdef MPI
 	nbytes += 6 * I.n_egroups * 10000 * sizeof(float);
+	#endif
 	
 	return nbytes;
 }
