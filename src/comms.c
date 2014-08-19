@@ -104,7 +104,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	{
 		MPI_Request request[12];
 		int active[6] = {0};
-		int mpi[6] = {0};
+		int mpi_send[6] = {0};
+		int mpi_recv[6] = {0};
 		long bookmark = idx;
 		for( int j = 0; j < 6; j++ )
 		{
@@ -131,6 +132,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					&request[j] );   	/* MPI Request (to monitor 
 											when call finishes) */
 				idx += (long) I.n_egroups * tracks_per_msg;
+				mpi_send[j] = 1;
 			}
 		}
 		for( int j = 0; j < 6; j++ )
@@ -154,7 +156,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 						grid.cart_comm_3d,	// MPI Communicator
 						&request[6+j] ); 		/* MPI Request (to monitor 
 												when call finishes) */
-				mpi[j] = 1;
+				mpi_recv[j] = 1;
 			}
 			active[j] = 1;
 		}
@@ -162,9 +164,12 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		// Block for Comm Round to complete & copy received data out of buffer
 		for( int j = 0; j < 6; j++ )
 		{
-			if( mpi[j] == 1 )
+			if( mpi_send[j] == 1 )
 			{
 				MPI_Wait( &request[j], &stat );
+			}
+			if( mpi_recv[j] == 1 )
+			{
 				MPI_Wait( &request[6+j], &stat );
 			}
 			if( active[j] == 1 )
