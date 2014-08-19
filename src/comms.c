@@ -163,7 +163,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			if( active[j] == 1 )
 			{
 				MPI_Wait( &request[j], &stat );
-				memcpy(&flux_array[bookmark],buffer[j],I.n_egroups*tracks_per_msg);
+				memcpy(&flux_array[bookmark],buffer[j],I.n_egroups*tracks_per_msg*sizeof(float));
 				bookmark += (long) I.n_egroups*tracks_per_msg;
 			}
 		}
