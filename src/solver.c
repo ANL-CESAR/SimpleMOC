@@ -272,6 +272,8 @@ void transport_sweep( Params params, Input I )
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
 	double fine_delta_z = node_delta_z / (I.cai * I.fai);
 
+	// Not needed Anymore since these ptrs are the same
+	/*
 	// initialize fluxes in transport sweep
 	for( int i = 0; i < I.ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
@@ -281,6 +283,7 @@ void transport_sweep( Params params, Input I )
 				for( int g = 0; g < I.n_egroups; g++)
 					track->psi[g] = track->start_flux[g];
 			}
+			*/
 
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
@@ -402,6 +405,7 @@ void transport_sweep( Params params, Input I )
 						{
 							// flag to reset z position
 							bool reset = false;
+
 
 							/* calculate new height based on s 
 							 * (distance traveled in FSR) */
