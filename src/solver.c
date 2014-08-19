@@ -272,19 +272,6 @@ void transport_sweep( Params params, Input I )
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
 	double fine_delta_z = node_delta_z / (I.cai * I.fai);
 
-	// Not needed Anymore since these ptrs are the same
-	/*
-	// initialize fluxes in transport sweep
-	for( int i = 0; i < I.ntracks_2D; i++)
-		for( int j = 0; j < I.n_polar_angles; j++)
-			for( int k = 0; k < I.z_stacked; k++)
-			{
-				Track * track = &params.tracks[i][j][k];
-				for( int g = 0; g < I.n_egroups; g++)
-					track->psi[g] = track->start_flux[g];
-			}
-			*/
-
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
 
@@ -829,7 +816,7 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < I.z_stacked; k++)
 				for( int g = 0; g < I.n_egroups; g++)
-					params.tracks[i][j][k].start_flux[g] *= norm_factor;
+					params.tracks[i][j][k].psi[g] *= norm_factor;
 
 	if( I.mype == 0 ) printf("Renormalizing Flux Complete.\n");
 	return;

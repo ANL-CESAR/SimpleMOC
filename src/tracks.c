@@ -131,16 +131,13 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 				// set polar weight, NOTE: this is the same for same polar angle
 				tracks[i][j][k].p_weight = urand();
 
-				/* Allocate start and end flux arrays (moved allocations out of
-				 * loop so they are contiguous) */
-				tracks[i][j][k].end_flux = &flux_space[flux_idx];
-				tracks[i][j][k].start_flux = tracks[i][j][k].end_flux;
-				tracks[i][j][k].psi = tracks[i][j][k].end_flux;
+				// assign angular flux array memory
+				tracks[i][j][k].psi = &flux_space[flux_idx];
 				flux_idx += I.n_egroups;
 
 				// set incoming flux to 0 (guess 0 for inner assemblies)
 				for( int g = 0; g < I.n_egroups; g++)
-					tracks[i][j][k].start_flux[g] = 0;
+					tracks[i][j][k].psi[g] = 0;
 			}
 		}
 	}

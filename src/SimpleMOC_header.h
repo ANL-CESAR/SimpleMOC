@@ -94,13 +94,9 @@ typedef struct{
 typedef struct{
 	float p_weight;				// Polar Quadrature Weight     (rand)
 	float z_height;           	// Z-height
-	float * start_flux;       	/* Starting (input) flux array received 
-								   from neighbor */
 	long rank_in;              	// MPI rank to receive from
-	float * end_flux;         	/* Attenuated (output) flux array to send to 
-								   output neighbor */
 	long rank_out;             	// MPI rank to send to
-	float * psi;			   	// current angular flux along track
+	float * psi;			   	// Angular flux along track
 } Track;
 
 // Source Region Structure
