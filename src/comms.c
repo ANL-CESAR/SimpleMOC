@@ -32,7 +32,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	max_requests *= 4;
 	max_requests += 2 * (ntracks_per_axial_direction / tracks_per_msg );
 
-	// One for send , one for received
+	// One for send, one for receive
 	max_requests *= 2;
 
 	long send_idx = 0;
@@ -46,7 +46,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 
 	// Use knowledge of underlying flux structure for efficiency
 	float * flux_array = params.tracks[0][0][0].psi;
-
 
 	// make an array of radial sending destinations
 	int send_dest[6] = 
@@ -70,6 +69,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	};
 	
 	// make an array of number of messages
+	// NOTE: There is some rounding here, should be corrected in real app
 	long num_messages[6] =
 	{
 		ntracks_per_radial_direction / tracks_per_msg,
@@ -109,6 +109,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			if( i >= num_messages[j] )
 				continue;
+			
 			// check if border assembly
 			else if( send_dest[j] == -1 )
 			{
@@ -128,20 +129,18 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 					grid.cart_comm_3d,	// MPI Communicator
 					&request[j] );   	/* MPI Request (to monitor 
 											when call finishes) */
-				idx += (long) I.n_egroups*tracks_per_msg;
+				idx += (long) I.n_egroups * tracks_per_msg;
 			}
 		}
 		for( int j = 0; j < 6; j++ )
 		{
 			if( i >= num_messages[j] )
 				continue;
+			
 			// Check if Border Case
 			else if( rec_sources[j] == -1)
-			{
-				long dim = I.n_egroups * tracks_per_msg;
-				for( long k =0; k < dim; k++)
+				for( long k =0; k < I.n_egroups * tracks_per_msg; k++)
 					buffer[j][k] = 0;
-			}
 			else
 			{
 				MPI_Irecv(
@@ -164,7 +163,8 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			if( active[j] == 1 )
 			{
 				MPI_Wait( &request[j], &stat );
-				memcpy(&flux_array[bookmark],buffer[j],I.n_egroups*tracks_per_msg*sizeof(float));
+				memcpy(&flux_array[bookmark], buffer[j],
+						I.n_egroups * tracks_per_msg * sizeof(float));
 				bookmark += (long) I.n_egroups*tracks_per_msg;
 			}
 		}
