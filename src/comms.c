@@ -116,7 +116,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			{
 				* params.leakage += pairwise_sum( &flux_array[idx],
 						I.n_egroups * tracks_per_msg );
-				idx += I.n_egroups * tracks_per_msg;
+				idx += (long) I.n_egroups * tracks_per_msg;
 			}
 			else
 			{
@@ -145,7 +145,6 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 				long dim = I.n_egroups * tracks_per_msg;
 				for( long k =0; k < dim; k++)
 					buffer[j][k] = 0;
-				bookmark += dim;
 			}
 			else
 			{
@@ -175,7 +174,7 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 		{
 			if( active[j] == 1 )
 			{
-				memcpy(&flux_array[bookmark],&buffer[j],I.n_egroups*tracks_per_msg);
+				memcpy(&flux_array[bookmark],buffer[j],I.n_egroups*tracks_per_msg);
 				bookmark += (long) I.n_egroups*tracks_per_msg;
 			}
 		}
