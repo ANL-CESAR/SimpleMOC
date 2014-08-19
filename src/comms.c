@@ -45,10 +45,10 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	
 
 	// Use knowledge of underlying flux structure for efficiency
-	float * flux_array = params.tracks[0][0][0].start_flux;
+	float * flux_array = params.tracks[0][0][0].psi;
 
 
-	// make an array of radial receiving sources
+	// make an array of radial sending destinations
 	int send_dest[6] = 
 	{
 		grid.x_pos_dest,
@@ -84,8 +84,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	// send_idx is now the beginning of the non-border region memory
 	// i.e., we need to actually MPI Send/Recv the rest of the data
 
+	// calculate the maximum number of messages sent in any direction
 	long max_msgs_per_dir = 0;
-	for( long i = 0; i < 6; i++ )
+	for( int i = 0; i < 6; i++ )
 		if( num_messages[i] > max_msgs_per_dir )
 		   max_msgs_per_dir = num_messages[i];
 
@@ -118,15 +119,15 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			else
 			{
 				MPI_Isend(
-					&flux_array[idx],   // Send Buffer
-					tracks_per_msg,                     // Number of Elements
-					grid.Flux_Array,         /* Type of element 
-											    (all energy group array) */
-					send_dest[j],	         // Destination MPI rank
-					j,                  // Message ID
-					grid.cart_comm_3d,       // MPI Communicator
-					&request[j] );      /* MPI Request (to monitor 
-												when call finishes) */
+					&flux_array[idx], 	// Send Buffer
+					tracks_per_msg,     // Number of Elements
+					grid.Flux_Array,  	/* Type of element 
+											(all energy group array) */
+					send_dest[j],	  	// Destination MPI rank
+					j,                	// Message ID
+					grid.cart_comm_3d,	// MPI Communicator
+					&request[j] );   	/* MPI Request (to monitor 
+											when call finishes) */
 				idx += (long) I.n_egroups*tracks_per_msg;
 			}
 		}
@@ -144,15 +145,15 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			else
 			{
 				MPI_Irecv(
-						buffer[j],   // Recv Buffer
-						tracks_per_msg,          // Number of Elements
-						grid.Flux_Array,         /* Type of element 
-													(all energy group array) */
-						rec_sources[j],          // MPI rank to Receive From
-						j,                  // Message ID
-						grid.cart_comm_3d,       // MPI Communicator
-						&request[j] );      /* MPI Request (to monitor 
-													when call finishes) */
+						buffer[j],   		// Recv Buffer
+						tracks_per_msg,   	// Number of Elements
+						grid.Flux_Array,  	/* Type of element 
+												(all energy group array) */
+						rec_sources[j],		// MPI rank to Receive From
+						j,              	// Message ID
+						grid.cart_comm_3d,	// MPI Communicator
+						&request[j] ); 		/* MPI Request (to monitor 
+												when call finishes) */
 				active[j] = 1;
 			}
 		}
@@ -278,14 +279,14 @@ void old_fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 			for( long j = 0; j < num_messages[i]; j++ )
 			{
 				MPI_Isend(
-						&flux_array[send_idx],   // Send Buffer
-						tracks_per_msg,                     // Number of Elements
-						grid.Flux_Array,         /* Type of element 
+						&flux_array[send_idx],  // Send Buffer
+						tracks_per_msg,      	// Number of Elements
+						grid.Flux_Array,        /* Type of element 
 													(all energy group array) */
-						send_dest[i],	         // Destination MPI rank
-						msg_id,                  // Message ID
-						grid.cart_comm_3d,       // MPI Communicator
-						&request[req_id] );      /* MPI Request (to monitor 
+						send_dest[i],	        // Destination MPI rank
+						msg_id,                 // Message ID
+						grid.cart_comm_3d,      // MPI Communicator
+						&request[req_id] );     /* MPI Request (to monitor 
 													when call finishes) */
 				send_idx += (long) I.n_egroups*tracks_per_msg;
 				msg_id++;
