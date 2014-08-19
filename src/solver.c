@@ -1012,18 +1012,6 @@ float compute_keff(Params params, Input I, CommGrid grid)
 
 	MPI_Barrier(grid.cart_comm_3d);
 
-	if( I.mype == 1 )
-	{
-		printf("\nPrinting info for rank 1\n");
-		printf("Node fission = %f\n", node_fission);
-		printf("Node absorption = %f\n", node_abs);
-		printf("Node leakage = %f\n", params.leakage);
-		printf("---------------------------------");
-		printf("Total fission = %f\n", tot_fission);
-		printf("Total absorption = %f\n", tot_abs);
-		printf("Total leakage = %f\n", leakage);
-	}
-
 	// calculate keff
 	float keff = tot_fission/ (tot_abs + leakage);
 	#else
