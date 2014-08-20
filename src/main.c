@@ -89,7 +89,7 @@ int main( int argc, char * argv[] )
 		stop = get_time();
 		time_compute_keff += stop-start;
 		if( mype == 0 )
-			printf("keff = %lf\n", keff);
+			printf("keff = %f\n", keff);
 	}
 
 	double time_total = time_transport + time_flux_exchange 
