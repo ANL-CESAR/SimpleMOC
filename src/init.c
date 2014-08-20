@@ -36,10 +36,10 @@ Input set_default_input( void )
 	I.y_assemblies = 13;        /* Number of assemblies in the y-axis 
 								   of the reactor */
 	I.cai = 9;                	// Number of coarse axial intervals
-	I.fai = 3;                  /* Number of fine axial intervals per coarse 
+	I.fai = 5;                  /* Number of fine axial intervals per coarse 
 								   axial interval */
 	I.axial_exp = 2;            // Axial source expansion order
-	I.radial_ray_sep = 0.5;     // Radial ray separation
+	I.radial_ray_sep = 0.20;    // Radial ray separation
 	I.axial_z_sep = 0.25;       // Axial stacked z-ray separation
 	I.n_azimuthal = 32;         // Number of azimuthal angles (should be 32)
 	I.n_polar_angles = 10;      // Number of polar angles
