@@ -439,7 +439,6 @@ void counter_stop( int * eventset, int num_papi_events, Input * I )
 			if( strcmp(info.symbol, "perf::DTLB-STORE-MISSES") == 0 )
 				tlb_store_m += values[i];
 		}
-		free(events);
 		free(values);	
 	}
 	{
@@ -456,6 +455,7 @@ void counter_stop( int * eventset, int num_papi_events, Input * I )
             }
         }
         free( I->vals_accum );
+		free(events);
 
 		border_print();
 		center_print("PERFORMANCE SUMMARY", 79);
