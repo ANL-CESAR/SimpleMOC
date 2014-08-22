@@ -40,7 +40,7 @@ typedef struct{
 	int n_polar_angles;        	// Number of polar angles
 	int n_egroups;             	// Number of energy groups
 	bool decompose;            	// Turn decomposition on/off
-	int decomp_assemblies_ax;  	// Number of assemblies per sub-domain (axially)
+	int decomp_assemblies_ax;  	// Number of sub-domains per assembly (axially)
 	long segments_per_track;   	// Average number of segments per track
 	float assembly_width;     	// Width of an assembly - 1.26 x 17 cm
 	float height;             	// Height of the reactor - 400 cm

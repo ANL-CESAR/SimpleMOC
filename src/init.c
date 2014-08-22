@@ -46,7 +46,7 @@ Input set_default_input( void )
 	I.n_egroups = 100;        	// Number of energy groups
 	I.decompose = true;      	/* Turn decomposition on/off (true = on, 
 								   flase = off) */
-	I.decomp_assemblies_ax = 3; /* Number of assemblies per sub-domain 
+	I.decomp_assemblies_ax = 3; /* Number of subdomains per assembly
 								   (axially) */
 	I.segments_per_track = 20;  // Average number of segments per track (123)
 	I.assembly_width = 1.26*17; // Width of an assembly - 1.26 x 17 cm
@@ -86,7 +86,7 @@ void set_small_input( Input * I )
 	I->n_egroups = 2;          		// Number of energy groups
 	I->decompose = false;      	 	/* Turn decomposition on/off (true = on, 
 								   		flase = off) */
-	I->decomp_assemblies_ax = 1; 	/* Number of assemblies per sub-domain 
+	I->decomp_assemblies_ax = 1; 	/* Number of sub-domains per assembly
 								   		(axially) */
 	I->segments_per_track = 20;  	// Average number of segments per track
 	I->assembly_width = 1.26*17; 	// Width of an assembly - 1.26 x 17 cm
