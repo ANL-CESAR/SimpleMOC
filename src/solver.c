@@ -354,10 +354,7 @@ void transport_sweep( Params params, Input I )
 			Source *** seg_src = malloc( I.z_stacked * sizeof(Source**) );
 			int * seg_idx = malloc( I.z_stacked * sizeof(int) );
 			int * seg_size = malloc( I.z_stacked * sizeof(int) );
-			if( i == 1 )
-				printf("Allocated 2nd time\n");
-
-			
+				
 			// fill matrix with arrays
 			for( int k = 0; k < I.z_stacked; k++)
 			{
@@ -366,11 +363,6 @@ void transport_sweep( Params params, Input I )
 				seg_src[k] = malloc( seg_size[k] * sizeof(Source *) );
 				seg_idx[k] = 0;
 			}
-		
-			if( i == 1 )
-				printf("Allocated 2nd time Success~\n");
-
-
 
 			// treat positive-z traveling rays first
 			bool pos_z_dir = true;
@@ -515,6 +507,9 @@ void transport_sweep( Params params, Input I )
 								exit(1);
 							}
 
+							// update track height
+							track->z_height = z;
+
 							// save segment lenght and source
 							seg_dist[k][seg_idx[k]] = ds;
 							seg_src[k][seg_idx[k]] = &params.sources[QSR_id];
@@ -539,41 +534,27 @@ void transport_sweep( Params params, Input I )
 						// load distance
 						float ds = seg_dist[k][n];
 
-						/*
-						printf("Im in 'The LOOP' %d / %d\n",k,I.z_stacked);
-						printf("Seg idx = %d\n", seg_idx[k]);
-						printf("n = %d\n", n);
-						*/					
-
 						// select current track
 						Track * track = &params.tracks[i][j][k];
 
 						// update sources and fluxes from attenuation over FSR
 						if( I.axial_exp == 2 )
-						{
 							attenuate_fluxes( track, false,
 								seg_src[k][n], 
 								&I, &params, ds, -mu, 
 								params.tracks_2D[i].az_weight, &A );
-						}
 
 						else if( I.axial_exp == 0 )
 							attenuate_FSR_fluxes( track, false,
 								seg_src[k][n],
 								&I, &params, ds, -mu,
 								params.tracks_2D[i].az_weight, &A );
-						else
-						{
-							printf("Error: invalid axial expansion order");
-							printf("\n Please input 0 or 2\n");
-							exit(1);
-						}
 
 						// update z height
 						track->z_height -= ds * mu;
 					}
 				}
-
+				
 				
 				/* Update all tracks with correct starting z location again
 				 * NOTE: this is only here to acocunt for roundoff error */
@@ -587,7 +568,6 @@ void transport_sweep( Params params, Input I )
 				}
 			}
 
-			printf("Free memory!!!\n");
 			// free memory
 			for( int k = 0; k < I.z_stacked; k++)
 			{
