@@ -110,7 +110,7 @@ size_t est_mem_usage( Input I )
 	nbytes += I.ntracks_2D * I.n_polar_angles * sizeof(Track *);
 	nbytes += I.ntracks * sizeof(Track);
 	nbytes += I.ntracks_2D * I.n_polar_angles * z_stacked 
-		* I.n_egroups * sizeof(float);
+		* I.n_egroups * sizeof(float) * 2;
 	nbytes += I.n_source_regions_per_node * sizeof(Source);
 	nbytes += n_xs_regions * sizeof(float **);
 	nbytes += n_xs_regions * sizeof(float **);
@@ -137,6 +137,6 @@ size_t est_mem_usage( Input I )
 double time_per_intersection( Input I, double time )
 {
 	double tpi = time / (double) I.ntracks /
-		(double) I.segments_per_track / (double) I.n_egroups / 1e-9; 
+		(double) I.segments_per_track / (double) I.n_egroups / 1e-9 / 2; 
 	return tpi;
 }

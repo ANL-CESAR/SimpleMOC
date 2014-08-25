@@ -114,7 +114,7 @@ int main( int argc, char * argv[] )
 		printf("Total Time:                   %6.2lf sec\n", time_total);
 	}
 
-	long tracks_per_second = input.ntracks/time_transport;
+	long tracks_per_second = 2 * input.ntracks/time_transport;
 
 	#ifdef MPI
 	MPI_Barrier(grid.cart_comm_3d);
