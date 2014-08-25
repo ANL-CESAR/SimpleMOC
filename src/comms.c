@@ -45,7 +45,9 @@ void fast_transfer_boundary_fluxes( Params params, Input I, CommGrid grid)
 	
 
 	// Use knowledge of underlying flux structure for efficiency
-	float * flux_array = params.tracks[0][0][0].psi;
+	float * flux_array = params.tracks[0][0][0].f_psi;
+
+	// TODO: Send reverse direction as well!!!
 
 	// make an array of radial sending destinations
 	int send_dest[6] = 

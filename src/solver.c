@@ -11,7 +11,7 @@
  * (but less effiient) version of the code in terms of the underlying physics, 
  * see alt_attenuate_fluxes which solves the problem in a more naive, 
  * straightforward manner. */
-void attenuate_fluxes( Track * track, Source * QSR, Input * I_in, 
+void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 		Params * params_in, float ds, float mu, float az_weight, 
 		AttenuateVars * A ) 
 {
@@ -167,6 +167,13 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 			/ (sigT[g] * sigT2[g]); 
 	}
 
+
+	float * psi;
+	if(forward)
+		psi = track->f_psi;
+	else
+		psi = track->b_psi;
+
 	//#pragma vector nontemporal
 	#ifdef INTEL
 	#pragma simd
@@ -176,7 +183,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
-		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g])
+		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * psi[g] - q0[g])
 			* expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 
 			* (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) 
 			/ (3.f * sigT2[g] * sigT2[g]);
@@ -249,7 +256,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t4[g] = track->psi[g] * (1.f - expVal[g]);
+		t4[g] = psi[g] * (1.f - expVal[g]);
 	}
 	// Total psi
 	#ifdef INTEL
@@ -259,7 +266,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		track->psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
+		psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
 	}
 }	
 
@@ -274,8 +281,6 @@ void transport_sweep( Params params, Input I )
 
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
-
-	//print_Input_struct( I );
 
 	#pragma omp parallel default(none) \
 	shared( I, params, node_delta_z, fine_delta_z ) 
@@ -344,6 +349,28 @@ void transport_sweep( Params params, Input I )
 							I.ntracks_2D );
 			#endif
 
+			// allocate arrays for segment storage
+			double ** seg_dist = malloc( I.z_stacked * sizeof(double *) );
+			Source *** seg_src = malloc( I.z_stacked * sizeof(Source**) );
+			int * seg_idx = malloc( I.z_stacked * sizeof(int) );
+			int * seg_size = malloc( I.z_stacked * sizeof(int) );
+			if( i == 1 )
+				printf("Allocated 2nd time\n");
+
+			
+			// fill matrix with arrays
+			for( int k = 0; k < I.z_stacked; k++)
+			{
+				seg_size[k] = 2 * I.segments_per_track;
+				seg_dist[k] = malloc( seg_size[k] * sizeof(double) );
+				seg_src[k] = malloc( seg_size[k] * sizeof(Source *) );
+				seg_idx[k] = 0;
+			}
+		
+			if( i == 1 )
+				printf("Allocated 2nd time Success~\n");
+
+
 
 			// treat positive-z traveling rays first
 			bool pos_z_dir = true;
@@ -357,6 +384,10 @@ void transport_sweep( Params params, Input I )
 				// start with all z stacked rays
 				int begin_stacked = 0;
 				int end_stacked = I.z_stacked;
+
+				// reset semgnet indexes
+				for( int k = 0; k < I.z_stacked; k++)
+					seg_idx[k] = 0;
 
 				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
 				{
@@ -467,13 +498,13 @@ void transport_sweep( Params params, Input I )
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
 							if( I.axial_exp == 2 )
-								attenuate_fluxes( track, 
+								attenuate_fluxes( track, true,
 										&params.sources[QSR_id], 
 										&I, &params, ds, mu, 
 										params.tracks_2D[i].az_weight, &A );
 
 							else if( I.axial_exp == 0 )
-								attenuate_FSR_fluxes( track,
+								attenuate_FSR_fluxes( track, true,
 										&params.sources[QSR_id],
 										&I, &params, ds, mu,
 										params.tracks_2D[i].az_weight, &A );
@@ -484,22 +515,90 @@ void transport_sweep( Params params, Input I )
 								exit(1);
 							}
 
-							// update with new z height or reset if finished
-							if( n == params.tracks_2D[i].n_segments - 1  
-									|| reset)
+							// save segment lenght and source
+							seg_dist[k][seg_idx[k]] = ds;
+							seg_src[k][seg_idx[k]] = &params.sources[QSR_id];
+							seg_idx[k]++;
+							if( seg_idx[k] >= seg_size[k] )
 							{
-								if( pos_z_dir)
-									track->z_height = I.axial_z_sep * k;
-								else
-									track->z_height = I.axial_z_sep * (k+1);
+								seg_size[k] *= 2;
+								seg_dist[k] = (double *) realloc( seg_dist[k],
+										seg_size[k] * sizeof(double) );
+								seg_src[k] = (Source **) realloc( seg_src[k],
+										seg_size[k] * sizeof(Source *) );
 							}
-							else
-								track->z_height = z;
-
 						}
 					}
 				}
+				
+				// loop over all z stacked rays again
+				for( int k = 0; k < I.z_stacked; k++ )
+				{
+					for( int n = seg_idx[k]-1; n >= 0; n--)
+					{
+						// load distance
+						float ds = seg_dist[k][n];
+
+						/*
+						printf("Im in 'The LOOP' %d / %d\n",k,I.z_stacked);
+						printf("Seg idx = %d\n", seg_idx[k]);
+						printf("n = %d\n", n);
+						*/					
+
+						// select current track
+						Track * track = &params.tracks[i][j][k];
+
+						// update sources and fluxes from attenuation over FSR
+						if( I.axial_exp == 2 )
+						{
+							attenuate_fluxes( track, false,
+								seg_src[k][n], 
+								&I, &params, ds, -mu, 
+								params.tracks_2D[i].az_weight, &A );
+						}
+
+						else if( I.axial_exp == 0 )
+							attenuate_FSR_fluxes( track, false,
+								seg_src[k][n],
+								&I, &params, ds, -mu,
+								params.tracks_2D[i].az_weight, &A );
+						else
+						{
+							printf("Error: invalid axial expansion order");
+							printf("\n Please input 0 or 2\n");
+							exit(1);
+						}
+
+						// update z height
+						track->z_height -= ds * mu;
+					}
+				}
+
+				
+				/* Update all tracks with correct starting z location again
+				 * NOTE: this is only here to acocunt for roundoff error */
+				for( int k = 0; k < I.z_stacked; k++)
+				{
+					Track * track = &params.tracks[i][j][k];
+					if( pos_z_dir)
+						track->z_height = I.axial_z_sep * k;
+					else
+						track->z_height = I.axial_z_sep * (k+1);
+				}
 			}
+
+			printf("Free memory!!!\n");
+			// free memory
+			for( int k = 0; k < I.z_stacked; k++)
+			{
+				free(seg_dist[k]);
+				free(seg_src[k]);
+			}
+			free(seg_dist);
+			free(seg_src);
+			free(seg_idx);
+			free(seg_size);
+
 		}
 		#ifdef OPENMP
 		if(thread == 0 && I.mype==0) printf("\n");
@@ -550,7 +649,7 @@ int get_neg_interval( float z, float dz)
  * This legacy function is unused since it is less efficient than the current 
  * attenuate_fluxes function. However, it provides a more straightforward 
  * description of the underlying physical problem. */
-void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I, 
+void alt_attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I,
 		Params * params, float ds, float mu, float az_weight ) 
 {
 	// compute fine axial interval spacing
@@ -635,8 +734,15 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 		// compute exponential ( 1 - exp(-x) ) using table lookup
 		float expVal = interpolateTable( params->expTable, tau );  
 
+		// load correct angular flux vector
+		float * psi;
+		if(forward)
+			psi = track->f_psi;
+		else
+			psi = track->b_psi;
+
 		// add contribution to new source flux
-		float flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
+		float flux_integral = (q0 * tau + (sigT * psi[g] - q0) * expVal)
 			/ sigT2
 			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
 			/ (sigT * sigT2)
@@ -647,7 +753,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 		FSR_flux[g] += weight * flux_integral;
 
 		// update angular flux
-		track->psi[g] = track->psi[g] * (1.0 - expVal) + q0 * expVal / sigT
+		psi[g] = psi[g] * (1.0 - expVal) + q0 * expVal / sigT
 			+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
 			(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
 	}
@@ -656,7 +762,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 /* Determines the change in angular flux along a particular track across a fine
  * axial region and tallies the contribution to the scalar flux in the fine 
  * axial region. This function assumes a constant  source. */ 
-void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
+void attenuate_FSR_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 		Params * params_in, float ds, float mu, float az_weight, 
 		AttenuateVars *A)
 {
@@ -709,6 +815,12 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 		expVal[g] = interpolateTable( params.expTable, tau[g] );
 	}
 
+	float * psi;
+	if(forward)
+		psi = track->f_psi;
+	else
+		psi = track->b_psi;
+
 	#ifdef INTEL
 	#pragma simd
 	#elif defined IBM
@@ -718,13 +830,13 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	{
 		// compute angular flux attenuation
 		float q = FSR->fine_source[fine_id][g] / sigT[g];
-		float delta_psi = (track->psi[g] - q) * expVal[g];
+		float delta_psi = (psi[g] - q) * expVal[g];
 
 		// add contribution to new source flux
 		tally[g] = weight * delta_psi;
 
 		// update angular flux
-		track->psi[g] -= delta_psi;
+		psi[g] -= delta_psi;
 	}
 
 
@@ -816,7 +928,10 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < I.z_stacked; k++)
 				for( int g = 0; g < I.n_egroups; g++)
-					params.tracks[i][j][k].psi[g] *= norm_factor;
+				{
+					params.tracks[i][j][k].f_psi[g] *= norm_factor;
+					params.tracks[i][j][k].b_psi[g] *= norm_factor;
+				}
 
 	if( I.mype == 0 ) printf("Renormalizing Flux Complete.\n");
 	return;

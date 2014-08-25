@@ -103,7 +103,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 	}
 
 	// Allocate space for Flux Arrays
-	size_t flux_bytes_needed = I.ntracks * I.n_egroups * sizeof(float);
+	size_t flux_bytes_needed = 2 * I.ntracks * I.n_egroups * sizeof(float);
 	
 	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", 
 			flux_bytes_needed / 1024 / 1024);
@@ -132,12 +132,17 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 				tracks[i][j][k].p_weight = urand();
 
 				// assign angular flux array memory
-				tracks[i][j][k].psi = &flux_space[flux_idx];
+				tracks[i][j][k].f_psi = &flux_space[flux_idx];
 				flux_idx += I.n_egroups;
-
+				tracks[i][j][k].b_psi = &flux_space[flux_idx];
+				flux_idx += I.n_egroups;
+				
 				// set incoming flux to 0 (guess 0 for inner assemblies)
 				for( int g = 0; g < I.n_egroups; g++)
-					tracks[i][j][k].psi[g] = 0;
+				{
+					tracks[i][j][k].f_psi[g] = 0;
+					tracks[i][j][k].b_psi[g] = 0;
+				}
 			}
 		}
 	}

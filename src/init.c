@@ -10,6 +10,9 @@ void calculate_derived_inputs( Input * I )
 	I->mype = mype;
 	#endif
 
+	/* Divide number of azimuthal angles by 2 to accound for forward/backward
+	 *  tracking */
+	I->n_azimuthal /= 2;
 
 	// calculate number of 2D tracks, enforcing divisible by 2
 	I->ntracks_2D = I->n_azimuthal * 

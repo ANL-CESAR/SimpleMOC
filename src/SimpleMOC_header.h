@@ -96,7 +96,8 @@ typedef struct{
 	float z_height;           	// Z-height
 	long rank_in;              	// MPI rank to receive from
 	long rank_out;             	// MPI rank to send to
-	float * psi;			   	// Angular flux along track
+	float * f_psi;			   	// Angular flux along track
+	float * b_psi;
 } Track;
 
 // Source Region Structure
@@ -218,11 +219,11 @@ void transport_sweep( Params params, Input I );
 int get_pos_interval( float z, float dz);
 int get_neg_interval( float z, float dz);
 int get_alt_neg_interval( float z, float dz);
-void attenuate_fluxes( Track * track, Source * QSR, Input * I, 
+void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I, 
 		Params * params, float ds, float mu, float az_weight, AttenuateVars * A ); 
-void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
+void attenuate_FSR_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 		Params * params, float ds, float mu, float az_weight, AttenuateVars * A );
-void alt_attenuate_fluxes( Track * track, Source * FSR, Input * I,
+void alt_attenuate_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 		Params * params, float ds, float mu, float az_weight );
 void renormalize_flux( Params params, Input I, CommGrid grid );
 float update_sources( Params params, Input I, float keff );
