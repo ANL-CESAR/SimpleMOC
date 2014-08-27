@@ -125,6 +125,16 @@ size_t est_mem_usage( Input I )
 	nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups
 		* sizeof(float);
 	
+	// 2way tracking memory
+	nbytes += I.nthreads * I.z_stacked * sizeof(double *);
+	nbytes += I.nthreads * I.z_stacked * sizeof(Source**);
+	nbytes += I.nthreads * I.z_stacked * sizeof(int);
+	nbytes += I.nthreads * I.z_stacked * sizeof(int);			
+	nbytes += I.nthreads * I.z_stacked * 2 * I.segments_per_track 
+		* sizeof(double);
+	nbytes += I.nthreads * I.z_stacked * 2 * I.segments_per_track 
+		* sizeof(Source *);		
+
 	// MPI Buffers
 	#ifdef MPI
 	nbytes += 6 * I.n_egroups * 10000 * sizeof(float);

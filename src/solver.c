@@ -510,10 +510,12 @@ void transport_sweep( Params params, Input I )
 							// update track height
 							track->z_height = z;
 
-							// save segment lenght and source
+							// save segment length and source
 							seg_dist[k][seg_idx[k]] = ds;
 							seg_src[k][seg_idx[k]] = &params.sources[QSR_id];
 							seg_idx[k]++;
+
+							// check if array needs to grow
 							if( seg_idx[k] >= seg_size[k] )
 							{
 								seg_size[k] *= 2;
