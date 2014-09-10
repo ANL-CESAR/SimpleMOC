@@ -30,12 +30,11 @@ int main( int argc, char * argv[] )
 	omp_set_num_threads(input.nthreads); 
 	#endif
 
+	Params params = build_tracks( &input );
 	CommGrid grid = init_mpi_grid( input );
 
 	if( mype == 0 )
 		print_input_summary(input);
-
-	Params params = build_tracks( input );
 
 	float res;
 	float keff = 1.0;

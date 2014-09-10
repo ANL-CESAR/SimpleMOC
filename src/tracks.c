@@ -146,7 +146,6 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 			}
 		}
 	}
-
 	return tracks;
 }
 
@@ -166,4 +165,121 @@ float * generate_polar_angles( Input I )
 		polar_angles[i] = M_PI * (i + 0.5) / I.n_polar_angles;
 	
 	return polar_angles;
+}
+
+Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbytes)
+{
+	int ret;
+	FILE* in;
+	in = fopen(fname, "r");
+	printf("Reading track data from:\n%s\n",fname);
+	int string_length;
+
+	/* Import Geometry metadata from the Track file */
+	ret = fread(&string_length, sizeof(int), 1, in);
+	char geometry_to_string[string_length];
+	ret = fread(geometry_to_string, sizeof(char)*string_length, 1, in);
+	printf("Importing ray tracing data from file...\n");
+	
+	/* Import ray tracing metadata from the Track file */
+	double spacing;
+	ret = fread(&I->n_azimuthal, sizeof(int), 1, in);
+	ret = fread(&spacing, sizeof(double), 1, in);
+	I->radial_ray_sep = (float) spacing;
+
+	/* Initialize data structures for Tracks */
+	int num_tracks[I->n_azimuthal];
+	int num_x[I->n_azimuthal];
+	int num_y[I->n_azimuthal];
+	double azim_weights[I->n_azimuthal];
+	
+	ret = fread(num_tracks, sizeof(int), I->n_azimuthal, in);
+	ret = fread(num_x, sizeof(int), I->n_azimuthal, in);
+	ret = fread(num_y, sizeof(int), I->n_azimuthal, in);
+	ret = fread(azim_weights, sizeof(double), I->n_azimuthal, in);
+	
+	/* Import azimuthal angle quadrature weights from Track file */
+	double x0, y0, x1, y1;
+	double phi;
+	int azim_angle_index;
+	int num_segments;
+	double length;
+	int material_id;
+	int region_id;
+	int mesh_surface_fwd;
+	int mesh_surface_bwd;
+	long num_2D_tracks;
+
+	/* Calculate the total number of 2D Tracks */
+	I->ntracks_2D = 0;
+	for (int i=0; i < I->n_azimuthal; i++)
+		I->ntracks_2D += (long) num_tracks[i];	
+	
+	/* Allocate memory for 2D tracks */
+	Track2D * tracks = (Track2D *) malloc( I->ntracks_2D * sizeof(Track2D));
+	*nbytes += I->ntracks_2D * sizeof(Track2D);
+
+	/* Allocate memory for the number of segments per Track array */
+	int uid = 0;
+	long tot_num_segments = 0;
+
+	/* Loop over Tracks */
+	for (int i=0; i < I->n_azimuthal; i++)
+	{
+		//TODO: recored actual azimuthal angles ???
+		for (int j=0; j < num_tracks[i]; j++)
+		{
+			/* Import data for this Track from Track file */
+			ret = fread(&x0, sizeof(double), 1, in);
+			ret = fread(&y0, sizeof(double), 1, in);
+			ret = fread(&x1, sizeof(double), 1, in);
+			ret = fread(&y1, sizeof(double), 1, in);
+			ret = fread(&phi, sizeof(double), 1, in);
+			ret = fread(&azim_angle_index, sizeof(int), 1, in);
+			
+			/* Load number of segments */
+			ret = fread(&num_segments, sizeof(int), 1, in);
+			tracks[uid].n_segments = (long) num_segments;
+			tot_num_segments += tracks[uid].n_segments;
+
+			/* Allocate memory for segments */
+			tracks[uid].segments = (Segment *) malloc( tracks[uid].n_segments
+					* sizeof(Segment) );
+
+			// TODO: set real azimuthal weight
+			tracks[uid].az_weight = urand();
+	
+			/* Loop over all segments in this Track */
+			for (int s=0; s < num_segments; s++)
+			{
+				/* Import data for this segment from Track file */
+				ret = fread(&length, sizeof(double), 1, in);
+				ret = fread(&material_id, sizeof(int), 1, in);
+				ret = fread(&region_id, sizeof(int), 1, in);
+			
+				/* record track length */
+				tracks[uid].segments[s].length = (float) length;
+
+				/* record region_id (not used at the moment) */
+				tracks[uid].segments[s].source_id = (long) region_id;
+
+				/* Import CMFD-related data if needed */
+				if (CMFD_obj)
+				{
+					ret = fread(&mesh_surface_fwd, sizeof(int), 1, in);
+					ret = fread(&mesh_surface_bwd, sizeof(int), 1, in);
+				}
+			}
+			uid++;
+		}
+	}
+
+	printf("Number of 2D tracks = %ld\n", I->ntracks_2D);
+	I->ntracks = I->ntracks_2D * I->n_polar_angles * I->z_stacked;  
+	printf("Number of 3D tracks = %ld\n", I->ntracks);
+	printf("Number of segments = %ld\n", tot_num_segments);
+
+	/* Close the Track file */
+	fclose(in);
+	return tracks;
 }

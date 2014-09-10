@@ -16,7 +16,7 @@ void calculate_derived_inputs( Input * I )
 
 	// calculate number of 2D tracks, enforcing divisible by 2
 	I->ntracks_2D = I->n_azimuthal * 
-		(I->assembly_width * sqrt(2) / I->radial_ray_sep);
+			(I->assembly_width * sqrt(2) / I->radial_ray_sep);
 
 	I->ntracks_2D = 2 * ( I->ntracks_2D / 2 );
 
@@ -102,8 +102,9 @@ void set_small_input( Input * I )
 }
 
 // Initializes all track data
-Params build_tracks( Input I )
+Params build_tracks( Input* input )
 {
+	Input I = *input;
 	size_t nbytes = 0;
 	Params params;
 
@@ -114,7 +115,15 @@ Params build_tracks( Input I )
 		printf("Initializing 2D tracks...\n");
 	}
 
-    params.tracks_2D = generate_2D_tracks(I, &nbytes); 
+	if(true)
+	{
+		params.tracks_2D = load_OpenMOC_tracks(
+				"/home/geogunow/ClosedMOC/sample-input/benchmarks/c5g7/tracks"
+				"/tracks_4_angles_0.1_cm_spacing.data",false, input, &nbytes);
+		I = *input;
+	}
+	else
+    	params.tracks_2D = generate_2D_tracks(I, &nbytes); 
 
 	if(I.mype == 0)
 	{
@@ -230,3 +239,5 @@ omp_lock_t * init_locks( Input I )
 	return locks;
 }	
 #endif
+
+

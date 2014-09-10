@@ -127,7 +127,6 @@ void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 		}
 	}
 
-
 	// cycle over energy groups
 	#ifdef INTEL
 	#pragma simd
@@ -377,6 +376,7 @@ void transport_sweep( Params params, Input I )
 				int begin_stacked = 0;
 				int end_stacked = I.z_stacked;
 
+			
 				// reset semgnet indexes
 				for( int k = 0; k < I.z_stacked; k++)
 					seg_idx[k] = 0;
@@ -415,7 +415,6 @@ void transport_sweep( Params params, Input I )
 						{
 							// flag to reset z position
 							bool reset = false;
-
 
 							/* calculate new height based on s 
 							 * (distance traveled in FSR) */

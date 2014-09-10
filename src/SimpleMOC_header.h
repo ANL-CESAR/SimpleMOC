@@ -173,7 +173,7 @@ typedef struct{
 // init.c
 Input set_default_input( void );
 void set_small_input( Input * I );
-Params build_tracks( Input I );
+Params build_tracks( Input* I );
 CommGrid init_mpi_grid( Input I );
 void calculate_derived_inputs( Input * I );
 #ifdef OPENMP
@@ -199,6 +199,7 @@ Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );
 float * generate_polar_angles( Input I );
+Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbytes);
 
 // utils.c
 float urand(void);
