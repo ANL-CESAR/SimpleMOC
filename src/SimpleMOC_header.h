@@ -68,6 +68,9 @@ typedef struct{
     long long *vals_accum;
     #endif
 
+	bool load_tracks;		// Turn on/off loading 2D tracks from file
+	char* track_file;		// Name/address of tracking file to load
+
 } Input;
 
 // Localized geometrical region ID

@@ -68,6 +68,8 @@ Input set_default_input( void )
 	I.nthreads = omp_get_max_threads();
 	#endif
 
+	I.load_tracks = false; 
+
 	return I;
 }
 
@@ -98,7 +100,6 @@ void set_small_input( Input * I )
 
 	// source regions per assembly (estimate)
 	I->n_2D_source_regions_per_assembly = 3000; 
-
 }
 
 // Initializes all track data
@@ -115,11 +116,10 @@ Params build_tracks( Input* input )
 		printf("Initializing 2D tracks...\n");
 	}
 
-	if(true)
+	if(I.load_tracks)
 	{
 		params.tracks_2D = load_OpenMOC_tracks(
-				"/home/geogunow/ClosedMOC/sample-input/benchmarks/c5g7/tracks"
-				"/tracks_4_angles_0.1_cm_spacing.data",false, input, &nbytes);
+				I.track_file,false, input, &nbytes);
 		I = *input;
 	}
 	else

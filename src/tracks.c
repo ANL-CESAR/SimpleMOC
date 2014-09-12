@@ -219,10 +219,47 @@ Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbyt
 	Track2D * tracks = (Track2D *) malloc( I->ntracks_2D * sizeof(Track2D));
 	*nbytes += I->ntracks_2D * sizeof(Track2D);
 
-	/* Allocate memory for the number of segments per Track array */
-	int uid = 0;
+	// Allocate memory for the number of segments per Track array
 	long tot_num_segments = 0;
 
+	fpos_t checkpoint;
+	fgetpos(in, &checkpoint);
+
+	// Loop over tracks to determine total number of segments
+	for (int i=0; i < I->n_azimuthal; i++)
+	{
+		for (int j=0; j < num_tracks[i]; j++)
+		{
+			// Skip to segment number information
+			fseek( in, 5*sizeof(double) + sizeof(int), SEEK_CUR);
+			
+			// Load number of segments
+			ret = fread(&num_segments, sizeof(int), 1, in);
+			tot_num_segments += (long) num_segments;
+
+			// Loop over all segments in this Track
+			for (int s=0; s < num_segments; s++)
+			{
+				// Skip ahead again 
+				fseek( in, 2*sizeof(int) + sizeof(double), SEEK_CUR);
+				if (CMFD_obj)
+					fseek( in, 2*sizeof(int), SEEK_CUR);
+			}
+		}
+	}
+
+	// Allocate contiguous space for segments 
+	Segment * contiguous_segments = (Segment *) malloc( tot_num_segments 
+			* sizeof(Segment));
+	*nbytes += tot_num_segments * sizeof(Segment);
+
+	// Reset file handle 
+	fsetpos(in, &checkpoint);
+	
+	/* Initialize 2D track unique identifer (uid) end semgnet index (idx)*/
+	int uid = 0;
+	int idx = 0;
+	
 	/* Loop over Tracks */
 	for (int i=0; i < I->n_azimuthal; i++)
 	{
@@ -240,15 +277,14 @@ Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbyt
 			/* Load number of segments */
 			ret = fread(&num_segments, sizeof(int), 1, in);
 			tracks[uid].n_segments = (long) num_segments;
-			tot_num_segments += tracks[uid].n_segments;
 
 			/* Allocate memory for segments */
-			tracks[uid].segments = (Segment *) malloc( tracks[uid].n_segments
-					* sizeof(Segment) );
+			tracks[uid].segments = &contiguous_segments[idx];
+			idx += tracks[uid].n_segments;
 
 			// TODO: set real azimuthal weight
 			tracks[uid].az_weight = urand();
-	
+		
 			/* Loop over all segments in this Track */
 			for (int s=0; s < num_segments; s++)
 			{
