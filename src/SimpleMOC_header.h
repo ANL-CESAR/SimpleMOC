@@ -91,6 +91,7 @@ typedef struct{
 	float az_weight;          	// Azimuthal Quadrature Weight (rand)
 	long n_segments;           	// Number of Segments (gaussian)
 	Segment * segments;        	// Array of Segments
+	int n_3D_segments;			// Number of intersections in 3D tracks
 } Track2D;
 
 // Track Structure
@@ -99,8 +100,8 @@ typedef struct{
 	float z_height;           	// Z-height
 	long rank_in;              	// MPI rank to receive from
 	long rank_out;             	// MPI rank to send to
-	float * f_psi;			   	// Angular flux along track
-	float * b_psi;
+	float * f_psi;			   	// Forward angular flux along track
+	float * b_psi;				// Backward angular flux along track
 } Track;
 
 // Source Region Structure

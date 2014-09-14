@@ -136,7 +136,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 				flux_idx += I.n_egroups;
 				tracks[i][j][k].b_psi = &flux_space[flux_idx];
 				flux_idx += I.n_egroups;
-				
+
 				// set incoming flux to 0 (guess 0 for inner assemblies)
 				for( int g = 0; g < I.n_egroups; g++)
 				{
@@ -263,7 +263,7 @@ Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbyt
 	/* Loop over Tracks */
 	for (int i=0; i < I->n_azimuthal; i++)
 	{
-		//TODO: recored actual azimuthal angles ???
+		//TODO: recored actual azimuthal angles
 		for (int j=0; j < num_tracks[i]; j++)
 		{
 			/* Import data for this Track from Track file */
@@ -309,9 +309,11 @@ Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbyt
 			uid++;
 		}
 	}
+	// recalculate average number of segments per track
+	I->segments_per_track = tot_num_segments / I->ntracks_2D;	
 
 	printf("Number of 2D tracks = %ld\n", I->ntracks_2D);
-	I->ntracks = I->ntracks_2D * I->n_polar_angles * I->z_stacked;  
+	I->ntracks = I->ntracks_2D * I->n_polar_angles * I->z_stacked; 
 	printf("Number of 3D tracks = %ld\n", I->ntracks);
 	printf("Number of segments = %ld\n", tot_num_segments);
 

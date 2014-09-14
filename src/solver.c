@@ -54,6 +54,9 @@ void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 
 	if( fine_id == 0 )
 	{
+		// adjust z height to account for edge
+		zin -= dz;
+
 		// cycle over energy groups
 		#ifdef INTEL
 		#pragma simd
@@ -63,21 +66,26 @@ void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
-			float y2 = QSR->fine_source[fine_id][g];
-			float y3 = QSR->fine_source[fine_id+1][g];
+			float y1 = QSR->fine_source[fine_id][g];
+			float y2 = QSR->fine_source[fine_id+1][g];
+			float y3 = QSR->fine_source[fine_id+2][g];
 
-			// do linear "fitting"
+			// do quadratic "fitting"
 			float c0 = y2;
-			float c1 = (y3 - y2) / dz;
-
+			float c1 = (y1 - y3) / (2.f*dz);
+			float c2 = (y1 - 2.f*y2 + y3) / (2.f*dz*dz);
+			
 			// calculate q0, q1, q2
-			q0[g] = c0 + c1*zin;
-			q1[g] = c1;
-			q2[g] = 0;
+			q0[g] = c0 + c1*zin + c2*zin*zin;
+			q1[g] = c1 + 2.f*c2*zin;
+			q2[g] = c2;
 		}
 	}
 	else if ( fine_id == I.fai - 1 )
 	{
+		// adjust z height to account for edge
+		zin += dz;
+		
 		// cycle over energy groups
 		#ifdef INTEL
 		#pragma simd
@@ -87,17 +95,19 @@ void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
-			float y1 = QSR->fine_source[fine_id-1][g];
-			float y2 = QSR->fine_source[fine_id][g];
+			float y1 = QSR->fine_source[fine_id-2][g];
+			float y2 = QSR->fine_source[fine_id-1][g];
+			float y3 = QSR->fine_source[fine_id][g];
 
-			// do linear "fitting"
+			// do quadratic "fitting"
 			float c0 = y2;
-			float c1 = (y2 - y1) / dz;
+			float c1 = (y1 - y3) / (2.f*dz);
+			float c2 = (y1 - 2.f*y2 + y3) / (2.f*dz*dz);
 
 			// calculate q0, q1, q2
-			q0[g] = c0 + c1*zin;
-			q1[g] = c1;
-			q2[g] = 0;
+			q0[g] = c0 + c1*zin + c2*zin*zin;
+			q1[g] = c1 + 2.f*c2*zin;
+			q2[g] = c2;
 		}
 	}
 	else
@@ -276,13 +286,14 @@ void transport_sweep( Params params, Input I )
 
 	// calculate the height of a node's domain and of each FSR
 	double node_delta_z = I.height / I.decomp_assemblies_ax;
-	double fine_delta_z = node_delta_z / (I.cai * I.fai);
+	int num_intervals = (I.cai * I.fai);
+	double fine_delta_z = node_delta_z / num_intervals;
 
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
 
 	#pragma omp parallel default(none) \
-	shared( I, params, node_delta_z, fine_delta_z ) 
+	shared( I, params, node_delta_z, fine_delta_z, num_intervals ) 
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
@@ -348,13 +359,13 @@ void transport_sweep( Params params, Input I )
 							I.ntracks_2D );
 			#endif
 
-			// allocate arrays for segment storage
+			// allocate arrays for segment storage FIXME
 			double ** seg_dist = malloc( I.z_stacked * sizeof(double *) );
 			Source *** seg_src = malloc( I.z_stacked * sizeof(Source**) );
 			int * seg_idx = malloc( I.z_stacked * sizeof(int) );
 			int * seg_size = malloc( I.z_stacked * sizeof(int) );
-				
-			// fill matrix with arrays
+
+			// fill matrix with arrays FIXME
 			for( int k = 0; k < I.z_stacked; k++)
 			{
 				seg_size[k] = 2 * I.segments_per_track;
@@ -376,7 +387,6 @@ void transport_sweep( Params params, Input I )
 				int begin_stacked = 0;
 				int end_stacked = I.z_stacked;
 
-			
 				// reset semgnet indexes
 				for( int k = 0; k < I.z_stacked; k++)
 					seg_idx[k] = 0;
@@ -391,99 +401,87 @@ void transport_sweep( Params params, Input I )
 					float ds = 0;
 
 					// loop over remaining z-stacked rays
+					int tracks_completed = 0;
 					for( int k = begin_stacked; k < end_stacked; k++)
 					{
-						// initialize s to full length
-						float s = s_full;
-
 						// select current track
 						Track * track = &params.tracks[i][j][k];
+
+						// determine current axial interval
+						int interval = (int) track->z_height / fine_delta_z;
+
+						// calculate distance to domain boundary
+						float bound_dist;
+						if( pos_z_dir)
+							bound_dist = (node_delta_z - track->z_height) / mu;
+						else
+							bound_dist = -track->z_height / mu;
+
+						// determine track length
+						float s;
+						if(	s_full < bound_dist )
+							s = s_full;
+						else
+						{
+							// note completion of track
+							s = bound_dist;
+							tracks_completed++;
+						}
 
 						// set flag for completeion of segment
 						bool seg_complete = false;
 
-						// calculate interval
-						int curr_interval;
-						if( pos_z_dir)
-							curr_interval = get_pos_interval(track->z_height, 
-									fine_delta_z);
-						else
-							curr_interval = get_neg_interval(track->z_height, 
-									fine_delta_z);
-
 						while( !seg_complete )
 						{
-							// flag to reset z position
-							bool reset = false;
+							// initialize tracking variables
+							long QSR_id = interval + num_intervals * n;
+							float ds;
+							float z;
 
-							/* calculate new height based on s 
-							 * (distance traveled in FSR) */
-							float z = track->z_height + s * cos(p_angle);
-
-							// check if still in same FSR (fine axial interval)
-							int new_interval;
+							// calculate z height of next fine axial interval
+							float fai_z_height;
 							if( pos_z_dir )
-								new_interval = get_pos_interval(z, 
-										fine_delta_z);
+								fai_z_height = (interval + 1) * fine_delta_z ;
 							else
-								new_interval = get_neg_interval(z,
-										fine_delta_z);
+								fai_z_height = interval * fine_delta_z;
 
-							if( new_interval == curr_interval )
-							{
-								seg_complete = true;
-								ds = s;
-							}
+							// calculate z distance to next fine axial interval
+							float z_dist_to_fai = 
+								fai_z_height - track->z_height;
 
-							// otherwise, we need to recalculate distances
-							else
+							/* calculate total distance (s) to fine axial 
+							 * interval */
+							float s_dist_to_fai = z_dist_to_fai / mu;
+
+							// determine if a fine axial interval is crossed
+							if( s_dist_to_fai < s )
 							{
-								// correct z
 								if( pos_z_dir )
-								{
-									curr_interval++;
-									z = fine_delta_z * (float) curr_interval;
-								}
-								else{
-									curr_interval--;
-									z = fine_delta_z * (float) curr_interval;
-								}
-
-								// calculate distance travelled in FSR (ds)
-								ds = (z - track->z_height) / cos(p_angle);
-
-								// update track length remaining
-								s -= ds;
-
-								/* check remaining track length to protect
-								 * against potential roundoff errors */
-								if( s <= 0 )
-									seg_complete = true;
-
-								// check if out of bounds or track complete
-								if( z <= 0 || z >= node_delta_z )
-								{
-									// mark segment as completed
-									seg_complete = true;
-
-									// remember to no longer treat this track
-									if ( pos_z_dir )
-										end_stacked--;
-									else
-										begin_stacked++;
-
-									// reset z height
-									reset = true;
-								}
+									interval++;
+								else
+									interval--;
+								ds = s_dist_to_fai;
+								z = track->z_height + z_dist_to_fai;
 							}
+							else
+							{
+								ds = s;
+								z = track->z_height + s * mu;
+							}	
+
+							/* shorten remaining segment length and check if
+							 * completed (accounting for potential roundoff) */
+							s -= ds;
+							if( s <= 0 || interval < 0 
+									|| interval >= num_intervals)
+								seg_complete = true;
 
 							// pick a random FSR (cache miss expected)
 							#ifdef OPENMP
-							long QSR_id = rand_r(&seed) % 
+							QSR_id = rand_r(&seed) % 
 								I.n_source_regions_per_node;
 							#else
-							long QSR_id = rand() % 
-								I.n_source_regions_per_node;
+							QSR_id = rand() % I.n_source_regions_per_node;
 							#endif
 
 							/* update sources and fluxes from attenuation 
@@ -508,13 +506,13 @@ void transport_sweep( Params params, Input I )
 
 							// update track height
 							track->z_height = z;
-
-							// save segment length and source
+							
+							// save segment length and source FIXME
 							seg_dist[k][seg_idx[k]] = ds;
 							seg_src[k][seg_idx[k]] = &params.sources[QSR_id];
 							seg_idx[k]++;
 
-							// check if array needs to grow
+							// check if array needs to grow FIXME
 							if( seg_idx[k] >= seg_size[k] )
 							{
 								seg_size[k] *= 2;
@@ -525,8 +523,12 @@ void transport_sweep( Params params, Input I )
 							}
 						}
 					}
+					if(pos_z_dir)
+						end_stacked -= tracks_completed;
+					else
+						begin_stacked += tracks_completed;
 				}
-				
+
 				// loop over all z stacked rays again
 				for( int k = 0; k < I.z_stacked; k++ )
 				{
@@ -541,22 +543,22 @@ void transport_sweep( Params params, Input I )
 						// update sources and fluxes from attenuation over FSR
 						if( I.axial_exp == 2 )
 							attenuate_fluxes( track, false,
-								seg_src[k][n], 
-								&I, &params, ds, -mu, 
-								params.tracks_2D[i].az_weight, &A );
+									seg_src[k][n], 
+									&I, &params, ds, -mu, 
+									params.tracks_2D[i].az_weight, &A );
 
 						else if( I.axial_exp == 0 )
 							attenuate_FSR_fluxes( track, false,
-								seg_src[k][n],
-								&I, &params, ds, -mu,
-								params.tracks_2D[i].az_weight, &A );
+									seg_src[k][n],
+									&I, &params, ds, -mu,
+									params.tracks_2D[i].az_weight, &A );
 
 						// update z height
 						track->z_height -= ds * mu;
 					}
 				}
-				
-				
+
+
 				/* Update all tracks with correct starting z location again
 				 * NOTE: this is only here to acocunt for roundoff error */
 				for( int k = 0; k < I.z_stacked; k++)
@@ -620,6 +622,16 @@ int get_neg_interval( float z, float dz)
 	int interval = INT_MAX - (int) ( (double) INT_MAX 
 			- (double) ( z / dz ) );
 	return interval;
+}
+
+int calc_next_fai( float z, float dz, bool pos_dir)
+{
+	int interval = z/dz;
+	float lower_z = dz * (float) interval;
+	if(pos_dir)
+		return interval + 1;
+	else
+		return interval;
 }
 
 /* Determines the change in angular flux along a particular track across a fine
@@ -1151,3 +1163,4 @@ float interpolateTable( Table table, float x)
 		return val;
 	}
 }
+
