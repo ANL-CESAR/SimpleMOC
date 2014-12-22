@@ -53,7 +53,6 @@ int main( int argc, char * argv[] )
 		center_print("SIMULATION", 79);
 		border_print();
 	}
-	printf("SOURCE REGIONS PER NODE = %ld\n", input.n_source_regions_per_node);
 
 	for( int i = 0; i < num_iters; i++)
 	{
@@ -132,8 +131,6 @@ int main( int argc, char * argv[] )
 
 	if( mype == 0 )
 	{
-		printf("Total Tracks per Second:        ");
-		fancy_int( tracks_per_second );
 		printf("Time per Intersection:          ");
 		printf("%.2lf ns\n", time_per_intersection( input, time_transport ));
 		border_print();
