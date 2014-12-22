@@ -280,20 +280,22 @@ void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 }	
 
 // run one full transport sweep, return k
-void transport_sweep( Params params, Input I )
+void transport_sweep( Params * params, Input * I )
 {
-	if(I.mype==0) printf("Starting transport sweep ...\n");
+	if(I->mype==0) printf("Starting transport sweep ...\n");
 
 	// calculate the height of a node's domain and of each FSR
-	double node_delta_z = I.height / I.decomp_assemblies_ax;
-	int num_intervals = (I.cai * I.fai);
+	double node_delta_z = I->height / I->decomp_assemblies_ax;
+	int num_intervals = (I->cai * I->fai);
 	double fine_delta_z = node_delta_z / num_intervals;
 
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
+		long segments_processed = 0;
 
 	#pragma omp parallel default(none) \
-	shared( I, params, node_delta_z, fine_delta_z, num_intervals ) 
+	shared( I, params, node_delta_z, fine_delta_z, num_intervals ) \
+	reduction(+ : segments_processed )
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
@@ -311,64 +313,65 @@ void transport_sweep( Params params, Input I )
 		}
 		#endif
 
+
 		AttenuateVars A;
-		float * ptr = (float * ) malloc( I.n_egroups * 14 * sizeof(float));
+		float * ptr = (float * ) malloc( I->n_egroups * 14 * sizeof(float));
 		A.q0 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.q1 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.q2 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.sigT = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.tau = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.sigT2 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.expVal = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.reuse = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.flux_integral = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.tally = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t1 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t2 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t3 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t4 = ptr;
 
 		#pragma omp for schedule( dynamic ) 
-		for (long i = 0; i < I.ntracks_2D; i++)
+		for (long i = 0; i < I->ntracks_2D; i++)
 		{
 			// print progress
 			#ifdef OPENMP
-			if(I.mype==0 && thread == 0)
+			if(I->mype==0 && thread == 0)
 			{
 				printf("\rAttenuating Tracks... (%.0lf%% completed)",
-						(i / ( (double)I.ntracks_2D / (double) nthreads ))
+						(i / ( (double)I->ntracks_2D / (double) nthreads ))
 						/ (double) nthreads * 100.0);
 			}
 			#else
 			if( i % 50 == 0)
-				if(I.mype==0)
+				if(I->mype==0)
 					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", 
-							I.ntracks_2D );
+							I->ntracks_2D );
 			#endif
 
 			// allocate arrays for segment storage FIXME
-			double ** seg_dist = malloc( I.z_stacked * sizeof(double *) );
-			Source *** seg_src = malloc( I.z_stacked * sizeof(Source**) );
-			int * seg_idx = malloc( I.z_stacked * sizeof(int) );
-			int * seg_size = malloc( I.z_stacked * sizeof(int) );
+			double ** seg_dist = malloc( I->z_stacked * sizeof(double *) );
+			Source *** seg_src = malloc( I->z_stacked * sizeof(Source**) );
+			int * seg_idx = malloc( I->z_stacked * sizeof(int) );
+			int * seg_size = malloc( I->z_stacked * sizeof(int) );
 
 			// fill matrix with arrays FIXME
-			for( int k = 0; k < I.z_stacked; k++)
+			for( int k = 0; k < I->z_stacked; k++)
 			{
-				seg_size[k] = 2 * I.segments_per_track;
+				seg_size[k] = 2 * I->segments_per_track;
 				seg_dist[k] = malloc( seg_size[k] * sizeof(double) );
 				seg_src[k] = malloc( seg_size[k] * sizeof(Source *) );
 				seg_idx[k] = 0;
@@ -376,25 +379,25 @@ void transport_sweep( Params params, Input I )
 
 			// treat positive-z traveling rays first
 			bool pos_z_dir = true;
-			for( int j = 0; j < I.n_polar_angles; j++)
+			for( int j = 0; j < I->n_polar_angles; j++)
 			{
-				if( j == I.n_polar_angles / 2 )
+				if( j == I->n_polar_angles / 2 )
 					pos_z_dir = false;
-				float p_angle = params.polar_angles[j];
+				float p_angle = params->polar_angles[j];
 				float mu = cos(p_angle);
 
 				// start with all z stacked rays
 				int begin_stacked = 0;
-				int end_stacked = I.z_stacked;
+				int end_stacked = I->z_stacked;
 
 				// reset semgnet indexes
-				for( int k = 0; k < I.z_stacked; k++)
+				for( int k = 0; k < I->z_stacked; k++)
 					seg_idx[k] = 0;
 
-				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
+				for( int n = 0; n < params->tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
-					float s_full = params.tracks_2D[i].segments[n].length 
+					float s_full = params->tracks_2D[i].segments[n].length 
 						/ sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
@@ -405,7 +408,7 @@ void transport_sweep( Params params, Input I )
 					for( int k = begin_stacked; k < end_stacked; k++)
 					{
 						// select current track
-						Track * track = &params.tracks[i][j][k];
+						Track * track = &params->tracks[i][j][k];
 
 						// determine current axial interval
 						int interval = (int) track->z_height / fine_delta_z;
@@ -479,24 +482,27 @@ void transport_sweep( Params params, Input I )
 							// pick a random FSR (cache miss expected)
 							#ifdef OPENMP
 							QSR_id = rand_r(&seed) % 
-								I.n_source_regions_per_node;
+								I->n_source_regions_per_node;
 							#else
-							QSR_id = rand() % I.n_source_regions_per_node;
+							QSR_id = rand() % I->n_source_regions_per_node;
 							#endif
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							if( I.axial_exp == 2 )
+							if( I->axial_exp == 2 )
+							{
 								attenuate_fluxes( track, true,
-										&params.sources[QSR_id], 
-										&I, &params, ds, mu, 
-										params.tracks_2D[i].az_weight, &A );
+										&params->sources[QSR_id], 
+										I, params, ds, mu, 
+										params->tracks_2D[i].az_weight, &A );
+								segments_processed++;
+							}
 
-							else if( I.axial_exp == 0 )
+							else if( I->axial_exp == 0 )
 								attenuate_FSR_fluxes( track, true,
-										&params.sources[QSR_id],
-										&I, &params, ds, mu,
-										params.tracks_2D[i].az_weight, &A );
+										&params->sources[QSR_id],
+										I, params, ds, mu,
+										params->tracks_2D[i].az_weight, &A );
 							else
 							{
 								printf("Error: invalid axial expansion order");
@@ -509,7 +515,7 @@ void transport_sweep( Params params, Input I )
 							
 							// save segment length and source FIXME
 							seg_dist[k][seg_idx[k]] = ds;
-							seg_src[k][seg_idx[k]] = &params.sources[QSR_id];
+							seg_src[k][seg_idx[k]] = &params->sources[QSR_id];
 							seg_idx[k]++;
 
 							// check if array needs to grow FIXME
@@ -530,7 +536,7 @@ void transport_sweep( Params params, Input I )
 				}
 
 				// loop over all z stacked rays again
-				for( int k = 0; k < I.z_stacked; k++ )
+				for( int k = 0; k < I->z_stacked; k++ )
 				{
 					for( int n = seg_idx[k]-1; n >= 0; n--)
 					{
@@ -538,20 +544,23 @@ void transport_sweep( Params params, Input I )
 						float ds = seg_dist[k][n];
 
 						// select current track
-						Track * track = &params.tracks[i][j][k];
+						Track * track = &params->tracks[i][j][k];
 
 						// update sources and fluxes from attenuation over FSR
-						if( I.axial_exp == 2 )
+						if( I->axial_exp == 2 )
+						{
 							attenuate_fluxes( track, false,
 									seg_src[k][n], 
-									&I, &params, ds, -mu, 
-									params.tracks_2D[i].az_weight, &A );
+									I, params, ds, -mu, 
+									params->tracks_2D[i].az_weight, &A );
+								segments_processed++;
+						}
 
-						else if( I.axial_exp == 0 )
+						else if( I->axial_exp == 0 )
 							attenuate_FSR_fluxes( track, false,
 									seg_src[k][n],
-									&I, &params, ds, -mu,
-									params.tracks_2D[i].az_weight, &A );
+									I, params, ds, -mu,
+									params->tracks_2D[i].az_weight, &A );
 
 						// update z height
 						track->z_height -= ds * mu;
@@ -561,18 +570,18 @@ void transport_sweep( Params params, Input I )
 
 				/* Update all tracks with correct starting z location again
 				 * NOTE: this is only here to acocunt for roundoff error */
-				for( int k = 0; k < I.z_stacked; k++)
+				for( int k = 0; k < I->z_stacked; k++)
 				{
-					Track * track = &params.tracks[i][j][k];
+					Track * track = &params->tracks[i][j][k];
 					if( pos_z_dir)
-						track->z_height = I.axial_z_sep * k;
+						track->z_height = I->axial_z_sep * k;
 					else
-						track->z_height = I.axial_z_sep * (k+1);
+						track->z_height = I->axial_z_sep * (k+1);
 				}
 			}
 
 			// free memory
-			for( int k = 0; k < I.z_stacked; k++)
+			for( int k = 0; k < I->z_stacked; k++)
 			{
 				free(seg_dist[k]);
 				free(seg_src[k]);
@@ -584,7 +593,7 @@ void transport_sweep( Params params, Input I )
 
 		}
 		#ifdef OPENMP
-		if(thread == 0 && I.mype==0) printf("\n");
+		if(thread == 0 && I->mype==0) printf("\n");
 		#endif
 
 		#ifdef PAPI
@@ -602,6 +611,8 @@ void transport_sweep( Params params, Input I )
 		counter_stop(&eventset, num_papi_events, &I);
 		#endif
 	}
+	printf("Number of segments processed: %ld\n", segments_processed);
+	I->segments_processed = segments_processed;
 
 	return;
 }

@@ -146,7 +146,10 @@ size_t est_mem_usage( Input I )
 // Calculates Time per Intersection
 double time_per_intersection( Input I, double time )
 {
+	/* This was the old estimate - new way uses actual tracking data
 	double tpi = time / (double) I.ntracks /
 		(double) I.segments_per_track / (double) I.n_egroups / 1e-9 / 2; 
+		*/
+	double tpi = time / (double) I.segments_processed * 1.0e9 / (double) I.n_egroups;
 	return tpi;
 }

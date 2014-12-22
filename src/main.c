@@ -53,12 +53,13 @@ int main( int argc, char * argv[] )
 		center_print("SIMULATION", 79);
 		border_print();
 	}
+	printf("SOURCE REGIONS PER NODE = %ld\n", input.n_source_regions_per_node);
 
 	for( int i = 0; i < num_iters; i++)
 	{
 		// Transport Sweep
 		start = get_time();
-		transport_sweep(params, input);
+		transport_sweep(&params, &input);
 		stop = get_time();
 		time_transport += stop-start;
 

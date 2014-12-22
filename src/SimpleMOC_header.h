@@ -71,6 +71,8 @@ typedef struct{
 	bool load_tracks;		// Turn on/off loading 2D tracks from file
 	char* track_file;		// Name/address of tracking file to load
 
+	long segments_processed;    // Total number of segments processed per node
+
 } Input;
 
 // Localized geometrical region ID
@@ -220,7 +222,7 @@ Source * initialize_sources( Input I, size_t * nbytes );
 void free_sources( Input I, Source * sources );
 
 // solver.c
-void transport_sweep( Params params, Input I );
+void transport_sweep( Params * params, Input * I );
 int get_pos_interval( float z, float dz);
 int get_neg_interval( float z, float dz);
 int get_alt_neg_interval( float z, float dz);
