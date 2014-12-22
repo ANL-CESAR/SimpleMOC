@@ -872,29 +872,45 @@ void attenuate_FSR_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
 	if( I.mype == 0 ) printf("Renormalizing Flux...\n");
-	// tally total fission rate (pair-wise sum)
-	float * fission_rates = malloc( I.n_source_regions_per_node 
-			* sizeof(float) );
-
-	float * fine_fission_rates = malloc( I.fai * sizeof(float) );
-	float * g_fission_rates = malloc( I.n_egroups * sizeof(float) );
-
-	// accumulate total fission rate on node domain
-	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	float node_fission_rate = 0;
+	#ifdef OPENMP
+	#pragma omp parallel default(none) shared(params, I, grid) \
+	reduction(+ : node_fission_rate)
 	{
-		Source src = params.sources[i];
-		for( int j = 0; j < I.fai; j++)
+	#endif
+		// tally total fission rate (pair-wise sum)
+		float * fission_rates = malloc( I.n_source_regions_per_node 
+				* sizeof(float) );
+
+		float * fine_fission_rates = malloc( I.fai * sizeof(float) );
+		float * g_fission_rates = malloc( I.n_egroups * sizeof(float) );
+
+		// accumulate total fission rate on node domain
+		#pragma omp for schedule(dynamic)
+		for( int i = 0; i < I.n_source_regions_per_node; i++)
 		{
-			for( int g = 0; g < I.n_egroups; g++)
-				g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
-					* src.XS[g][0];
-			fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
-					I.n_egroups );
+			Source src = params.sources[i];
+			for( int j = 0; j < I.fai; j++)
+			{
+				for( int g = 0; g < I.n_egroups; g++)
+					g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
+						* src.XS[g][0];
+				fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
+						I.n_egroups );
+			}
+			fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
 		}
-		fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
+		node_fission_rate = pairwise_sum(fission_rates, 
+				I.n_source_regions_per_node);
+		
+		// free allocated memory
+		free(fission_rates);
+		free(fine_fission_rates);
+		free(g_fission_rates);
+	
+	#ifdef OPENMP
 	}
-	float node_fission_rate = pairwise_sum(fission_rates, 
-			I.n_source_regions_per_node);
+	#endif
 
 	#ifdef MPI	
 	// accumulate total fission rate by MPI Allreduce
@@ -911,13 +927,12 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	float total_fission_rate = node_fission_rate;
 	#endif
 
-	// free allocated memory
-	free(fission_rates);
-	free(fine_fission_rates);
-	free(g_fission_rates);
 
 	// normalize fluxes by fission reaction rate
 	float norm_factor = 1.0 / total_fission_rate;
+
+	#pragma omp parallel for default(none) \
+	shared(I, params) private(norm_factor) schedule(dynamic)
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source * src = &params.sources[i];
@@ -928,6 +943,8 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	}
 
 	// normalize boundary fluxes by same factor
+	#pragma omp parallel for default(none) \
+	shared(I, params) private(norm_factor) schedule(dynamic)
 	for( long i = 0; i < I.ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < I.z_stacked; k++)
