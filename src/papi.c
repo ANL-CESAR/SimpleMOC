@@ -16,7 +16,7 @@ void papi_serial_init(void)
 	}
 }
 
-void counter_init( int *eventset, int *num_papi_events, Input I )
+void counter_init( int *eventset, int *num_papi_events, Input * I )
 {
 	char error_str[PAPI_MAX_STR_LEN];
 	int stat;
@@ -24,13 +24,13 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 	int * events;
     
     // Command line event
-    if( I.papi_event_set == -1){
+    if( I->papi_event_set == -1){
         *num_papi_events = 1;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
-        PAPI_event_name_to_code( I.event_name, &events[0]);
+        PAPI_event_name_to_code( I->event_name, &events[0]);
     }
 	// FLOPS
-	if( I.papi_event_set == 0 )
+	if( I->papi_event_set == 0 )
 	{
 		*num_papi_events = 2;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -38,7 +38,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[1] = PAPI_TOT_CYC;
 	}
 	// Bandwidth
-	if( I.papi_event_set == 1 )
+	if( I->papi_event_set == 1 )
 	{
 		*num_papi_events = 2;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -46,7 +46,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[1] = PAPI_TOT_CYC;
 	}
 	// CPU Stall Reason
-	if( I.papi_event_set == 2 )
+	if( I->papi_event_set == 2 )
 	{
 		*num_papi_events = 4;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -65,7 +65,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[3] = EventCode;	
 	}
 	// CPU Stall Percentage
-	if( I.papi_event_set == 3 )
+	if( I->papi_event_set == 3 )
 	{
 		*num_papi_events = 2;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -78,7 +78,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[1] = EventCode;	
 	}
 	// Memory Loads
-	if( I.papi_event_set == 4 )
+	if( I->papi_event_set == 4 )
 	{
 		*num_papi_events = 4;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -97,7 +97,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[3] = EventCode;	
 	}
 	// LLC Miss Rate
-	if( I.papi_event_set == 5 )
+	if( I->papi_event_set == 5 )
 	{
 		*num_papi_events = 2;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -105,7 +105,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[1] = PAPI_L3_TCA;
 	}
 	// Branch MisPrediction
-	if( I.papi_event_set == 6 )
+	if( I->papi_event_set == 6 )
 	{
 		*num_papi_events = 3;
 		events = (int *) malloc( *num_papi_events * sizeof(int));
@@ -114,7 +114,7 @@ void counter_init( int *eventset, int *num_papi_events, Input I )
 		events[2] = PAPI_BR_PRC;
 	}
 	// TLB Misses
-	if( I.papi_event_set == 7 )
+	if( I->papi_event_set == 7 )
 	{
 		*num_papi_events = 4;
 		events = (int *) malloc( *num_papi_events * sizeof(int));

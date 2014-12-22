@@ -242,7 +242,7 @@ void print_Input_struct( Input I );
 
 // papi.c
 void papi_serial_init(void);
-void counter_init( int *eventset, int *num_papi_events, Input I );
+void counter_init( int *eventset, int *num_papi_events, Input * I );
 void counter_stop( int * eventset, int num_papi_events, Input * I );
 
 // comms.c
