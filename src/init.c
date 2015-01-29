@@ -217,7 +217,7 @@ CommGrid init_mpi_grid( Input I )
 omp_lock_t * init_locks( Input I )
 {
 	// Allocate locks array
-	long n_locks = I.n_source_regions_per_node * I.cai; 
+	long n_locks = I.n_source_regions_per_node * I.fai; 
 	omp_lock_t * locks = (omp_lock_t *) malloc( n_locks* sizeof(omp_lock_t));
 	
 	// Initialize locks array

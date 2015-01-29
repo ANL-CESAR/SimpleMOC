@@ -199,7 +199,7 @@ Source * initialize_sources( Input I, size_t * nbytes )
 
 		#ifdef OPENMP
 		sources[i].locks = &locks[lock_idx];
-		lock_idx += I.cai;
+		lock_idx += I.fai;
 		#endif
 	}
 
