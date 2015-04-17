@@ -162,6 +162,17 @@ void read_CLI( int argc, char * argv[], Input * input )
                 print_CLI_error();
         }
         #endif
+		// Load OpenMOC track data file
+		else if( strcmp(arg,"-d") == 0)
+		{
+			if( ++i < argc )
+			{
+				input->track_file = argv[i];
+				input->load_tracks = true;
+			}
+			else
+				print_CLI_error();
+		}
 		else
 			print_CLI_error();
 	}

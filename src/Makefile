@@ -2,13 +2,13 @@
 # User Options
 #===============================================================================
 
-COMPILER    = gnu
+COMPILER    = intel
 MPI         = no
 OPENMP      = yes
 OPTIMIZE    = yes
-DEBUG       = yes
+DEBUG       = no
 PROFILE     = no
-PAPI        = no
+PAPI        = yes
 BENCHMARK   = no
 
 #===============================================================================

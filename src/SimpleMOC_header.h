@@ -68,6 +68,11 @@ typedef struct{
     long long *vals_accum;
     #endif
 
+	bool load_tracks;		// Turn on/off loading 2D tracks from file
+	char* track_file;		// Name/address of tracking file to load
+
+	long segments_processed;    // Total number of segments processed per node
+
 } Input;
 
 // Localized geometrical region ID
@@ -88,6 +93,7 @@ typedef struct{
 	float az_weight;          	// Azimuthal Quadrature Weight (rand)
 	long n_segments;           	// Number of Segments (gaussian)
 	Segment * segments;        	// Array of Segments
+	int n_3D_segments;			// Number of intersections in 3D tracks
 } Track2D;
 
 // Track Structure
@@ -96,7 +102,8 @@ typedef struct{
 	float z_height;           	// Z-height
 	long rank_in;              	// MPI rank to receive from
 	long rank_out;             	// MPI rank to send to
-	float * psi;			   	// Angular flux along track
+	float * f_psi;			   	// Forward angular flux along track
+	float * b_psi;				// Backward angular flux along track
 } Track;
 
 // Source Region Structure
@@ -172,7 +179,7 @@ typedef struct{
 // init.c
 Input set_default_input( void );
 void set_small_input( Input * I );
-Params build_tracks( Input I );
+Params build_tracks( Input* I );
 CommGrid init_mpi_grid( Input I );
 void calculate_derived_inputs( Input * I );
 #ifdef OPENMP
@@ -198,6 +205,7 @@ Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );
 float * generate_polar_angles( Input I );
+Track2D * load_OpenMOC_tracks(char* fname, bool CMFD_obj, Input* I, size_t* nbytes);
 
 // utils.c
 float urand(void);
@@ -214,15 +222,15 @@ Source * initialize_sources( Input I, size_t * nbytes );
 void free_sources( Input I, Source * sources );
 
 // solver.c
-void transport_sweep( Params params, Input I );
+void transport_sweep( Params * params, Input * I );
 int get_pos_interval( float z, float dz);
 int get_neg_interval( float z, float dz);
 int get_alt_neg_interval( float z, float dz);
-void attenuate_fluxes( Track * track, Source * QSR, Input * I, 
+void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I, 
 		Params * params, float ds, float mu, float az_weight, AttenuateVars * A ); 
-void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
+void attenuate_FSR_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 		Params * params, float ds, float mu, float az_weight, AttenuateVars * A );
-void alt_attenuate_fluxes( Track * track, Source * FSR, Input * I,
+void alt_attenuate_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 		Params * params, float ds, float mu, float az_weight );
 void renormalize_flux( Params params, Input I, CommGrid grid );
 float update_sources( Params params, Input I, float keff );
@@ -234,7 +242,7 @@ void print_Input_struct( Input I );
 
 // papi.c
 void papi_serial_init(void);
-void counter_init( int *eventset, int *num_papi_events, Input I );
+void counter_init( int *eventset, int *num_papi_events, Input * I );
 void counter_stop( int * eventset, int num_papi_events, Input * I );
 
 // comms.c

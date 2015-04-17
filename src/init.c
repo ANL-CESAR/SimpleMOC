@@ -10,10 +10,13 @@ void calculate_derived_inputs( Input * I )
 	I->mype = mype;
 	#endif
 
+	/* Divide number of azimuthal angles by 2 to accound for forward/backward
+	 *  tracking */
+	I->n_azimuthal /= 2;
 
 	// calculate number of 2D tracks, enforcing divisible by 2
 	I->ntracks_2D = I->n_azimuthal * 
-		(I->assembly_width * sqrt(2) / I->radial_ray_sep);
+			(I->assembly_width * sqrt(2) / I->radial_ray_sep);
 
 	I->ntracks_2D = 2 * ( I->ntracks_2D / 2 );
 
@@ -58,12 +61,14 @@ Input set_default_input( void )
 	I.n_2D_source_regions_per_assembly = 5000; 
 
 	#ifdef PAPI
-	I.papi_event_set = 6;
+	I.papi_event_set = 0;
 	#endif
 	
 	#ifdef OPENMP
 	I.nthreads = omp_get_max_threads();
 	#endif
+
+	I.load_tracks = false; 
 
 	return I;
 }
@@ -95,12 +100,12 @@ void set_small_input( Input * I )
 
 	// source regions per assembly (estimate)
 	I->n_2D_source_regions_per_assembly = 3000; 
-
 }
 
 // Initializes all track data
-Params build_tracks( Input I )
+Params build_tracks( Input* input )
 {
+	Input I = *input;
 	size_t nbytes = 0;
 	Params params;
 
@@ -111,7 +116,14 @@ Params build_tracks( Input I )
 		printf("Initializing 2D tracks...\n");
 	}
 
-    params.tracks_2D = generate_2D_tracks(I, &nbytes); 
+	if(I.load_tracks)
+	{
+		params.tracks_2D = load_OpenMOC_tracks(
+				I.track_file,false, input, &nbytes);
+		I = *input;
+	}
+	else
+    	params.tracks_2D = generate_2D_tracks(I, &nbytes); 
 
 	if(I.mype == 0)
 	{
@@ -227,3 +239,5 @@ omp_lock_t * init_locks( Input I )
 	return locks;
 }	
 #endif
+
+

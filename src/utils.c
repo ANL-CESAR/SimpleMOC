@@ -110,7 +110,7 @@ size_t est_mem_usage( Input I )
 	nbytes += I.ntracks_2D * I.n_polar_angles * sizeof(Track *);
 	nbytes += I.ntracks * sizeof(Track);
 	nbytes += I.ntracks_2D * I.n_polar_angles * z_stacked 
-		* I.n_egroups * sizeof(float);
+		* I.n_egroups * sizeof(float) * 2;
 	nbytes += I.n_source_regions_per_node * sizeof(Source);
 	nbytes += n_xs_regions * sizeof(float **);
 	nbytes += n_xs_regions * sizeof(float **);
@@ -125,6 +125,16 @@ size_t est_mem_usage( Input I )
 	nbytes += I.n_source_regions_per_node * I.fai * I.n_egroups
 		* sizeof(float);
 	
+	// 2way tracking memory
+	nbytes += I.nthreads * I.z_stacked * sizeof(double *);
+	nbytes += I.nthreads * I.z_stacked * sizeof(Source**);
+	nbytes += I.nthreads * I.z_stacked * sizeof(int);
+	nbytes += I.nthreads * I.z_stacked * sizeof(int);			
+	nbytes += I.nthreads * I.z_stacked * 2 * I.segments_per_track 
+		* sizeof(double);
+	nbytes += I.nthreads * I.z_stacked * 2 * I.segments_per_track 
+		* sizeof(Source *);		
+
 	// MPI Buffers
 	#ifdef MPI
 	nbytes += 6 * I.n_egroups * 10000 * sizeof(float);
@@ -136,7 +146,10 @@ size_t est_mem_usage( Input I )
 // Calculates Time per Intersection
 double time_per_intersection( Input I, double time )
 {
+	/* This was the old estimate - new way uses actual tracking data
 	double tpi = time / (double) I.ntracks /
-		(double) I.segments_per_track / (double) I.n_egroups / 1e-9; 
+		(double) I.segments_per_track / (double) I.n_egroups / 1e-9 / 2; 
+		*/
+	double tpi = time / (double) I.segments_processed * 1.0e9 / (double) I.n_egroups;
 	return tpi;
 }

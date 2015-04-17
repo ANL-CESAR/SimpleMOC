@@ -30,12 +30,11 @@ int main( int argc, char * argv[] )
 	omp_set_num_threads(input.nthreads); 
 	#endif
 
+	Params params = build_tracks( &input );
 	CommGrid grid = init_mpi_grid( input );
 
 	if( mype == 0 )
 		print_input_summary(input);
-
-	Params params = build_tracks( input );
 
 	float res;
 	float keff = 1.0;
@@ -59,7 +58,7 @@ int main( int argc, char * argv[] )
 	{
 		// Transport Sweep
 		start = get_time();
-		transport_sweep(params, input);
+		transport_sweep(&params, &input);
 		stop = get_time();
 		time_transport += stop-start;
 
@@ -114,7 +113,7 @@ int main( int argc, char * argv[] )
 		printf("Total Time:                   %6.2lf sec\n", time_total);
 	}
 
-	long tracks_per_second = input.ntracks/time_transport;
+	long tracks_per_second = 2 * input.ntracks/time_transport;
 
 	#ifdef MPI
 	MPI_Barrier(grid.cart_comm_3d);
@@ -132,8 +131,6 @@ int main( int argc, char * argv[] )
 
 	if( mype == 0 )
 	{
-		printf("Total Tracks per Second:        ");
-		fancy_int( tracks_per_second );
 		printf("Time per Intersection:          ");
 		printf("%.2lf ns\n", time_per_intersection( input, time_transport ));
 		border_print();

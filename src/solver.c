@@ -11,7 +11,7 @@
  * (but less effiient) version of the code in terms of the underlying physics, 
  * see alt_attenuate_fluxes which solves the problem in a more naive, 
  * straightforward manner. */
-void attenuate_fluxes( Track * track, Source * QSR, Input * I_in, 
+void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 		Params * params_in, float ds, float mu, float az_weight, 
 		AttenuateVars * A ) 
 {
@@ -54,6 +54,9 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 
 	if( fine_id == 0 )
 	{
+		// adjust z height to account for edge
+		zin -= dz;
+
 		// cycle over energy groups
 		#ifdef INTEL
 		#pragma simd
@@ -63,21 +66,26 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
-			float y2 = QSR->fine_source[fine_id][g];
-			float y3 = QSR->fine_source[fine_id+1][g];
+			float y1 = QSR->fine_source[fine_id][g];
+			float y2 = QSR->fine_source[fine_id+1][g];
+			float y3 = QSR->fine_source[fine_id+2][g];
 
-			// do linear "fitting"
+			// do quadratic "fitting"
 			float c0 = y2;
-			float c1 = (y3 - y2) / dz;
-
+			float c1 = (y1 - y3) / (2.f*dz);
+			float c2 = (y1 - 2.f*y2 + y3) / (2.f*dz*dz);
+			
 			// calculate q0, q1, q2
-			q0[g] = c0 + c1*zin;
-			q1[g] = c1;
-			q2[g] = 0;
+			q0[g] = c0 + c1*zin + c2*zin*zin;
+			q1[g] = c1 + 2.f*c2*zin;
+			q2[g] = c2;
 		}
 	}
 	else if ( fine_id == I.fai - 1 )
 	{
+		// adjust z height to account for edge
+		zin += dz;
+		
 		// cycle over energy groups
 		#ifdef INTEL
 		#pragma simd
@@ -87,17 +95,19 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 		for( int g = 0; g < I.n_egroups; g++)
 		{
 			// load neighboring sources
-			float y1 = QSR->fine_source[fine_id-1][g];
-			float y2 = QSR->fine_source[fine_id][g];
+			float y1 = QSR->fine_source[fine_id-2][g];
+			float y2 = QSR->fine_source[fine_id-1][g];
+			float y3 = QSR->fine_source[fine_id][g];
 
-			// do linear "fitting"
+			// do quadratic "fitting"
 			float c0 = y2;
-			float c1 = (y2 - y1) / dz;
+			float c1 = (y1 - y3) / (2.f*dz);
+			float c2 = (y1 - 2.f*y2 + y3) / (2.f*dz*dz);
 
 			// calculate q0, q1, q2
-			q0[g] = c0 + c1*zin;
-			q1[g] = c1;
-			q2[g] = 0;
+			q0[g] = c0 + c1*zin + c2*zin*zin;
+			q1[g] = c1 + 2.f*c2*zin;
+			q2[g] = c2;
 		}
 	}
 	else
@@ -126,7 +136,6 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 			q2[g] = c2;
 		}
 	}
-
 
 	// cycle over energy groups
 	#ifdef INTEL
@@ -167,6 +176,13 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 			/ (sigT[g] * sigT2[g]); 
 	}
 
+
+	float * psi;
+	if(forward)
+		psi = track->f_psi;
+	else
+		psi = track->b_psi;
+
 	//#pragma vector nontemporal
 	#ifdef INTEL
 	#pragma simd
@@ -176,7 +192,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	for( int g = 0; g < I.n_egroups; g++)
 	{
 		// add contribution to new source flux
-		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * track->psi[g] - q0[g])
+		flux_integral[g] = (q0[g] * tau[g] + (sigT[g] * psi[g] - q0[g])
 			* expVal[g]) / sigT2[g] + q1[g] * mu * reuse[g] + q2[g] * mu2 
 			* (tau[g] * (tau[g] * (tau[g] - 3.f) + 6.f) - 6.f * expVal[g]) 
 			/ (3.f * sigT2[g] * sigT2[g]);
@@ -249,7 +265,7 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		t4[g] = track->psi[g] * (1.f - expVal[g]);
+		t4[g] = psi[g] * (1.f - expVal[g]);
 	}
 	// Total psi
 	#ifdef INTEL
@@ -259,26 +275,27 @@ void attenuate_fluxes( Track * track, Source * QSR, Input * I_in,
 	#endif
 	for( int g = 0; g < I.n_egroups; g++)
 	{
-		track->psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
+		psi[g] = t1[g] + t2[g] + t3[g] + t4[g];
 	}
 }	
 
 // run one full transport sweep, return k
-void transport_sweep( Params params, Input I )
+void transport_sweep( Params * params, Input * I )
 {
-	if(I.mype==0) printf("Starting transport sweep ...\n");
+	if(I->mype==0) printf("Starting transport sweep ...\n");
 
 	// calculate the height of a node's domain and of each FSR
-	double node_delta_z = I.height / I.decomp_assemblies_ax;
-	double fine_delta_z = node_delta_z / (I.cai * I.fai);
+	double node_delta_z = I->height / I->decomp_assemblies_ax;
+	int num_intervals = (I->cai * I->fai);
+	double fine_delta_z = node_delta_z / num_intervals;
 
 	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
 	 * angles, polar angles, and z stacked rays) */
-
-	//print_Input_struct( I );
+		long segments_processed = 0;
 
 	#pragma omp parallel default(none) \
-	shared( I, params, node_delta_z, fine_delta_z ) 
+	shared( I, params, node_delta_z, fine_delta_z, num_intervals ) \
+	reduction(+ : segments_processed )
 	{
 		#ifdef OPENMP
 		int thread = omp_get_thread_num();
@@ -296,187 +313,196 @@ void transport_sweep( Params params, Input I )
 		}
 		#endif
 
+
 		AttenuateVars A;
-		float * ptr = (float * ) malloc( I.n_egroups * 14 * sizeof(float));
+		float * ptr = (float * ) malloc( I->n_egroups * 14 * sizeof(float));
 		A.q0 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.q1 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.q2 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.sigT = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.tau = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.sigT2 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.expVal = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.reuse = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.flux_integral = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.tally = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t1 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t2 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t3 = ptr;
-		ptr += I.n_egroups;
+		ptr += I->n_egroups;
 		A.t4 = ptr;
 
 		#pragma omp for schedule( dynamic ) 
-		for (long i = 0; i < I.ntracks_2D; i++)
+		for (long i = 0; i < I->ntracks_2D; i++)
 		{
 			// print progress
 			#ifdef OPENMP
-			if(I.mype==0 && thread == 0)
+			if(I->mype==0 && thread == 0)
 			{
 				printf("\rAttenuating Tracks... (%.0lf%% completed)",
-						(i / ( (double)I.ntracks_2D / (double) nthreads ))
+						(i / ( (double)I->ntracks_2D / (double) nthreads ))
 						/ (double) nthreads * 100.0);
 			}
 			#else
 			if( i % 50 == 0)
-				if(I.mype==0)
+				if(I->mype==0)
 					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", 
-							I.ntracks_2D );
+							I->ntracks_2D );
 			#endif
 
+			// allocate arrays for segment storage FIXME
+			double ** seg_dist = malloc( I->z_stacked * sizeof(double *) );
+			Source *** seg_src = malloc( I->z_stacked * sizeof(Source**) );
+			int * seg_idx = malloc( I->z_stacked * sizeof(int) );
+			int * seg_size = malloc( I->z_stacked * sizeof(int) );
+
+			// fill matrix with arrays FIXME
+			for( int k = 0; k < I->z_stacked; k++)
+			{
+				seg_size[k] = 2 * I->segments_per_track;
+				seg_dist[k] = malloc( seg_size[k] * sizeof(double) );
+				seg_src[k] = malloc( seg_size[k] * sizeof(Source *) );
+				seg_idx[k] = 0;
+			}
 
 			// treat positive-z traveling rays first
 			bool pos_z_dir = true;
-			for( int j = 0; j < I.n_polar_angles; j++)
+			for( int j = 0; j < I->n_polar_angles; j++)
 			{
-				if( j == I.n_polar_angles / 2 )
+				if( j == I->n_polar_angles / 2 )
 					pos_z_dir = false;
-				float p_angle = params.polar_angles[j];
+				float p_angle = params->polar_angles[j];
 				float mu = cos(p_angle);
 
 				// start with all z stacked rays
 				int begin_stacked = 0;
-				int end_stacked = I.z_stacked;
+				int end_stacked = I->z_stacked;
 
-				for( int n = 0; n < params.tracks_2D[i].n_segments; n++)
+				// reset semgnet indexes
+				for( int k = 0; k < I->z_stacked; k++)
+					seg_idx[k] = 0;
+
+				for( int n = 0; n < params->tracks_2D[i].n_segments; n++)
 				{
 					// calculate distance traveled in cell if segment completed
-					float s_full = params.tracks_2D[i].segments[n].length 
+					float s_full = params->tracks_2D[i].segments[n].length 
 						/ sin(p_angle);
 
 					// allocate varaible for distance traveled in an FSR
 					float ds = 0;
 
 					// loop over remaining z-stacked rays
+					int tracks_completed = 0;
 					for( int k = begin_stacked; k < end_stacked; k++)
 					{
-						// initialize s to full length
-						float s = s_full;
-
 						// select current track
-						Track * track = &params.tracks[i][j][k];
+						Track * track = &params->tracks[i][j][k];
+
+						// determine current axial interval
+						int interval = (int) track->z_height / fine_delta_z;
+
+						// calculate distance to domain boundary
+						float bound_dist;
+						if( pos_z_dir)
+							bound_dist = (node_delta_z - track->z_height) / mu;
+						else
+							bound_dist = -track->z_height / mu;
+
+						// determine track length
+						float s;
+						if(	s_full < bound_dist )
+							s = s_full;
+						else
+						{
+							// note completion of track
+							s = bound_dist;
+							tracks_completed++;
+						}
 
 						// set flag for completeion of segment
 						bool seg_complete = false;
 
-						// calculate interval
-						int curr_interval;
-						if( pos_z_dir)
-							curr_interval = get_pos_interval(track->z_height, 
-									fine_delta_z);
-						else
-							curr_interval = get_neg_interval(track->z_height, 
-									fine_delta_z);
-
 						while( !seg_complete )
 						{
-							// flag to reset z position
-							bool reset = false;
+							// initialize tracking variables
+							long QSR_id = interval + num_intervals * n;
+							float ds;
+							float z;
 
-
-							/* calculate new height based on s 
-							 * (distance traveled in FSR) */
-							float z = track->z_height + s * cos(p_angle);
-
-							// check if still in same FSR (fine axial interval)
-							int new_interval;
+							// calculate z height of next fine axial interval
+							float fai_z_height;
 							if( pos_z_dir )
-								new_interval = get_pos_interval(z, 
-										fine_delta_z);
+								fai_z_height = (interval + 1) * fine_delta_z ;
 							else
-								new_interval = get_neg_interval(z,
-										fine_delta_z);
+								fai_z_height = interval * fine_delta_z;
 
-							if( new_interval == curr_interval )
-							{
-								seg_complete = true;
-								ds = s;
-							}
+							// calculate z distance to next fine axial interval
+							float z_dist_to_fai = 
+								fai_z_height - track->z_height;
 
-							// otherwise, we need to recalculate distances
-							else
+							/* calculate total distance (s) to fine axial 
+							 * interval */
+							float s_dist_to_fai = z_dist_to_fai / mu;
+
+							// determine if a fine axial interval is crossed
+							if( s_dist_to_fai < s )
 							{
-								// correct z
 								if( pos_z_dir )
-								{
-									curr_interval++;
-									z = fine_delta_z * (float) curr_interval;
-								}
-								else{
-									curr_interval--;
-									z = fine_delta_z * (float) curr_interval;
-								}
-
-								// calculate distance travelled in FSR (ds)
-								ds = (z - track->z_height) / cos(p_angle);
-
-								// update track length remaining
-								s -= ds;
-
-								/* check remaining track length to protect
-								 * against potential roundoff errors */
-								if( s <= 0 )
-									seg_complete = true;
-
-								// check if out of bounds or track complete
-								if( z <= 0 || z >= node_delta_z )
-								{
-									// mark segment as completed
-									seg_complete = true;
-
-									// remember to no longer treat this track
-									if ( pos_z_dir )
-										end_stacked--;
-									else
-										begin_stacked++;
-
-									// reset z height
-									reset = true;
-								}
+									interval++;
+								else
+									interval--;
+								ds = s_dist_to_fai;
+								z = track->z_height + z_dist_to_fai;
 							}
+							else
+							{
+								ds = s;
+								z = track->z_height + s * mu;
+							}	
+
+							/* shorten remaining segment length and check if
+							 * completed (accounting for potential roundoff) */
+							s -= ds;
+							if( s <= 0 || interval < 0 
+									|| interval >= num_intervals)
+								seg_complete = true;
 
 							// pick a random FSR (cache miss expected)
 							#ifdef OPENMP
-							long QSR_id = rand_r(&seed) % 
-								I.n_source_regions_per_node;
+							QSR_id = rand_r(&seed) % 
+								I->n_source_regions_per_node;
 							#else
-							long QSR_id = rand() % 
-								I.n_source_regions_per_node;
+							QSR_id = rand() % I->n_source_regions_per_node;
 							#endif
 
 							/* update sources and fluxes from attenuation 
 							 * over FSR */
-							if( I.axial_exp == 2 )
-								attenuate_fluxes( track, 
-										&params.sources[QSR_id], 
-										&I, &params, ds, mu, 
-										params.tracks_2D[i].az_weight, &A );
+							if( I->axial_exp == 2 )
+							{
+								attenuate_fluxes( track, true,
+										&params->sources[QSR_id], 
+										I, params, ds, mu, 
+										params->tracks_2D[i].az_weight, &A );
+								segments_processed++;
+							}
 
-							else if( I.axial_exp == 0 )
-								attenuate_FSR_fluxes( track,
-										&params.sources[QSR_id],
-										&I, &params, ds, mu,
-										params.tracks_2D[i].az_weight, &A );
+							else if( I->axial_exp == 0 )
+								attenuate_FSR_fluxes( track, true,
+										&params->sources[QSR_id],
+										I, params, ds, mu,
+										params->tracks_2D[i].az_weight, &A );
 							else
 							{
 								printf("Error: invalid axial expansion order");
@@ -484,25 +510,90 @@ void transport_sweep( Params params, Input I )
 								exit(1);
 							}
 
-							// update with new z height or reset if finished
-							if( n == params.tracks_2D[i].n_segments - 1  
-									|| reset)
-							{
-								if( pos_z_dir)
-									track->z_height = I.axial_z_sep * k;
-								else
-									track->z_height = I.axial_z_sep * (k+1);
-							}
-							else
-								track->z_height = z;
+							// update track height
+							track->z_height = z;
+							
+							// save segment length and source FIXME
+							seg_dist[k][seg_idx[k]] = ds;
+							seg_src[k][seg_idx[k]] = &params->sources[QSR_id];
+							seg_idx[k]++;
 
+							// check if array needs to grow FIXME
+							if( seg_idx[k] >= seg_size[k] )
+							{
+								seg_size[k] *= 2;
+								seg_dist[k] = (double *) realloc( seg_dist[k],
+										seg_size[k] * sizeof(double) );
+								seg_src[k] = (Source **) realloc( seg_src[k],
+										seg_size[k] * sizeof(Source *) );
+							}
 						}
 					}
+					if(pos_z_dir)
+						end_stacked -= tracks_completed;
+					else
+						begin_stacked += tracks_completed;
+				}
+
+				// loop over all z stacked rays again
+				for( int k = 0; k < I->z_stacked; k++ )
+				{
+					for( int n = seg_idx[k]-1; n >= 0; n--)
+					{
+						// load distance
+						float ds = seg_dist[k][n];
+
+						// select current track
+						Track * track = &params->tracks[i][j][k];
+
+						// update sources and fluxes from attenuation over FSR
+						if( I->axial_exp == 2 )
+						{
+							attenuate_fluxes( track, false,
+									seg_src[k][n], 
+									I, params, ds, -mu, 
+									params->tracks_2D[i].az_weight, &A );
+								segments_processed++;
+						}
+
+						else if( I->axial_exp == 0 )
+							attenuate_FSR_fluxes( track, false,
+									seg_src[k][n],
+									I, params, ds, -mu,
+									params->tracks_2D[i].az_weight, &A );
+
+						// update z height
+						track->z_height -= ds * mu;
+					}
+				}
+
+
+				/* Update all tracks with correct starting z location again
+				 * NOTE: this is only here to acocunt for roundoff error */
+				for( int k = 0; k < I->z_stacked; k++)
+				{
+					Track * track = &params->tracks[i][j][k];
+					if( pos_z_dir)
+						track->z_height = I->axial_z_sep * k;
+					else
+						track->z_height = I->axial_z_sep * (k+1);
 				}
 			}
+
+			// free memory
+			for( int k = 0; k < I->z_stacked; k++)
+			{
+				free(seg_dist[k]);
+				free(seg_src[k]);
+			}
+			free(seg_dist);
+			free(seg_src);
+			free(seg_idx);
+			free(seg_size);
+
 		}
 		#ifdef OPENMP
-		if(thread == 0 && I.mype==0) printf("\n");
+		if(thread == 0 && I->mype==0) printf("\n");
 		#endif
 
 		#ifdef PAPI
@@ -517,9 +608,11 @@ void transport_sweep( Params params, Input I )
 		{
 			#pragma omp barrier
 		}
-		counter_stop(&eventset, num_papi_events, &I);
+		counter_stop(&eventset, num_papi_events, I);
 		#endif
 	}
+	printf("Number of segments processed: %ld\n", segments_processed);
+	I->segments_processed = segments_processed;
 
 	return;
 }
@@ -542,6 +635,16 @@ int get_neg_interval( float z, float dz)
 	return interval;
 }
 
+int calc_next_fai( float z, float dz, bool pos_dir)
+{
+	int interval = z/dz;
+	float lower_z = dz * (float) interval;
+	if(pos_dir)
+		return interval + 1;
+	else
+		return interval;
+}
+
 /* Determines the change in angular flux along a particular track across a fine
  * axial region and tallies the contribution to the scalar flux in the fine 
  * axial region. This function assumes a quadratic source, which is calculated 
@@ -550,7 +653,7 @@ int get_neg_interval( float z, float dz)
  * This legacy function is unused since it is less efficient than the current 
  * attenuate_fluxes function. However, it provides a more straightforward 
  * description of the underlying physical problem. */
-void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I, 
+void alt_attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I,
 		Params * params, float ds, float mu, float az_weight ) 
 {
 	// compute fine axial interval spacing
@@ -635,8 +738,15 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 		// compute exponential ( 1 - exp(-x) ) using table lookup
 		float expVal = interpolateTable( params->expTable, tau );  
 
+		// load correct angular flux vector
+		float * psi;
+		if(forward)
+			psi = track->f_psi;
+		else
+			psi = track->b_psi;
+
 		// add contribution to new source flux
-		float flux_integral = (q0 * tau + (sigT * track->psi[g] - q0) * expVal)
+		float flux_integral = (q0 * tau + (sigT * psi[g] - q0) * expVal)
 			/ sigT2
 			+ q1 * mu * (tau * (tau - 2) + 2 * expVal)
 			/ (sigT * sigT2)
@@ -647,7 +757,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 		FSR_flux[g] += weight * flux_integral;
 
 		// update angular flux
-		track->psi[g] = track->psi[g] * (1.0 - expVal) + q0 * expVal / sigT
+		psi[g] = psi[g] * (1.0 - expVal) + q0 * expVal / sigT
 			+ q1 * mu * (tau - expVal) / sigT2 + q2 * mu2 *
 			(tau * (tau - 2) + 2 * expVal) / (sigT2 * sigT);
 	}
@@ -656,7 +766,7 @@ void alt_attenuate_fluxes( Track * track, Source * QSR, Input * I,
 /* Determines the change in angular flux along a particular track across a fine
  * axial region and tallies the contribution to the scalar flux in the fine 
  * axial region. This function assumes a constant  source. */ 
-void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
+void attenuate_FSR_fluxes( Track * track, bool forward, Source * FSR, Input * I,
 		Params * params_in, float ds, float mu, float az_weight, 
 		AttenuateVars *A)
 {
@@ -709,6 +819,12 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 		expVal[g] = interpolateTable( params.expTable, tau[g] );
 	}
 
+	float * psi;
+	if(forward)
+		psi = track->f_psi;
+	else
+		psi = track->b_psi;
+
 	#ifdef INTEL
 	#pragma simd
 	#elif defined IBM
@@ -718,13 +834,13 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 	{
 		// compute angular flux attenuation
 		float q = FSR->fine_source[fine_id][g] / sigT[g];
-		float delta_psi = (track->psi[g] - q) * expVal[g];
+		float delta_psi = (psi[g] - q) * expVal[g];
 
 		// add contribution to new source flux
 		tally[g] = weight * delta_psi;
 
 		// update angular flux
-		track->psi[g] -= delta_psi;
+		psi[g] -= delta_psi;
 	}
 
 
@@ -756,29 +872,45 @@ void attenuate_FSR_fluxes( Track * track, Source * FSR, Input * I,
 void renormalize_flux( Params params, Input I, CommGrid grid )
 {
 	if( I.mype == 0 ) printf("Renormalizing Flux...\n");
-	// tally total fission rate (pair-wise sum)
-	float * fission_rates = malloc( I.n_source_regions_per_node 
-			* sizeof(float) );
-
-	float * fine_fission_rates = malloc( I.fai * sizeof(float) );
-	float * g_fission_rates = malloc( I.n_egroups * sizeof(float) );
-
-	// accumulate total fission rate on node domain
-	for( int i = 0; i < I.n_source_regions_per_node; i++)
+	float node_fission_rate = 0;
+	#ifdef OPENMP
+	#pragma omp parallel default(none) shared(params, I, grid) \
+	reduction(+ : node_fission_rate)
 	{
-		Source src = params.sources[i];
-		for( int j = 0; j < I.fai; j++)
+	#endif
+		// tally total fission rate (pair-wise sum)
+		float * fission_rates = malloc( I.n_source_regions_per_node 
+				* sizeof(float) );
+
+		float * fine_fission_rates = malloc( I.fai * sizeof(float) );
+		float * g_fission_rates = malloc( I.n_egroups * sizeof(float) );
+
+		// accumulate total fission rate on node domain
+		#pragma omp for schedule(dynamic)
+		for( int i = 0; i < I.n_source_regions_per_node; i++)
 		{
-			for( int g = 0; g < I.n_egroups; g++)
-				g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
-					* src.XS[g][0];
-			fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
-					I.n_egroups );
+			Source src = params.sources[i];
+			for( int j = 0; j < I.fai; j++)
+			{
+				for( int g = 0; g < I.n_egroups; g++)
+					g_fission_rates[g] = src.fine_flux[j][g] * src.vol 
+						* src.XS[g][0];
+				fine_fission_rates[j] = pairwise_sum( g_fission_rates, 
+						I.n_egroups );
+			}
+			fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
 		}
-		fission_rates[i] = pairwise_sum( fine_fission_rates, I.fai );
+		node_fission_rate = pairwise_sum(fission_rates, 
+				I.n_source_regions_per_node);
+		
+		// free allocated memory
+		free(fission_rates);
+		free(fine_fission_rates);
+		free(g_fission_rates);
+	
+	#ifdef OPENMP
 	}
-	float node_fission_rate = pairwise_sum(fission_rates, 
-			I.n_source_regions_per_node);
+	#endif
 
 	#ifdef MPI	
 	// accumulate total fission rate by MPI Allreduce
@@ -795,13 +927,12 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	float total_fission_rate = node_fission_rate;
 	#endif
 
-	// free allocated memory
-	free(fission_rates);
-	free(fine_fission_rates);
-	free(g_fission_rates);
 
 	// normalize fluxes by fission reaction rate
 	float norm_factor = 1.0 / total_fission_rate;
+
+	#pragma omp parallel for default(none) \
+	shared(I, params) private(norm_factor) schedule(dynamic)
 	for( int i = 0; i < I.n_source_regions_per_node; i++)
 	{
 		Source * src = &params.sources[i];
@@ -812,11 +943,16 @@ void renormalize_flux( Params params, Input I, CommGrid grid )
 	}
 
 	// normalize boundary fluxes by same factor
+	#pragma omp parallel for default(none) \
+	shared(I, params) private(norm_factor) schedule(dynamic)
 	for( long i = 0; i < I.ntracks_2D; i++)
 		for( int j = 0; j < I.n_polar_angles; j++)
 			for( int k = 0; k < I.z_stacked; k++)
 				for( int g = 0; g < I.n_egroups; g++)
-					params.tracks[i][j][k].psi[g] *= norm_factor;
+				{
+					params.tracks[i][j][k].f_psi[g] *= norm_factor;
+					params.tracks[i][j][k].b_psi[g] *= norm_factor;
+				}
 
 	if( I.mype == 0 ) printf("Renormalizing Flux Complete.\n");
 	return;
@@ -1055,3 +1191,4 @@ float interpolateTable( Table table, float x)
 		return val;
 	}
 }
+
