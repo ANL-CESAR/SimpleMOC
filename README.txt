@@ -79,6 +79,8 @@ Running SimpleMOC-------------------------------------------------------------
 	Options include:
 	  -t <threads>     Number of OpenMP threads to run
 	  -i <filename>    Input file name with customized parameters.
+      -p <PAPI event>  PAPI event name to count (1 only)
+      -s               Small problem flag
 	Default (no arguments given) runs a small model using baked-in parameters.
 
 ==============================================================================
@@ -129,14 +131,16 @@ reactor model to represent a good target problem for full core reactor
 simualations to be run on exascale class supercomputers. Arbitrary
 user-defined geometries are not supported.
 
-The reactor model used by this application is detailed as follows:
-
 ===============================================================================
 Input Variables
 ===============================================================================
 
-By default, the program will run with a conservatively small set of inputs
-so that at most ~900MB of memory is used on a node.
+By default, the program will run with a default set of inputs
+so that around 12 GB of memory is used on a node.
+
+A smaller problem, using only 900MB of memory, can be run using the "-s"
+command line option. This problem is quite small, but may be useful for
+error checking on smaller systems with limited memory capacities.
 
 Custom inputs can be defined via input file using the "-i" command line
 argument.

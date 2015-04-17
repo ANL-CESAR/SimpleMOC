@@ -86,9 +86,9 @@ void set_small_input( Input * I )
 	I->axial_exp = 2;            	// Axial source expansion order
 	I->radial_ray_sep = 0.5;     	// Radial ray separation
 	I->axial_z_sep = 0.2;        	// Axial stacked z-ray separation
-	I->n_azimuthal = 10;         	// Number of azimuthal angles
-	I->n_polar_angles = 10;      	// Number of polar angles
-	I->n_egroups = 2;          		// Number of energy groups
+	I->n_azimuthal = 5;         	// Number of azimuthal angles
+	I->n_polar_angles = 5;      	// Number of polar angles
+	I->n_egroups = 104;        		// Number of energy groups
 	I->decompose = false;      	 	/* Turn decomposition on/off (true = on, 
 								   		flase = off) */
 	I->decomp_assemblies_ax = 1; 	/* Number of sub-domains per assembly
