@@ -136,9 +136,9 @@ Input Variables
 ===============================================================================
 
 By default, the program will run with a default set of inputs
-so that around 12 GB of memory is used on a node.
+so that around 13 GB of memory is used on a node.
 
-A smaller problem, using only 900MB of memory, can be run using the "-s"
+A smaller problem, using only 1 GB of memory, can be run using the "-s"
 command line option. This problem is quite small, but may be useful for
 error checking on smaller systems with limited memory capacities.
 
