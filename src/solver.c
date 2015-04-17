@@ -611,7 +611,7 @@ void transport_sweep( Params * params, Input * I )
 		counter_stop(&eventset, num_papi_events, I);
 		#endif
 	}
-	printf("Number of segments processed: %ld\n", segments_processed);
+	//printf("Number of segments processed: %ld\n", segments_processed);
 	I->segments_processed = segments_processed;
 
 	return;
