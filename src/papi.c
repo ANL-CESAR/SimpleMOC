@@ -455,7 +455,6 @@ void counter_stop( int * eventset, int num_papi_events, Input * I )
             }
         }
         free( I->vals_accum );
-		free(events);
 
 		border_print();
 		center_print("PERFORMANCE SUMMARY", 79);

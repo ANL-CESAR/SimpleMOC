@@ -61,7 +61,7 @@ Input set_default_input( void )
 	I.n_2D_source_regions_per_assembly = 5000; 
 
 	#ifdef PAPI
-	I.papi_event_set = 0;
+	I.papi_event_set = 4;
 	#endif
 	
 	#ifdef OPENMP
