@@ -279,8 +279,281 @@ void attenuate_fluxes( Track * track, bool forward, Source * QSR, Input * I_in,
 	}
 }	
 
-// run one full transport sweep, return k
+// single direction transport sweep
 void transport_sweep( Params * params, Input * I )
+{
+	if(I->mype==0) printf("Starting transport sweep ...\n");
+
+	// calculate the height of a node's domain and of each FSR
+	double node_delta_z = I->height / I->decomp_assemblies_ax;
+	double fine_delta_z = node_delta_z / (I->cai * I->fai);
+
+	/* loop over tracks (implicitly azimuthal angles, tracks in azimuthal 
+	 * angles, polar angles, and z stacked rays) */
+
+	//print_Input_struct( I );
+	long segments_processed = 0;
+
+	#pragma omp parallel default(none) \
+	shared( I, params, node_delta_z, fine_delta_z ) \
+	reduction(+ : segments_processed )
+	{
+		#ifdef OPENMP
+		int thread = omp_get_thread_num();
+		int nthreads = omp_get_num_threads();
+		unsigned int seed = time(NULL) * (thread+1);
+		#endif
+		//print_Input_struct( I );
+
+		#ifdef PAPI
+		int eventset = PAPI_NULL;
+		int num_papi_events;
+		#pragma omp critical
+		{
+			counter_init(&eventset, &num_papi_events, I);
+		}
+		#endif
+
+		AttenuateVars A;
+		float * ptr = (float * ) malloc( I->n_egroups * 14 * sizeof(float));
+		A.q0 = ptr;
+		ptr += I->n_egroups;
+		A.q1 = ptr;
+		ptr += I->n_egroups;
+		A.q2 = ptr;
+		ptr += I->n_egroups;
+		A.sigT = ptr;
+		ptr += I->n_egroups;
+		A.tau = ptr;
+		ptr += I->n_egroups;
+		A.sigT2 = ptr;
+		ptr += I->n_egroups;
+		A.expVal = ptr;
+		ptr += I->n_egroups;
+		A.reuse = ptr;
+		ptr += I->n_egroups;
+		A.flux_integral = ptr;
+		ptr += I->n_egroups;
+		A.tally = ptr;
+		ptr += I->n_egroups;
+		A.t1 = ptr;
+		ptr += I->n_egroups;
+		A.t2 = ptr;
+		ptr += I->n_egroups;
+		A.t3 = ptr;
+		ptr += I->n_egroups;
+		A.t4 = ptr;
+
+		#pragma omp for schedule( dynamic ) 
+		for (long i = 0; i < I->ntracks_2D; i++)
+		{
+			// print progress
+			#ifdef OPENMP
+			if(I->mype==0 && thread == 0)
+			{
+				printf("\rAttenuating Tracks... (%.0lf%% completed)",
+						(i / ( (double)I->ntracks_2D / (double) nthreads ))
+						/ (double) nthreads * 100.0);
+			}
+			#else
+			if( i % 50 == 0)
+				if(I->mype==0)
+					printf("%s%ld%s%ld\n","2D Tracks Completed = ", i," / ", 
+							I->ntracks_2D );
+			#endif
+
+
+			// treat positive-z traveling rays first
+			bool pos_z_dir = true;
+			for( int j = 0; j < I->n_polar_angles; j++)
+			{
+				if( j == I->n_polar_angles / 2 )
+					pos_z_dir = false;
+				float p_angle = params->polar_angles[j];
+				float mu = cos(p_angle);
+
+				// start with all z stacked rays
+				int begin_stacked = 0;
+				int end_stacked = I->z_stacked;
+
+				for( int n = 0; n < params->tracks_2D[i].n_segments; n++)
+				{
+					// calculate distance traveled in cell if segment completed
+					float s_full = params->tracks_2D[i].segments[n].length 
+						/ sin(p_angle);
+
+					// allocate varaible for distance traveled in an FSR
+					float ds = 0;
+
+					// loop over remaining z-stacked rays
+					for( int k = begin_stacked; k < end_stacked; k++)
+					{
+						// initialize s to full length
+						float s = s_full;
+
+						// select current track
+						Track * track = &params->tracks[i][j][k];
+
+						// set flag for completeion of segment
+						bool seg_complete = false;
+
+						// calculate interval
+						int curr_interval;
+						if( pos_z_dir)
+							curr_interval = get_pos_interval(track->z_height, 
+									fine_delta_z);
+						else
+							curr_interval = get_neg_interval(track->z_height, 
+									fine_delta_z);
+
+						while( !seg_complete )
+						{
+							// flag to reset z position
+							bool reset = false;
+
+
+							/* calculate new height based on s 
+							 * (distance traveled in FSR) */
+							float z = track->z_height + s * cos(p_angle);
+
+							// check if still in same FSR (fine axial interval)
+							int new_interval;
+							if( pos_z_dir )
+								new_interval = get_pos_interval(z, 
+										fine_delta_z);
+							else
+								new_interval = get_neg_interval(z,
+										fine_delta_z);
+
+							if( new_interval == curr_interval )
+							{
+								seg_complete = true;
+								ds = s;
+							}
+
+							// otherwise, we need to recalculate distances
+							else
+							{
+								// correct z
+								if( pos_z_dir )
+								{
+									curr_interval++;
+									z = fine_delta_z * (float) curr_interval;
+								}
+								else{
+									curr_interval--;
+									z = fine_delta_z * (float) curr_interval;
+								}
+
+								// calculate distance travelled in FSR (ds)
+								ds = (z - track->z_height) / cos(p_angle);
+
+								// update track length remaining
+								s -= ds;
+
+								/* check remaining track length to protect
+								 * against potential roundoff errors */
+								if( s <= 0 )
+									seg_complete = true;
+
+								// check if out of bounds or track complete
+								if( z <= 0 || z >= node_delta_z )
+								{
+									// mark segment as completed
+									seg_complete = true;
+
+									// remember to no longer treat this track
+									if ( pos_z_dir )
+										end_stacked--;
+									else
+										begin_stacked++;
+
+									// reset z height
+									reset = true;
+								}
+							}
+
+							// pick a random FSR (cache miss expected)
+							#ifdef OPENMP
+							long QSR_id = rand_r(&seed) % 
+								I->n_source_regions_per_node;
+							#else
+							long QSR_id = rand() % 
+								I->n_source_regions_per_node;
+							#endif
+
+							/* update sources and fluxes from attenuation 
+							 * over FSR */
+							if( I->axial_exp == 2 )
+							{
+								attenuate_fluxes( track, true, 
+										&params->sources[QSR_id], 
+										I, params, ds, mu, 
+										params->tracks_2D[i].az_weight, &A );
+
+								segments_processed++;
+							}
+
+							else if( I->axial_exp == 0 )
+							{
+								attenuate_FSR_fluxes( track, true,
+										&params->sources[QSR_id],
+										I, params, ds, mu,
+										params->tracks_2D[i].az_weight, &A );
+
+								segments_processed++;
+							}
+							else
+							{
+								printf("Error: invalid axial expansion order");
+								printf("\n Please input 0 or 2\n");
+								exit(1);
+							}
+
+							// update with new z height or reset if finished
+							if( n == params->tracks_2D[i].n_segments - 1  
+									|| reset)
+							{
+								if( pos_z_dir)
+									track->z_height = I->axial_z_sep * k;
+								else
+									track->z_height = I->axial_z_sep * (k+1);
+							}
+							else
+								track->z_height = z;
+
+						}
+					}
+				}
+			}
+		}
+		#ifdef OPENMP
+		if(thread == 0 && I->mype==0) printf("\n");
+		#endif
+
+		#ifdef PAPI
+		if( thread == 0 )
+		{
+			printf("\n");
+			border_print();
+			center_print("PAPI COUNTER RESULTS", 79);
+			border_print();
+			printf("Count          \tSmybol      \tDescription\n");
+		}
+		{
+			#pragma omp barrier
+		}
+		counter_stop(&eventset, num_papi_events, I);
+		#endif
+	}
+	I->segments_processed = segments_processed;
+
+	return;
+}
+
+
+// run one full transport sweep, return k
+void two_way_transport_sweep( Params * params, Input * I )
 {
 	if(I->mype==0) printf("Starting transport sweep ...\n");
 

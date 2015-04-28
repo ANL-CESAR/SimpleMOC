@@ -1,0 +1,11 @@
+===============================================================================
+NEW IN VERSION 2
+===============================================================================
+
+- Simplified the transport sweep. We were previously doing a forwards and
+  backwards setup as is often done in MOC. However, for 3D MOC, this doesn't
+  have much benefit anymore especially due to the more computationally intense
+  quadratic source. Note that this change does not alter performance
+  significantly, as it doesn't touch the inner "attenuate fluxes" function.
+
+===============================================================================
