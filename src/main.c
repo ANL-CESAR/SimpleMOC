@@ -137,7 +137,11 @@ int main( int argc, char * argv[] )
 	}
 
 	free_2D_tracks( params.tracks_2D );
+	#ifdef NVRAM
+	NVRAM_free_tracks(params.tracks, params);
+	#else
 	free_tracks( params.tracks );
+	#endif
 
 	#ifdef MPI
 	MPI_Finalize();

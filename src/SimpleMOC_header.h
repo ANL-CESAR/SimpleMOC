@@ -11,6 +11,7 @@
 #include<assert.h>
 #include<pthread.h>
 #include<unistd.h>
+#include "mmappedspace.h"
 
 #ifdef MPI
 #include<mpi.h>
@@ -135,6 +136,7 @@ typedef struct{
    	float * polar_angles;
 	float * leakage;
 	Table expTable;
+	struct mms_struct *mms;
 } Params;
 
 // MPI 3D Grid info
@@ -201,6 +203,8 @@ Track2D * generate_2D_tracks( Input input, size_t * nbytes );
 void generate_2D_segments( Input input, Track2D * tracks,
 	   	size_t * nbytes );
 void free_2D_tracks( Track2D * tracks );
+Track *** NVRAM_generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes, struct mms_struct ** mms );
+void NVRAM_free_tracks( Track *** tracks, Params params );
 Track *** generate_tracks(Input input, Track2D * tracks_2D, size_t * nbytes);
 void free_tracks( Track *** tracks );
 long segments_per_2D_track_distribution( Input I );

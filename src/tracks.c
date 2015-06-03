@@ -72,6 +72,107 @@ void free_2D_tracks( Track2D * tracks )
 }
 
 // allocate memory for tracks (primarily angular fluxes)
+Track *** NVRAM_generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes, struct mms_struct ** mms )
+{
+	// Allocate space for tracks (3D)
+	Track *** tracks = (Track ***) malloc( I.ntracks_2D * sizeof(Track **));
+	*nbytes += I.ntracks_2D * sizeof(Track **);
+
+	// Allocate pointers for tracks associated with a 2D track
+	Track ** tracks_in_track2D = (Track **) malloc( I.ntracks_2D *
+		   	I.n_polar_angles * sizeof(Track *));
+	*nbytes += I.ntracks_2D * I.n_polar_angles * sizeof(Track *);
+
+	// Allocate complete array of track data
+	Track * track_data = (Track *) malloc( I.ntracks * sizeof(Track) );
+	*nbytes += I.ntracks * sizeof(Track);
+	if(I.mype==0) printf("3D track data requires %zu MB of data...\n", 
+			I.ntracks * sizeof(Track) / 1024 / 1024 );
+
+	// stitch pointers together
+	for( long i = 0; i < I.ntracks_2D; i++ )
+		tracks[i] = &tracks_in_track2D[ i * I.n_polar_angles ];
+
+	for( long i = 0; i < I.ntracks_2D; i++ )
+	{
+		for( int j = 0; j < I.n_polar_angles; j++ )
+		{
+			tracks[i][j] = &track_data[ 
+				(i * I.n_polar_angles + j) * I.z_stacked ];
+		}
+	}
+
+	// Allocate space for Flux Arrays
+	size_t flux_bytes_needed = 2 * I.ntracks * I.n_egroups * sizeof(float);
+	
+	if(I.mype==0) printf("Flux Arrays Require %zu MB of data...\n", 
+			flux_bytes_needed / 1024 / 1024);
+
+	// NVRAM allocation ///////////////////////////////////////////////////
+	char * drive = "/dev/tdh"; 
+	*mms = mms_init(drive, flux_bytes_needed);
+	if (!mms) {
+		printf("mms_init() failed\n");
+		exit(1);
+	}
+	printf("NVRAM drive initialized...\n");
+	float * flux_space = (float *) mms_malloc( *mms, flux_bytes_needed );
+	if (!flux_space) {
+		printf("Failed to allocate on NVRAM drive\n");
+		exit(1);
+	}
+	printf("NVRAM allocation successful...\n");
+	// NVRAM allocation ///////////////////////////////////////////////////
+
+	*nbytes += flux_bytes_needed;
+	size_t flux_idx = 0;
+
+	long offset = I.ntracks * I.n_egroups;
+
+	for( long i = 0; i < I.ntracks_2D; i++ )
+	{
+		for( int j = 0; j < I.n_polar_angles; j++ )
+		{
+			for( int k = 0; k < I.z_stacked; k++ )
+			{
+				/* bottom z heights should only have upward directed polar
+				 * angles and  similarly top should only have downward directed
+				 * polar angles */
+				if( j < I.n_polar_angles/2 )
+					tracks[i][j][k].z_height = I.axial_z_sep * k;
+				else
+					tracks[i][j][k].z_height = I.axial_z_sep * ( k + 1 );
+				
+				// set polar weight, NOTE: this is the same for same polar angle
+				tracks[i][j][k].p_weight = urand();
+
+				// assign angular flux array memory
+				tracks[i][j][k].f_psi = &flux_space[flux_idx];
+				flux_idx += I.n_egroups;
+				tracks[i][j][k].b_psi = &flux_space[flux_idx];
+				flux_idx += I.n_egroups;
+
+				// set incoming flux to 0 (guess 0 for inner assemblies)
+				for( int g = 0; g < I.n_egroups; g++)
+				{
+					tracks[i][j][k].f_psi[g] = 0;
+					tracks[i][j][k].b_psi[g] = 0;
+				}
+			}
+		}
+	}
+	return tracks;
+}
+
+void NVRAM_free_tracks( Track *** tracks, Params params )
+{
+	printf("Free'ing flux data from NVRAM...\n");
+	mms_free(params.mms, tracks[0][0][0].f_psi);
+	printf("Releasing NVRAM drive...\n");
+	mms_fini(params.mms);
+}
+
+// allocate memory for tracks (primarily angular fluxes)
 Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 {
 	// Allocate space for tracks (3D)
@@ -152,7 +253,7 @@ Track *** generate_tracks(Input I, Track2D * tracks_2D, size_t * nbytes)
 // free memory associated with tracks
 void free_tracks( Track *** tracks )
 {
-	free(tracks);
+	free(tracks[0][0][0].f_psi);
 }
 
 // assign polar angles

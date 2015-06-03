@@ -6,10 +6,11 @@ COMPILER    = intel
 MPI         = no
 OPENMP      = yes
 OPTIMIZE    = yes
-DEBUG       = no
+DEBUG       = yes
 PROFILE     = no
 PAPI        = no
 BENCHMARK   = no
+NVRAM       = no
 
 #===============================================================================
 # Program name & source code list
@@ -114,6 +115,10 @@ endif
    	CFLAGS += -DOPENMP
 endif
 
+# NVRAM
+ifeq ($(NVRAM), yes)
+	CFLAGS += -DNVRAM
+endif
 
 #===============================================================================
 # Targets to Build

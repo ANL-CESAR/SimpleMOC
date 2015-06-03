@@ -131,8 +131,14 @@ Params build_tracks( Input* input )
 		printf("Initializing 3D tracks...\n");
 	}
 
-	params.tracks = generate_tracks(I, params.tracks_2D, &nbytes);
+	#ifdef NVRAM
+	struct mms_struct *mms;
+	params.tracks = NVRAM_generate_tracks(I, params.tracks_2D, &nbytes, &mms);
 	params.polar_angles = generate_polar_angles( I ); 
+	params.mms = mms;
+	#else
+	params.tracks = generate_tracks(I, params.tracks_2D, &nbytes);
+	#endif
 
 	if(I.mype == 0)
 	{
