@@ -27,7 +27,9 @@ io.c \
 tracks.c \
 utils.c \
 solver.c \
-papi.c
+papi.c \
+mmappedspace.c \
+dlmalloc.c
 
 obj = $(source:.c=.o)
 
@@ -56,7 +58,7 @@ ifeq ($(MACHINE),bluegene)
 endif
 
 # Standard Flags
-CFLAGS := -std=gnu99
+CFLAGS := -std=gnu99 -DONLY_MSPACES 
 
 # Linker Flags
 LDFLAGS = -lm
