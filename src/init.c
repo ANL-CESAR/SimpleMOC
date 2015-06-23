@@ -38,7 +38,7 @@ Input set_default_input( void )
 								   of the reactor */
 	I.y_assemblies = 17;        /* Number of assemblies in the y-axis 
 								   of the reactor */
-	I.cai = 9;                	// Number of coarse axial intervals
+	I.cai = 27;                	// Number of coarse axial intervals
 	I.fai = 5;                  /* Number of fine axial intervals per coarse 
 								   axial interval */
 	I.axial_exp = 2;            // Axial source expansion order

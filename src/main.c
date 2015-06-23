@@ -2,7 +2,7 @@
 
 int main( int argc, char * argv[] )
 {
-	int version = 2;
+	int version = 3;
 	int mype = 0;
 
 	#ifdef MPI
