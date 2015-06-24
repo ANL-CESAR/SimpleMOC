@@ -51,7 +51,7 @@ Input set_default_input( void )
 								   flase = off) */
 	I.decomp_assemblies_ax =20; /* Number of subdomains per assembly
 								   (axially) */
-	I.segments_per_track = 20;  // Average number of segments per track (123)
+	I.segments_per_track = 120;  // Average number of segments per track (123)
 	I.assembly_width = 21.42;   // Width of an assembly - 1.26 x 17 cm
 	I.height = 400.0;           // Height of the reactor - 400 cm
 	I.precision = 0.01;			// precision for source convergence
@@ -93,7 +93,7 @@ void set_small_input( Input * I )
 								   		flase = off) */
 	I->decomp_assemblies_ax = 1; 	/* Number of sub-domains per assembly
 								   		(axially) */
-	I->segments_per_track = 20;  	// Average number of segments per track
+	I->segments_per_track = 120;  	// Average number of segments per track
 	I->assembly_width = 1.26*17; 	// Width of an assembly - 1.26 x 17 cm
 	I->height = 400.0;           	// Height of the reactor - 400 cm
 	I->precision = 0.01;			// precision for source convergence

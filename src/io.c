@@ -193,6 +193,7 @@ void print_CLI_error(void)
 	printf("  -i <filename>    Input file name\n");
     printf("  -p <PAPI event>  PAPI event name to count (1 only) \n");
     printf("  -s               Small problem flag \n");
+	printf("  -d <filename>    OpenMOC tracking file\n");
 	printf("See readme for full description of default run values\n");
 	exit(1);
 }
