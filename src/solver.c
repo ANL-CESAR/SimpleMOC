@@ -371,7 +371,7 @@ void transport_sweep( Params * params, Input * I )
 					pos_z_dir = false;
 				float p_angle = params->polar_angles[j];
 				float mu = cos(p_angle);
-                float sin_theta = sin(p_angle)
+                float sin_theta = sin(p_angle);
 
                 // estimate the upper and lower points of the first track in the
                 // z-stack
@@ -423,13 +423,13 @@ void transport_sweep( Params * params, Input * I )
 
                         // compute track indexes that cross the source region
                         int start_track = ceil((z_min - first_track_upper_z) /
-                                z_spacing);
+                                fine_delta_z);
                         int start_full = ceil((z_min - first_track_lower_z) /
-                                z_spacing);
+                                fine_delta_z);
                         int end_full = ceil((z_max - first_track_upper_z) /
-                                z_spacing);
+                                fine_delta_z);
                         int end_track = ceil((z_max - first_track_lower_z) /
-                                z_spacing);
+                                fine_delta_z);
 
                         // Treat lower tracks that do not cross the entire 2D
                         // length
