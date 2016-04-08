@@ -441,7 +441,7 @@ void transport_sweep( Params * params, Input * I )
                             
                             // calculate the distance traveled in the SR
                             float end_z = first_track_upper_z + k*fine_delta_z;
-                            float ds = (end_z - z_min) / abs(mu);
+                            float ds = (end_z - z_min) / fabs(mu);
 
                             /* update sources and fluxes from attenuation 
 							 * over SR */
@@ -514,7 +514,7 @@ void transport_sweep( Params * params, Input * I )
                         // with any traveling the entire 2D distance)
                         else if( start_full > end_full )
                         {
-                            float ds = (z_max - z_min) / abs(mu);
+                            float ds = (z_max - z_min) / fabs(mu);
 
                             for (int k = end_full; k < start_full; k++) {
 
@@ -559,7 +559,7 @@ void transport_sweep( Params * params, Input * I )
                             
                             // calculate the distance traveled in the SR
                             float start_z = first_track_lower_z + k*fine_delta_z;
-                            float ds = (z_max - start_z) / abs(mu);
+                            float ds = (z_max - start_z) / fabs(mu);
 
                             /* update sources and fluxes from attenuation 
 							 * over SR */
