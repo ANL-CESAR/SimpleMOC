@@ -33,6 +33,14 @@ characterterics and viability of the Method of Characteristics (MOC)
 for 3D neutron transport calculations in the context of full scale
 light water reactor simulation.
 
+More information on SimpleMOC can be found in the following publication:
+
+Geoffrey Gunow, John Tramm, Benoit Forget, Kord Smith, and Tim He. SimpleMOC
+– A performance abstraction for 3D MOC. In ANS & M&C 2015 - Joint
+International Conference on Mathematics and Computation (M&C), Supercomputing
+in Nuclear Applications (SNA) and the Monte Carlo (MC) Method, 2015.
+http://www.mcs.anl.gov/publication/simplemoc-performance-abstraction-3d-moc
+
 ==============================================================================
 Quick Start Guide
 ==============================================================================
@@ -167,4 +175,26 @@ precision      : precision for source convergence
 n_2D_source_regions_per_assembly : 2D src regions per assembly 
 papi_event_set : PAPI Event Set Choice 
 
+===============================================================================
+Citing SimpleMOC
+===============================================================================
+
+Papers that cite SimpleMOC should in general refer to the following
+publication:
+
+Geoffrey Gunow, John Tramm, Benoit Forget, Kord Smith, and Tim He. SimpleMOC
+– A performance abstraction for 3D MOC. In ANS & M&C 2015 - Joint
+International Conference on Mathematics and Computation (M&C), Supercomputing
+in Nuclear Applications (SNA) and the Monte Carlo (MC) Method, 2015.
+http://www.mcs.anl.gov/publication/simplemoc-performance-abstraction-3d-moc
+
+The bibtext entry for this paper is included below:
+
+@inproceedings{Gunow2015,
+author = {Gunow, Geoffrey and Tramm, John and Forget, Benoit and Smith, Kord and He, Tim},
+keywords = {high performance computing,method of characteristics},
+booktitle = {ANS \& M\&C 2015 - Joint International Conference on Mathematics and Computation (M\&C), Supercomputing in Nuclear Applications (SNA) and the Monte Carlo (MC) Method},
+title = {{SimpleMOC} -- A PERFORMANCE ABSTRACTION FOR {3D MOC}},
+year = {2015}
+}
 ===============================================================================
