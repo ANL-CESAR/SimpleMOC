@@ -371,119 +371,80 @@ void transport_sweep( Params * params, Input * I )
 					pos_z_dir = false;
 				float p_angle = params->polar_angles[j];
 				float mu = cos(p_angle);
+                float sin_theta = sin(p_angle);
 
-				// start with all z stacked rays
-				int begin_stacked = 0;
-				int end_stacked = I->z_stacked;
+                // estimate the upper and lower points of the first track in the
+                // z-stack
+                float first_track_lower_z = -I->assembly_width / sin_theta;
+                float first_track_upper_z = 0;
 
+                // loop over all 2D segments in the 2D track
 				for( int n = 0; n < params->tracks_2D[i].n_segments; n++)
 				{
-					// calculate distance traveled in cell if segment completed
-					float s_full = params->tracks_2D[i].segments[n].length 
-						/ sin(p_angle);
+                    // determine the start and end points in the first track
+                    float first_start_z;
+                    float first_end_z;
+                    if( pos_z_dir )
+                    {
+                        first_start_z = first_track_lower_z;
+                        first_end_z = first_track_upper_z;
+                    }
+                    else
+                    {
+                        first_start_z = first_track_upper_z;
+                        first_end_z = first_track_lower_z;
+                    }
 
-					// allocate varaible for distance traveled in an FSR
-					float ds = 0;
-
-					// loop over remaining z-stacked rays
-					for( int k = begin_stacked; k < end_stacked; k++)
-					{
-						// initialize s to full length
-						float s = s_full;
-
-						// select current track
-						Track * track = &params->tracks[i][j][k];
-
-						// set flag for completeion of segment
-						bool seg_complete = false;
-
-						// calculate interval
-						int curr_interval;
-						if( pos_z_dir)
-							curr_interval = get_pos_interval(track->z_height, 
-									fine_delta_z);
-						else
-							curr_interval = get_neg_interval(track->z_height, 
-									fine_delta_z);
-
-						while( !seg_complete )
-						{
-							// flag to reset z position
-							bool reset = false;
+                    // loop over all 3D SRs associated with the 2D segment
+                    int num_ax_srs = I->cai*I->fai;
+                    for( int z_iter = 0; z_iter < num_ax_srs; z_iter++)
+                    {
+					    // pick a random SR (cache miss expected)
+                        #ifdef OPENMP
+                        long QSR_id = rand_r(&seed) % 
+                            I->n_source_regions_per_node;
+                        #else
+                        long QSR_id = rand() % 
+                            I->n_source_regions_per_node;
+                        #endif
 
 
-							/* calculate new height based on s 
-							 * (distance traveled in FSR) */
-							float z = track->z_height + s * cos(p_angle);
+                        // If traveling in the negative direction, loop thorugh
+                        // SRs from the top
+                        int z_ind;
+                        if ( pos_z_dir )
+                            z_ind = z_iter;
+                        else
+                            z_ind = num_ax_srs - z_iter - 1;
 
-							// check if still in same FSR (fine axial interval)
-							int new_interval;
-							if( pos_z_dir )
-								new_interval = get_pos_interval(z, 
-										fine_delta_z);
-							else
-								new_interval = get_neg_interval(z,
-										fine_delta_z);
+                        // calculate the boundaries of the source region
+                        float z_min = fine_delta_z * z_ind;
+                        float z_max = z_min + fine_delta_z;
 
-							if( new_interval == curr_interval )
-							{
-								seg_complete = true;
-								ds = s;
-							}
+                        // compute track indexes that cross the source region
+                        int start_track = ceil((z_min - first_track_upper_z) /
+                                fine_delta_z);
+                        int start_full = ceil((z_min - first_track_lower_z) /
+                                fine_delta_z);
+                        int end_full = ceil((z_max - first_track_upper_z) /
+                                fine_delta_z);
+                        int end_track = ceil((z_max - first_track_lower_z) /
+                                fine_delta_z);
 
-							// otherwise, we need to recalculate distances
-							else
-							{
-								// correct z
-								if( pos_z_dir )
-								{
-									curr_interval++;
-									z = fine_delta_z * (float) curr_interval;
-								}
-								else{
-									curr_interval--;
-									z = fine_delta_z * (float) curr_interval;
-								}
+                        // Treat lower tracks that do not cross the entire 2D
+                        // length
+                        int min_lower = min(start_full, end_full);
+                        for( int k = start_track; k < min_lower; k++) {
 
-								// calculate distance travelled in FSR (ds)
-								ds = (z - track->z_height) / cos(p_angle);
+                            // select current track
+						    Track * track = &params->tracks[i][j][k];
+                            
+                            // calculate the distance traveled in the SR
+                            float end_z = first_track_upper_z + k*fine_delta_z;
+                            float ds = (end_z - z_min) / fabs(mu);
 
-								// update track length remaining
-								s -= ds;
-
-								/* check remaining track length to protect
-								 * against potential roundoff errors */
-								if( s <= 0 )
-									seg_complete = true;
-
-								// check if out of bounds or track complete
-								if( z <= 0 || z >= node_delta_z )
-								{
-									// mark segment as completed
-									seg_complete = true;
-
-									// remember to no longer treat this track
-									if ( pos_z_dir )
-										end_stacked--;
-									else
-										begin_stacked++;
-
-									// reset z height
-									reset = true;
-								}
-							}
-
-							// pick a random FSR (cache miss expected)
-							#ifdef OPENMP
-							long QSR_id = rand_r(&seed) % 
-								I->n_source_regions_per_node;
-							#else
-							long QSR_id = rand() % 
-								I->n_source_regions_per_node;
-							#endif
-
-							/* update sources and fluxes from attenuation 
-							 * over FSR */
+                            /* update sources and fluxes from attenuation 
+							 * over SR */
 							if( I->axial_exp == 2 )
 							{
 								attenuate_fluxes( track, true, 
@@ -493,7 +454,6 @@ void transport_sweep( Params * params, Input * I )
 
 								segments_processed++;
 							}
-
 							else if( I->axial_exp == 0 )
 							{
 								attenuate_FSR_fluxes( track, true,
@@ -509,20 +469,125 @@ void transport_sweep( Params * params, Input * I )
 								printf("\n Please input 0 or 2\n");
 								exit(1);
 							}
+                        }
 
-							// update with new z height or reset if finished
-							if( n == params->tracks_2D[i].n_segments - 1  
-									|| reset)
+                        // Find if there are tracks traversing the entire 2D length
+                        if( end_full > start_full ) {
+                            float ds = params->tracks_2D[i].segments[n].length
+						                    / sin(p_angle);
+                            for (int k = start_full; k < end_full; k++) {
+
+                                // select current track
+                                Track * track = &params->tracks[i][j][k];
+                                
+                                /* update sources and fluxes from attenuation 
+                                 * over SR */
+                                if( I->axial_exp == 2 )
+                                {
+                                    attenuate_fluxes( track, true, 
+                                            &params->sources[QSR_id], 
+                                            I, params, ds, mu, 
+                                            params->tracks_2D[i].az_weight, &A );
+
+                                    segments_processed++;
+                                }
+                                else if( I->axial_exp == 0 )
+                                {
+                                    attenuate_FSR_fluxes( track, true,
+                                            &params->sources[QSR_id],
+                                            I, params, ds, mu,
+                                            params->tracks_2D[i].az_weight, &A );
+
+                                    segments_processed++;
+                                }
+                                else
+                                {
+                                    printf("Error: invalid axial expansion order");
+                                    printf("\n Please input 0 or 2\n");
+                                    exit(1);
+                                }
+                            }
+                        }
+
+                        // determine if there are tracks that cross the entire
+                        // z-height of the source region (mutually exclusive
+                        // with any traveling the entire 2D distance)
+                        else if( start_full > end_full )
+                        {
+                            float ds = (z_max - z_min) / fabs(mu);
+
+                            for (int k = end_full; k < start_full; k++) {
+
+                                // select current track
+                                Track * track = &params->tracks[i][j][k];
+                                
+                                /* update sources and fluxes from attenuation 
+                                 * over SR */
+                                if( I->axial_exp == 2 )
+                                {
+                                    attenuate_fluxes( track, true, 
+                                            &params->sources[QSR_id], 
+                                            I, params, ds, mu, 
+                                            params->tracks_2D[i].az_weight, &A );
+
+                                    segments_processed++;
+                                }
+                                else if( I->axial_exp == 0 )
+                                {
+                                    attenuate_FSR_fluxes( track, true,
+                                            &params->sources[QSR_id],
+                                            I, params, ds, mu,
+                                            params->tracks_2D[i].az_weight, &A );
+
+                                    segments_processed++;
+                                }
+                                else
+                                {
+                                    printf("Error: invalid axial expansion order");
+                                    printf("\n Please input 0 or 2\n");
+                                    exit(1);
+                                }
+                            }
+                        }
+                        // Treat upper tracks that do not cross the entire 2D
+                        // length
+                        int min_upper = max(start_full, end_full);
+                        for( int k = min_upper; k < end_track; k++) {
+
+                            // select current track
+						    Track * track = &params->tracks[i][j][k];
+                            
+                            // calculate the distance traveled in the SR
+                            float start_z = first_track_lower_z + k*fine_delta_z;
+                            float ds = (z_max - start_z) / fabs(mu);
+
+                            /* update sources and fluxes from attenuation 
+							 * over SR */
+							if( I->axial_exp == 2 )
 							{
-								if( pos_z_dir)
-									track->z_height = I->axial_z_sep * k;
-								else
-									track->z_height = I->axial_z_sep * (k+1);
+								attenuate_fluxes( track, true, 
+										&params->sources[QSR_id], 
+										I, params, ds, mu, 
+										params->tracks_2D[i].az_weight, &A );
+
+								segments_processed++;
+							}
+							else if( I->axial_exp == 0 )
+							{
+								attenuate_FSR_fluxes( track, true,
+										&params->sources[QSR_id],
+										I, params, ds, mu,
+										params->tracks_2D[i].az_weight, &A );
+
+								segments_processed++;
 							}
 							else
-								track->z_height = z;
-
-						}
+							{
+								printf("Error: invalid axial expansion order");
+								printf("\n Please input 0 or 2\n");
+								exit(1);
+							}
+                        }
 					}
 				}
 			}
