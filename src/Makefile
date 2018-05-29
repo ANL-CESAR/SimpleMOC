@@ -2,7 +2,7 @@
 # User Options
 #===============================================================================
 
-COMPILER    = intel
+COMPILER    = gnu
 MPI         = no
 OPENMP      = yes
 OPTIMIZE    = yes
