@@ -20,7 +20,7 @@ void calculate_derived_inputs( Input * I )
 
 	I->ntracks_2D = 2 * ( I->ntracks_2D / 2 );
 
-	I->z_stacked = (int) ( I->height / (I->axial_z_sep * I->decomp_assemblies_ax));
+	I->z_stacked = round ( I->height / (I->axial_z_sep * I->decomp_assemblies_ax));
 	I->ntracks = I->ntracks_2D * I->n_polar_angles * I->z_stacked;  
 	I->domain_height = I->height / I->decomp_assemblies_ax;
 
